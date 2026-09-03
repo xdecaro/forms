@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<updates>
+    <update>
+        <name>Forms System Plugin</name>
+        <description>System plugin for Forms.</description>
+        <element>decaroforms</element>
+        <type>plugin</type>
+        <folder>system</folder>
+        <version>1.0.0</version>
+        <client>site</client>
+        <downloads>
+            <downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.0.0/plg_system_decaroforms_1.0.0.zip</downloadurl>
+        </downloads>
+        <changelogurl>https://raw.githubusercontent.com/xdecaro/forms/main/updates/changelog.xml</changelogurl>
+        <tags><tag>stable</tag></tags>
+        <maintainer>Luca De Caro</maintainer>
+        <maintainerurl>https://github.com/xdecaro/forms</maintainerurl>
+        <targetplatform name="joomla" version="6\.[0-9]+" />
+        <php_minimum>8.3.0</php_minimum>
+        <sha256>8db60c7388ea64cf824eaeaf704d9eef259973055ba5f2ce121753262261e723</sha256>
+    </update>
+</updates>

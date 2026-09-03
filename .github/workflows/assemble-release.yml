@@ -1,0 +1,31 @@
+name: Assemble Forms release
+
+on:
+  push:
+    paths:
+      - 'release-data/1.1.0/**'
+      - '.github/workflows/assemble-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble package
+        run: |
+          mkdir -p releases/1.1.0
+          cat release-data/1.1.0/*.b64 | base64 --decode > releases/1.1.0/pkg_decaroforms_1.1.0.zip
+          echo 'dd6d7ba3802d9d8d579e09ab905bffb356ad8ff799a08dc93d937d12b49bc535  releases/1.1.0/pkg_decaroforms_1.1.0.zip' | sha256sum -c -
+          unzip -t releases/1.1.0/pkg_decaroforms_1.1.0.zip
+      - name: Commit assembled package
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add releases/1.1.0/pkg_decaroforms_1.1.0.zip
+          git diff --cached --quiet && exit 0
+          git commit -m 'Assemble Forms 1.1.0 release package'
+          git push

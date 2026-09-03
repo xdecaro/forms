@@ -3,6 +3,19 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.2.7</version>
+    <addition>
+      <item>Copy form and paste form workflow in administrator.</item>
+      <item>Copy form action is also available from the form submissions page.</item>
+    </addition>
+    <change>
+      <item>Pasted forms receive a new ID, slug and shortcode while preserving configuration and fields.</item>
+      <item>Submissions and uploaded files are deliberately excluded from copies.</item>
+    </change>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.2.6</version>
     <addition>
       <item>Live search while typing in Recent submissions and form submissions.</item>

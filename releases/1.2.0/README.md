@@ -22,6 +22,6 @@ Existing data is preserved. The installer adds `statuses_json` and `list_columns
 
 Official package SHA-256:
 
-`08dc86c56c98713d95fda4f4775acae007b4f34837a55ad30bd190eecf73827d`
+`ce83bffd7b91f73df5e097c92b08d449add05da71c53c9029b5ad39f9d091d56`
 
 The Joomla update feed must only be switched to 1.2.0 after `pkg_decaroforms_1.2.0.zip` is present in this directory.

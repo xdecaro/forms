@@ -13,26 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Forms release operation
+      - name: Rebuild ZIP from compressed Base64 chunks
         shell: bash
         run: |
           set -euo pipefail
-          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
-          if [ "$MODE" = "inspect-1.2.8" ]; then
-            exit 0
-          fi
-          if [ "$MODE" = "build-1.2.9" ]; then
-            sed -i '/xmllint --noout/d' tools/release-1.2.9/build.sh
-            bash tools/release-1.2.9/build.sh
-            python3 - <<'PY'
-          import xml.etree.ElementTree as ET
-          ET.parse('/tmp/forms129/component/com_decaroforms.xml')
-          ET.parse('updates/pkg_decaroforms.xml')
-          ET.parse('updates/changelog.xml')
-          print('XML checks OK')
-          PY
-            exit 0
-          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
@@ -44,10 +28,8 @@ jobs:
       - name: Commit rebuilt package
         shell: bash
         run: |
-          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
-          if [ "$MODE" = "inspect-1.2.8" ]; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add releases
           git commit -m "Publish Forms release package" || exit 0
           git push

@@ -5,7 +5,7 @@ Responsive e dark-mode maintenance release.
 ## Modifiche
 
 - ricerca Elenco moduli estesa a ID, shortcode, titolo, descrizione e slug;
-- ricerca in tempo reale anche scrivendo  o parti dello shortcode;
+- ricerca in tempo reale anche scrivendo `{form id="3"}` o parti dello shortcode;
 - responsive basato sulla larghezza reale del componente tramite container queries;
 - filtri Elenco moduli in accordion su smartphone;
 - Azioni e + Nuovo modulo su righe separate su smartphone;

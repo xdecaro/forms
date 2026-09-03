@@ -1,0 +1,34 @@
+name: Inspect Forms source files
+
+on:
+  push:
+    paths:
+      - 'tools/inspect/REQUEST'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print requested component files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/forms-src /tmp/forms-outer
+          mkdir -p /tmp/forms-src /tmp/forms-outer
+          unzip -q releases/1.2.1/pkg_decaroforms_1.2.1.zip -d /tmp/forms-outer
+          unzip -q /tmp/forms-outer/com_decaroforms_1.2.1.zip -d /tmp/forms-src
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            echo "===== FILE: $f ====="
+            if [ -f "/tmp/forms-src/$f" ]; then
+              cat "/tmp/forms-src/$f"
+            else
+              echo "MISSING"
+            fi
+            echo
+            echo "===== END FILE: $f ====="
+          done < tools/inspect/REQUEST

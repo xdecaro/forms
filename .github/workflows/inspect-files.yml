@@ -13,19 +13,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Print requested component files
+      - name: Print requested package files
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/forms-src /tmp/forms-outer
-          mkdir -p /tmp/forms-src /tmp/forms-outer
+          rm -rf /tmp/forms-src /tmp/forms-outer /tmp/forms-plugin
+          mkdir -p /tmp/forms-src /tmp/forms-outer /tmp/forms-plugin
           unzip -q releases/1.2.1/pkg_decaroforms_1.2.1.zip -d /tmp/forms-outer
           unzip -q /tmp/forms-outer/com_decaroforms_1.2.1.zip -d /tmp/forms-src
+          unzip -q /tmp/forms-outer/plg_system_decaroforms_1.2.1.zip -d /tmp/forms-plugin
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             echo "===== FILE: $f ====="
-            if [ -f "/tmp/forms-src/$f" ]; then
-              cat "/tmp/forms-src/$f"
+            if [[ "$f" == @outer/* ]]; then
+              p="/tmp/forms-outer/${f#@outer/}"
+            elif [[ "$f" == @plugin/* ]]; then
+              p="/tmp/forms-plugin/${f#@plugin/}"
+            else
+              p="/tmp/forms-src/$f"
+            fi
+            if [ -f "$p" ]; then
+              cat "$p"
             else
               echo "MISSING"
             fi

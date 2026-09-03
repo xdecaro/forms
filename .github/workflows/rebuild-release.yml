@@ -18,20 +18,8 @@ jobs:
         run: |
           set -euo pipefail
           MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
-          if [ "$MODE" = "inspect-1.2.7" ]; then
-            ROOT=/tmp/forms127
-            rm -rf "$ROOT" && mkdir -p "$ROOT/outer" "$ROOT/component"
-            unzip -q releases/1.2.7/pkg_decaroforms_1.2.7.zip -d "$ROOT/outer"
-            unzip -q "$ROOT/outer/com_decaroforms_1.2.7.zip" -d "$ROOT/component"
-            for f in \
-              administrator/components/com_decaroforms/tmpl/forms/default.php \
-              administrator/components/com_decaroforms/tmpl/submissions/default.php \
-              administrator/components/com_decaroforms/src/Controller/BuilderController.php \
-              administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini \
-              com_decaroforms.xml; do
-              echo "===== $f ====="
-              cat "$ROOT/component/$f"
-            done
+          if [ "$MODE" = "build-1.2.8" ]; then
+            bash tools/release-1.2.8/build.sh
             exit 0
           fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
@@ -45,10 +33,8 @@ jobs:
       - name: Commit rebuilt package
         shell: bash
         run: |
-          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
-          if [ "$MODE" = "inspect-1.2.7" ]; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add releases
+          git add -A
           git commit -m "Publish Forms release package" || exit 0
           git push

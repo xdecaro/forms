@@ -1,1 +1,1 @@
-inspect-1.2.5-live
+build-1.2.6

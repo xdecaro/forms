@@ -19,17 +19,25 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
     path.write_text(text.replace(old, new, 1), encoding='utf-8')
 
 
+def regex_replace_once(path: Path, pattern: str, new: str, label: str) -> None:
+    text = path.read_text(encoding='utf-8')
+    text, count = re.subn(pattern, new, text, count=1, flags=re.S)
+    if count != 1:
+        raise RuntimeError(f'missing patch target: {label} in {path}')
+    path.write_text(text, encoding='utf-8')
+
+
 # Invii recenti: live search while typing + immediate select filters.
 recent = component / 'administrator/components/com_decaroforms/tmpl/recent/default.php'
 old_recent = "document.getElementById('df-r-filter').addEventListener('click',apply);document.getElementById('df-r-clear').addEventListener('click',()=>{search.value='';form.value='all';status.value='all';limit.value='50';apply();});search.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();apply();}});limit.addEventListener('change',apply);statButtons.forEach(button=>button.addEventListener('click',()=>{status.value=button.dataset.recentStatusFilter||'all';apply();}));"
 new_recent = "let liveTimer=null;function scheduleApply(){clearTimeout(liveTimer);liveTimer=setTimeout(apply,180);}document.getElementById('df-r-filter').addEventListener('click',()=>{clearTimeout(liveTimer);apply();});document.getElementById('df-r-clear').addEventListener('click',()=>{clearTimeout(liveTimer);search.value='';form.value='all';status.value='all';limit.value='50';apply();});search.addEventListener('input',scheduleApply);search.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();clearTimeout(liveTimer);apply();}});form.addEventListener('change',apply);status.addEventListener('change',apply);limit.addEventListener('change',apply);statButtons.forEach(button=>button.addEventListener('click',()=>{status.value=button.dataset.recentStatusFilter||'all';apply();}));"
 replace_once(recent, old_recent, new_recent, 'recent live filters')
 
-# Invii del singolo modulo: same live behaviour.
+# Invii del singolo modulo: same live behaviour. Use a whitespace-tolerant patch.
 submissions = component / 'administrator/components/com_decaroforms/tmpl/submissions/default.php'
-old_sub = "document.getElementById('df-filter-btn').addEventListener('click',apply);\ndocument.getElementById('df-clear-btn').addEventListener('click',()=>{search.value='';filter.value='all';limit.value='50';apply();});\nstatButtons.forEach(button=>button.addEventListener('click',()=>{filter.value=button.dataset.statusFilter||'all';apply();}));\nsearch.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();apply();}});limit.addEventListener('change',apply);"
+sub_pattern = r"document\.getElementById\('df-filter-btn'\)\.addEventListener\('click',apply\);\s*document\.getElementById\('df-clear-btn'\)\.addEventListener\('click',\(\)=>\{search\.value='';filter\.value='all';limit\.value='50';apply\(\);\}\);\s*statButtons\.forEach\(button=>button\.addEventListener\('click',\(\)=>\{filter\.value=button\.dataset\.statusFilter\|\|'all';apply\(\);\}\)\);\s*search\.addEventListener\('keydown',event=>\{if\(event\.key==='Enter'\)\{event\.preventDefault\(\);apply\(\);\}\}\);limit\.addEventListener\('change',apply\);"
 new_sub = "let liveTimer=null;function scheduleApply(){clearTimeout(liveTimer);liveTimer=setTimeout(apply,180);}\ndocument.getElementById('df-filter-btn').addEventListener('click',()=>{clearTimeout(liveTimer);apply();});\ndocument.getElementById('df-clear-btn').addEventListener('click',()=>{clearTimeout(liveTimer);search.value='';filter.value='all';limit.value='50';apply();});\nstatButtons.forEach(button=>button.addEventListener('click',()=>{filter.value=button.dataset.statusFilter||'all';apply();}));\nsearch.addEventListener('input',scheduleApply);search.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();clearTimeout(liveTimer);apply();}});filter.addEventListener('change',apply);limit.addEventListener('change',apply);"
-replace_once(submissions, old_sub, new_sub, 'form submissions live filters')
+regex_replace_once(submissions, sub_pattern, new_sub, 'form submissions live filters')
 
 # Elenco moduli already live; standardise typing with same lightweight debounce.
 forms = component / 'administrator/components/com_decaroforms/tmpl/forms/default.php'

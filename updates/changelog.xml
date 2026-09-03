@@ -3,6 +3,23 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.2.0</version>
+    <addition>
+      <item>Dashboard with forms, active forms, submission totals and recent activity.</item>
+      <item>Per-form custom status workflows.</item>
+      <item>Per-form selectable submission-list columns, including form fields.</item>
+      <item>Full-width administrator layout.</item>
+      <item>Dark-mode support across all Forms administrator views.</item>
+    </addition>
+    <change>
+      <item>The first configured status is assigned automatically to new submissions.</item>
+      <item>Submission filters and exports support custom technical status keys.</item>
+      <item>The main Forms administrator menu now opens the Dashboard.</item>
+    </change>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.1.2</version>
     <change>
       <item>Minimal maintenance release for testing Joomla automatic extension update detection from the GitHub package feed.</item>

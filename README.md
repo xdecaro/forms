@@ -6,7 +6,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.2.0**
+**1.2.1**
 
 ### Main features
 
@@ -16,6 +16,9 @@ Developed by **Luca De Caro**.
 - submissions management with a custom status workflow for each form;
 - configurable submission-list columns for each form;
 - Joomla administrator dark-mode support across all Forms views;
+- clickable email template cards with modal facsimile preview;
+- Joomla-adaptive primary button styling;
+- back navigation from a single submission to its submissions list;
 - IT / EN / FR interface following the active Joomla language;
 - generic Data Import wizard;
 - import from the current Joomla database, CSV/TSV, Google Sheets, Google Forms through the linked response sheet, and external MySQL/MariaDB;

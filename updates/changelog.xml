@@ -3,6 +3,15 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.1.2</version>
+    <change>
+      <item>Minimal maintenance release for testing Joomla automatic extension update detection from the GitHub package feed.</item>
+      <item>No database schema changes and no changes to existing form or submission data.</item>
+    </change>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.1.1</version>
     <addition>
       <item>Submissions export to Excel (.xlsx), CSV and PDF.</item>

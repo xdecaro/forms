@@ -3,6 +3,19 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.2.1</version>
+    <addition>
+      <item>Email template cards are clickable and open a modal facsimile preview.</item>
+      <item>Single submission view now includes back navigation to the form submissions list.</item>
+    </addition>
+    <change>
+      <item>Primary administrator actions use Joomla/Bootstrap button styling so colors adapt to the active administrator theme.</item>
+      <item>Email preview uses the configured Forms brand name and accent color.</item>
+    </change>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.2.0</version>
     <addition>
       <item>Dashboard with forms, active forms, submission totals and recent activity.</item>

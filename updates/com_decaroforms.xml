@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<updates>
+    <update>
+        <name>Forms</name>
+        <description>Reusable Joomla form builder and submissions manager.</description>
+        <element>com_decaroforms</element>
+        <type>component</type>
+        <version>1.0.0</version>
+        <client>administrator</client>
+        <downloads>
+            <downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.0.0/com_decaroforms_1.0.0.zip</downloadurl>
+        </downloads>
+        <changelogurl>https://raw.githubusercontent.com/xdecaro/forms/main/updates/changelog.xml</changelogurl>
+        <tags><tag>stable</tag></tags>
+        <maintainer>Luca De Caro</maintainer>
+        <maintainerurl>https://github.com/xdecaro/forms</maintainerurl>
+        <targetplatform name="joomla" version="6\.[0-9]+" />
+        <php_minimum>8.3.0</php_minimum>
+        <sha256>2d00a1f21b86ac905bbc8e201ea163ef2398c798335490f4f88eb14428829424</sha256>
+    </update>
+</updates>

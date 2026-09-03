@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
+    <version>1.2.6</version>
+    <addition>
+      <item>Live search while typing in Recent submissions and form submissions.</item>
+      <item>Immediate filtering when form, status or row-limit selectors change.</item>
+    </addition>
+    <change>
+      <item>Standardised list filtering with a lightweight 180 ms debounce across administrator list views.</item>
+    </change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.5</version>
     <addition><item>Clickable summary cards that act as immediate status filters.</item><item>Export icons for CSV, Excel and PDF.</item></addition>
     <change><item>Forms list title aligned with the Elenco moduli menu label.</item><item>Back navigation moved into the submissions page header.</item><item>Larger live status badge moved into the Gestisci invio heading.</item></change>

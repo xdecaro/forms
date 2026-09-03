@@ -1,0 +1,12 @@
+administrator/components/com_decaroforms/tmpl/builder/default.php
+administrator/components/com_decaroforms/src/Controller/BuilderController.php
+administrator/components/com_decaroforms/src/View/Builder/HtmlView.php
+administrator/components/com_decaroforms/tmpl/submission/default.php
+administrator/components/com_decaroforms/src/View/Submission/HtmlView.php
+administrator/components/com_decaroforms/tmpl/submissions/default.php
+administrator/components/com_decaroforms/src/View/Submissions/HtmlView.php
+administrator/components/com_decaroforms/src/Controller/SubmissionController.php
+administrator/components/com_decaroforms/src/Helper/ExportHelper.php
+administrator/components/com_decaroforms/src/Helper/FormHelper.php
+administrator/components/com_decaroforms/script.php
+administrator/components/com_decaroforms/com_decaroforms.xml

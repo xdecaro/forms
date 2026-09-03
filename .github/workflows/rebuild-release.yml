@@ -3,7 +3,7 @@ name: Rebuild release package
 on:
   push:
     paths:
-      - 'releases/_upload/**'
+      - 'releases/_upload/READY'
 
 permissions:
   contents: write
@@ -19,9 +19,10 @@ jobs:
           set -euo pipefail
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
+          TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
           mkdir -p "releases/${VERSION}"
-          cat releases/_upload/part-*.b64 | base64 -d > "releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
-          ACTUAL="$(sha256sum "releases/${VERSION}/pkg_decaroforms_${VERSION}.zip" | awk '{print $1}')"
+          cat releases/_upload/part-*.b64 | base64 -d > "$TARGET"
+          ACTUAL="$(sha256sum "$TARGET" | awk '{print $1}')"
           test "$ACTUAL" = "$EXPECTED"
           rm -rf releases/_upload
       - name: Commit rebuilt package
@@ -30,5 +31,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add releases
-          git commit -m "Publish Forms $(cat /dev/null 2>/dev/null || true) release package" || exit 0
+          git commit -m "Publish Forms release package" || exit 0
           git push

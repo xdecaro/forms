@@ -6,7 +6,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.1.1**
+**1.1.2**
 
 ### Main features
 
@@ -21,7 +21,11 @@ Developed by **Luca De Caro**.
 - optional legacy LSFS Forms migration preset;
 - submissions export to Excel (.xlsx), CSV and PDF;
 - export respects active search and status filters;
-- package-level Joomla update server (release feed enabled only after the full package ZIP is published).
+- package-level Joomla update server.
+
+## 1.1.2 test release
+
+Version 1.1.2 is a minimal maintenance build used to test automatic Joomla extension update detection from GitHub. It contains no database schema changes and no changes to existing form/submission data.
 
 ### Google Forms note
 

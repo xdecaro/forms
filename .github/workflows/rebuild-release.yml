@@ -22,7 +22,15 @@ jobs:
             exit 0
           fi
           if [ "$MODE" = "build-1.2.9" ]; then
+            sed -i '/xmllint --noout/d' tools/release-1.2.9/build.sh
             bash tools/release-1.2.9/build.sh
+            python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          ET.parse('/tmp/forms129/component/com_decaroforms.xml')
+          ET.parse('updates/pkg_decaroforms.xml')
+          ET.parse('updates/changelog.xml')
+          print('XML checks OK')
+          PY
             exit 0
           fi
           VERSION="$(cat releases/_upload/VERSION.txt)"

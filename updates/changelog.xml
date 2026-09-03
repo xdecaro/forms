@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.8</version>
+    <addition><item>One-click form duplication without copying submissions or files.</item><item>Actions dialog and real-time forms filters/sorting.</item></addition>
+    <change><item>Removed Copy/Paste form workflow from the administrator UI.</item><item>Improved smartphone form-card layout and action placement.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
     <version>1.2.7</version>

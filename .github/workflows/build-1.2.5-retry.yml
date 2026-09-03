@@ -1,0 +1,152 @@
+name: Build Forms 1.2.5 retry
+
+on:
+  push:
+    paths:
+      - 'tools/build-1.2.5/RETRY'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and validate Joomla package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/forms125
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/outer" "$ROOT/component" "$ROOT/plugin"
+
+          unzip -q releases/1.2.4/pkg_decaroforms_1.2.4.zip -d "$ROOT/outer"
+          unzip -q "$ROOT/outer/com_decaroforms_1.2.4.zip" -d "$ROOT/component"
+          unzip -q "$ROOT/outer/plg_system_decaroforms_1.2.4.zip" -d "$ROOT/plugin"
+          python3 patches/1.2.5/apply_patch.py "$ROOT/component" "$ROOT/plugin" "$ROOT/outer"
+
+          echo '=== PHP syntax check ==='
+          while IFS= read -r -d '' f; do php -l "$f" >/dev/null; done < <(find "$ROOT/component" "$ROOT/plugin" -type f -name '*.php' -print0)
+
+          echo '=== XML syntax check ==='
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          for f in [Path('/tmp/forms125/component/com_decaroforms.xml'),Path('/tmp/forms125/plugin/decaroforms.xml'),Path('/tmp/forms125/outer/pkg_decaroforms.xml')]:
+              ET.parse(f)
+              print('OK', f)
+          PY
+
+          echo '=== Feature checks ==='
+          check(){ label="$1"; pattern="$2"; file="$3"; if grep -Fq "$pattern" "$file"; then echo "OK $label"; else echo "FAIL $label" >&2; grep -Fn "$pattern" "$file" || true; exit 1; fi; }
+          SUB="$ROOT/component/administrator/components/com_decaroforms/tmpl/submissions/default.php"
+          REC="$ROOT/component/administrator/components/com_decaroforms/tmpl/recent/default.php"
+          DET="$ROOT/component/administrator/components/com_decaroforms/tmpl/submission/default.php"
+          LANG="$ROOT/component/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini"
+          HELP="$ROOT/component/administrator/components/com_decaroforms/src/Helper/FormHelper.php"
+
+          check 'forms list title' 'COM_DECAROFORMS_FORMS="Elenco moduli"' "$LANG"
+          if grep -Fq 'df-sub-back' "$SUB"; then echo 'FAIL standalone Back still present' >&2; exit 1; else echo 'OK standalone Back removed'; fi
+          check 'header forms-list action' '← <?php echo Text::_(' "$SUB"
+          check 'export icons' 'df-export-icon' "$SUB"
+          check 'form summary filters' 'data-status-filter="all"' "$SUB"
+          check 'recent summary filters' 'data-recent-status-filter="all"' "$REC"
+          check 'manage status header' 'df-manage-head' "$DET"
+          check 'large status badge' 'min-height:34px' "$DET"
+          check 'version' "VERSION = '1.2.5'" "$HELP"
+          if grep -Eq 'static (fn|function).*\$this' "$DET"; then echo 'FAIL unsafe static closure using $this' >&2; exit 1; else echo 'OK no unsafe static closure'; fi
+
+          rm -f "$ROOT/outer/com_decaroforms_1.2.4.zip" "$ROOT/outer/plg_system_decaroforms_1.2.4.zip"
+          (cd "$ROOT/component" && zip -qr "$ROOT/outer/com_decaroforms_1.2.5.zip" .)
+          (cd "$ROOT/plugin" && zip -qr "$ROOT/outer/plg_system_decaroforms_1.2.5.zip" .)
+          check 'component package ref' 'com_decaroforms_1.2.5.zip' "$ROOT/outer/pkg_decaroforms.xml"
+          check 'plugin package ref' 'plg_system_decaroforms_1.2.5.zip' "$ROOT/outer/pkg_decaroforms.xml"
+          check 'component version' '<version>1.2.5</version>' "$ROOT/component/com_decaroforms.xml"
+          check 'plugin version' '<version>1.2.5</version>' "$ROOT/plugin/decaroforms.xml"
+          check 'package version' '<version>1.2.5</version>' "$ROOT/outer/pkg_decaroforms.xml"
+
+          mkdir -p releases/1.2.5
+          rm -f releases/1.2.5/pkg_decaroforms_1.2.5.zip
+          (cd "$ROOT/outer" && zip -qr "$GITHUB_WORKSPACE/releases/1.2.5/pkg_decaroforms_1.2.5.zip" .)
+          unzip -t releases/1.2.5/pkg_decaroforms_1.2.5.zip >/dev/null
+          unzip -t "$ROOT/outer/com_decaroforms_1.2.5.zip" >/dev/null
+          unzip -t "$ROOT/outer/plg_system_decaroforms_1.2.5.zip" >/dev/null
+          SHA=$(sha256sum releases/1.2.5/pkg_decaroforms_1.2.5.zip | awk '{print $1}')
+          echo "PACKAGE_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "Built SHA-256: $SHA"
+
+      - name: Update release metadata and feed
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > releases/1.2.5/README.md <<EOF
+          # Forms 1.2.5
+
+          Administrator UI refinement release.
+
+          ## Changed
+
+          - forms-list title aligned with **Elenco moduli**;
+          - isolated Back button removed from form submissions and replaced by a single **← Elenco moduli** action in the header;
+          - graphical icons added to **Esporta**, CSV, Excel and PDF;
+          - summary cards on form submissions and Recent submissions are clickable instant status filters with an active state;
+          - **Totale** resets the status filter immediately;
+          - the live status badge in **Gestisci invio** is larger and moved beside the panel title;
+          - changing the status selector updates the large badge immediately.
+
+          ## Compatibility
+
+          - includes the 1.2.4 submission-detail hotfix;
+          - Joomla 6.0+;
+          - PHP 8.3+;
+          - no database schema changes;
+          - existing forms, status colors and submissions are preserved.
+
+          Official package SHA-256:
+
+          \`${PACKAGE_SHA}\`
+          EOF
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          sha=os.environ['PACKAGE_SHA']
+          Path('updates/pkg_decaroforms.xml').write_text(f'''<?xml version="1.0" encoding="utf-8"?>
+          <updates><update>
+          <name>Forms</name><description>Reusable Joomla form builder, submissions manager, data importer and export tools.</description>
+          <element>pkg_decaroforms</element><type>package</type><client>site</client><version>1.2.5</version>
+          <downloads><downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.2.5/pkg_decaroforms_1.2.5.zip</downloadurl></downloads>
+          <changelogurl>https://raw.githubusercontent.com/xdecaro/forms/main/updates/changelog.xml</changelogurl><tags><tag>stable</tag></tags>
+          <maintainer>Luca De Caro</maintainer><maintainerurl>https://github.com/xdecaro/forms</maintainerurl>
+          <targetplatform name="joomla" version="6\\.[0-9]+" /><php_minimum>8.3.0</php_minimum><sha256>{sha}</sha256>
+          </update></updates>
+          ''',encoding='utf-8')
+          path=Path('updates/changelog.xml'); text=path.read_text(encoding='utf-8')
+          if '<version>1.2.5</version>' not in text:
+              entry='''  <changelog>
+              <element>pkg_decaroforms</element><type>package</type><version>1.2.5</version>
+              <addition><item>Clickable summary cards that act as immediate status filters.</item><item>Export icons for CSV, Excel and PDF.</item></addition>
+              <change><item>Forms list title aligned with the Elenco moduli menu label.</item><item>Back navigation moved into the submissions page header.</item><item>Larger live status badge moved into the Gestisci invio heading.</item></change>
+            </changelog>
+          '''
+              text=text.replace('<changelogs>\n','<changelogs>\n'+entry,1); path.write_text(text,encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          ET.parse('updates/pkg_decaroforms.xml'); ET.parse('updates/changelog.xml'); print('Update XML valid')
+          PY
+
+      - name: Clean temporary helpers and publish 1.2.5
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf patches/1.2.5 tools/build-1.2.5 tools/inspect-1.2.4-ui
+          rm -f .github/workflows/build-1.2.5.yml .github/workflows/build-1.2.5-retry.yml .github/workflows/inspect-1.2.4-ui.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then echo 'No changes to publish.'; exit 0; fi
+          git commit -m 'Release Forms 1.2.5'
+          git push origin HEAD:main

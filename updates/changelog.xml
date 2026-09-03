@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.9</version>
+    <fix><item>Forms list search now includes ID and shortcode.</item><item>Responsive layout now follows the component container width and avoids horizontal overflow.</item><item>Dark mode no longer shows light title bands or light filter panels.</item></fix>
+    <change><item>Smartphone filters use an accordion and primary actions stack vertically.</item><item>Actions dialog uses one item per row.</item><item>Dark accent buttons use a darker variant for better contrast.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.8</version>
     <addition><item>One-click form duplication without copying submissions or files.</item><item>Actions dialog and real-time forms filters/sorting.</item></addition>
     <change><item>Removed Copy/Paste form workflow from the administrator UI.</item><item>Improved smartphone form-card layout and action placement.</item></change>

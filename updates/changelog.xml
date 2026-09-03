@@ -3,6 +3,18 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.1.1</version>
+    <addition>
+      <item>Submissions export to Excel (.xlsx), CSV and PDF.</item>
+      <item>Exports respect the active search and status filters.</item>
+    </addition>
+    <fix>
+      <item>Fixed status filtering so translated labels continue to use the correct technical status value.</item>
+    </fix>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.1.0</version>
     <security>
       <item>Import operations require a Joomla CSRF token and core.create permission.</item>

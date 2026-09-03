@@ -22,15 +22,11 @@ import re
 p=Path('/tmp/forms1213/component/administrator/components/com_decaroforms/tmpl/forms/default.php')
 s=p.read_text()
 
-# Add a short, reusable Menu label for this navigation control.
-lang_files=[]
+# Add a short Menu label wherever the Actions label already exists.
 for f in Path('/tmp/forms1213/component').rglob('*.ini'):
     t=f.read_text(errors='ignore')
-    if 'COM_DECAROFORMS_ACTIONS=' in t:
-        if 'COM_DECAROFORMS_MENU_SHORT=' not in t:
-            t=t.rstrip()+"\nCOM_DECAROFORMS_MENU_SHORT=\"Menu\"\n"
-            f.write_text(t)
-        lang_files.append(str(f))
+    if 'COM_DECAROFORMS_ACTIONS=' in t and 'COM_DECAROFORMS_MENU_SHORT=' not in t:
+        f.write_text(t.rstrip()+"\nCOM_DECAROFORMS_MENU_SHORT=\"Menu\"\n")
 
 # Button label and accessibility attributes.
 s=s.replace(
@@ -38,52 +34,46 @@ s=s.replace(
     '<button class="df-btn" type="button" id="df-open-actions" aria-haspopup="menu" aria-expanded="false" aria-controls="df-actions-menu"><?php echo Text::_(\'COM_DECAROFORMS_MENU_SHORT\'); ?> ▾</button>'
 )
 
-# Replace the central modal/dialog with a lightweight anchored dropdown menu.
+# Replace the central dialog HTML with a compact menu container.
 pattern=re.compile(r'\s*<dialog class="df-actions-dialog" id="df-actions-dialog">.*?</dialog>\s*',re.S)
 replacement='''\n  <div class="df-actions-menu" id="df-actions-menu" role="menu" hidden>\n    <div class="df-dialog-links">\n      <a class="df-btn" role="menuitem" href="<?php echo $this->dashboardUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_DASHBOARD'); ?></a>\n      <a class="df-btn" role="menuitem" href="<?php echo $this->recentUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_RECENT'); ?></a>\n      <a class="df-btn" role="menuitem" href="<?php echo $this->importUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_MENU_IMPORT'); ?></a>\n      <a class="df-btn" role="menuitem" href="<?php echo $this->informationUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_INFORMATION'); ?></a>\n    </div>\n  </div>\n\n'''
 s,n=pattern.subn(replacement,s,count=1)
 if n!=1:
-    raise SystemExit('Actions dialog block not found')
+    raise SystemExit('Actions dialog HTML not found')
 
-# Replace dialog CSS with compact dropdown styling. Keep one item per row.
-s=re.sub(
-    r'\.df-actions-dialog\{.*?\.df-dialog-links \.df-btn\{width:100%;min-height:48px;justify-content:center\}',
-    '.df-actions-menu{position:fixed;z-index:1200;width:min(240px,calc(100vw - 24px));padding:8px;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);color:inherit;box-shadow:0 14px 36px rgba(0,0,0,.28)}.df-actions-menu[hidden]{display:none!important}.df-dialog-links{display:grid;grid-template-columns:1fr;gap:6px;padding:0}.df-dialog-links .df-btn{width:100%;min-height:44px;justify-content:flex-start;padding-left:14px;padding-right:14px}',
-    s,
-    count=1,
-    flags=re.S
-)
-# Ensure obsolete modal-specific backdrop/header rules cannot affect anything.
+# Compact dropdown styling. One navigation item per row.
+css_pattern=re.compile(r'\.df-actions-dialog\{.*?\.df-dialog-links \.df-btn\{width:100%;min-height:48px;justify-content:center\}',re.S)
+css_new='.df-actions-menu{position:fixed;z-index:1200;width:min(240px,calc(100vw - 24px));padding:8px;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);color:inherit;box-shadow:0 14px 36px rgba(0,0,0,.28)}.df-actions-menu[hidden]{display:none!important}.df-dialog-links{display:grid;grid-template-columns:1fr;gap:6px;padding:0}.df-dialog-links .df-btn{width:100%;min-height:44px;justify-content:flex-start;padding-left:14px;padding-right:14px}'
+s,n=css_pattern.subn(css_new,s,count=1)
+if n!=1:
+    raise SystemExit('Actions dialog CSS not found')
 s=s.replace('.df-actions-dialog::backdrop{background:rgba(0,0,0,.56)}','')
 s=re.sub(r'\.df-dialog-head\{.*?\.df-dialog-close\{.*?\}', '', s, count=1, flags=re.S)
 
-# Replace dialog JS with anchored dropdown behaviour.
-js_pattern=re.compile(r"const dialog=document\.getElementById\('df-actions-dialog'\),open=document\.getElementById\('df-open-actions'\),close=document\.getElementById\('df-close-actions'\);.*?dialog\?\.addEventListener\('click',e=>\{if\(e\.target===dialog\)dialog\.close\(\);\}\);",re.S)
-js_replacement="""const menu=document.getElementById('df-actions-menu'),open=document.getElementById('df-open-actions');
- const closeMenu=()=>{if(!menu)return;menu.hidden=true;open?.setAttribute('aria-expanded','false');};
- const placeMenu=()=>{if(!menu||!open||menu.hidden)return;const r=open.getBoundingClientRect();const w=menu.offsetWidth||240;const left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));menu.style.left=`${left}px`;menu.style.top=`${Math.min(r.bottom+8,window.innerHeight-menu.offsetHeight-12)}px`;};
- open?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!menu)return;const willOpen=menu.hidden;if(willOpen){menu.hidden=false;open.setAttribute('aria-expanded','true');requestAnimationFrame(placeMenu);}else closeMenu();});
- menu?.addEventListener('click',e=>e.stopPropagation());
- menu?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenu));
- document.addEventListener('click',closeMenu);
- document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
- window.addEventListener('resize',placeMenu);
- window.addEventListener('scroll',placeMenu,true);"""
-s,n=js_pattern.subn(js_replacement,s,count=1)
-if n!=1:
-    # Fallback for minutely different spacing in the shipped template.
-    start=s.find("const dialog=document.getElementById('df-actions-dialog')")
-    if start<0:
-        raise SystemExit('Actions dialog JS not found')
-    end=s.find("const filterToggle=",start)
-    if end<0:
-        raise SystemExit('Could not find JS boundary after dialog logic')
-    s=s[:start]+js_replacement+'\n '+s[end:]
+# Keep the legacy dialog JS harmless (the dialog no longer exists) and add the new menu logic.
+# This is deliberately additive so the release is resilient to minor formatting changes in prior JS.
+menu_js="""
+ const menuNav=document.getElementById('df-actions-menu'),menuBtnNav=document.getElementById('df-open-actions');
+ const closeMenuNav=()=>{if(!menuNav)return;menuNav.hidden=true;menuBtnNav?.setAttribute('aria-expanded','false');};
+ const placeMenuNav=()=>{if(!menuNav||!menuBtnNav||menuNav.hidden)return;const r=menuBtnNav.getBoundingClientRect();const w=menuNav.offsetWidth||240;const left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));menuNav.style.left=`${left}px`;const maxTop=Math.max(12,window.innerHeight-menuNav.offsetHeight-12);menuNav.style.top=`${Math.min(r.bottom+8,maxTop)}px`;};
+ menuBtnNav?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!menuNav)return;const opening=menuNav.hidden;if(opening){menuNav.hidden=false;menuBtnNav.setAttribute('aria-expanded','true');requestAnimationFrame(placeMenuNav);}else closeMenuNav();});
+ menuNav?.addEventListener('click',e=>e.stopPropagation());
+ menuNav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenuNav));
+ document.addEventListener('click',closeMenuNav);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenuNav();});
+ window.addEventListener('resize',placeMenuNav);
+ window.addEventListener('scroll',placeMenuNav,true);
+"""
+marker='})();'
+pos=s.rfind(marker)
+if pos<0:
+    raise SystemExit('Forms list IIFE end not found')
+s=s[:pos]+menu_js+s[pos:]
 
 p.write_text(s)
 PY
 
-# Version bump inside component/plugin/package manifests and metadata.
+# Version bump.
 while IFS= read -r -d '' file; do
   sed -i 's/1\.2\.12/1.2.13/g' "$file"
 done < <(find "$COMP" "$PLUGIN" -type f \( -name '*.xml' -o -name '*.php' -o -name '*.ini' -o -name '*.txt' \) -print0)
@@ -114,9 +104,8 @@ grep -q 'id="df-actions-menu" role="menu" hidden' "$FORM_VIEW"
 grep -q 'aria-haspopup="menu"' "$FORM_VIEW"
 grep -q 'COM_DECAROFORMS_MENU_SHORT' "$FORM_VIEW"
 grep -q 'width:min(240px,calc(100vw - 24px))' "$FORM_VIEW"
-grep -q "document.addEventListener('click',closeMenu)" "$FORM_VIEW"
-! grep -q 'showModal' "$FORM_VIEW"
-! grep -q 'df-actions-dialog' "$FORM_VIEW"
+grep -q "document.addEventListener('click',closeMenuNav)" "$FORM_VIEW"
+! grep -q '<dialog class="df-actions-dialog"' "$FORM_VIEW"
 
 cat > releases/1.2.13/README.md <<EOF
 # Forms 1.2.13

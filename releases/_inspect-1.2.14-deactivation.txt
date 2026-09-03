@@ -1,264 +1,203 @@
-=== tmpl/builder/default.php ===
-36:       <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_TITLE'); ?> *</label><input name="title" required value="<?php echo $val('title'); ?>" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_TITLE_PLACEHOLDER'),ENT_QUOTES,'UTF-8'); ?>"></div>
-37:       <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_SLUG'); ?></label><input name="slug" value="<?php echo $val('slug'); ?>" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_SLUG_PLACEHOLDER'),ENT_QUOTES,'UTF-8'); ?>"><span class="df-note"><?php echo Text::_('COM_DECAROFORMS_SLUG_HELP'); ?></span></div>
-38:       <div class="df-field df-field-full"><label><?php echo Text::_('COM_DECAROFORMS_DESCRIPTION'); ?></label><textarea name="description"><?php echo $val('description'); ?></textarea></div>
-39:       <div class="df-field"><label class="df-check"><input type="checkbox" name="enabled" value="1" <?php echo $checked('enabled',true)?'checked':''; ?>><?php echo Text::_('COM_DECAROFORMS_ENABLED'); ?></label></div>
-40:       <div class="df-field"><label class="df-check"><input type="checkbox" name="show_heading" value="1" <?php echo $checked('show_heading',true)?'checked':''; ?>><?php echo Text::_('COM_DECAROFORMS_SHOW_HEADING'); ?></label></div>
-41:       <div class="df-field df-field-full"><label><?php echo Text::_('COM_DECAROFORMS_SUCCESS_MESSAGE'); ?></label><input name="success_message" value="<?php echo $val('success_message',Text::_('COM_DECAROFORMS_SUCCESS_DEFAULT')); ?>"></div>
-42:       <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_WHEN_DISABLED'); ?></label><select name="closed_reason"><option value="closed" <?php echo $val('closed_reason','closed')==='closed'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CLOSED_REGISTRATIONS'); ?></option><option value="limit" <?php echo $val('closed_reason')==='limit'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_LIMIT_REACHED'); ?></option><option value="deadline" <?php echo $val('closed_reason')==='deadline'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_DEADLINE_EXPIRED'); ?></option><option value="temporary" <?php echo $val('closed_reason')==='temporary'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_TEMPORARILY_CLOSED'); ?></option><option value="custom" <?php echo $val('closed_reason')==='custom'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CUSTOM_MESSAGE'); ?></option></select></div>
----
-43:       <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_CLOSED_MESSAGE'); ?></label><input name="closed_message" value="<?php echo $val('closed_message'); ?>" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_OPTIONAL_CUSTOM_TEXT'),ENT_QUOTES,'UTF-8'); ?>"></div>
-44:     </div></div></section>
----
-45: 
----
-46:     <section class="df-section"><div class="df-section-head"><h3><?php echo Text::_('COM_DECAROFORMS_SECTION_TEMPLATES'); ?></h3></div><div class="df-section-body"><div class="df-template-row"><button type="button" data-template="contact"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_CONTACT'); ?></button><button type="button" data-template="registration"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_REGISTRATION'); ?></button><button type="button" data-template="event"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_EVENT'); ?></button><button type="button" data-template="membership"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_MEMBERSHIP'); ?></button><button type="button" data-template="reservation"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_RESERVATION'); ?></button><button type="button" data-template="blank"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_BLANK'); ?></button></div><p class="df-note"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_NOTE'); ?></p></div></section>
----
-47: 
-48:     <section class="df-section"><div class="df-section-head"><h3><?php echo Text::_('COM_DECAROFORMS_SECTION_SELECTED'); ?></h3></div><div class="df-section-body"><div class="df-selected" id="df-selected"></div></div></section>
-49: 
-50:     <section class="df-section"><div class="df-section-head"><h3><?php echo Text::_('COM_DECAROFORMS_SECTION_LIBRARY'); ?></h3></div><div class="df-section-body"><div class="df-library-tools"><input type="search" id="df-library-search" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_SEARCH_FIELD'),ENT_QUOTES,'UTF-8'); ?>"><select id="df-library-filter"><option value="all"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_ALL'); ?></option><option value="personal"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_PERSONAL'); ?></option><option value="contact"><?php echo Text::_('COM_DECAROFORMS_TEMPLATE_CONTACT'); ?></option><option value="address"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_ADDRESS'); ?></option><option value="organisation"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_ORGANISATION'); ?></option><option value="sport"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_SPORT'); ?></option><option value="event"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_EVENT'); ?></option><option value="message"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_MESSAGE'); ?></option><option value="document"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_DOCUMENT'); ?></option><option value="consent"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_CONSENT'); ?></option><option value="custom"><?php echo Text::_('COM_DECAROFORMS_CATEGORY_CUSTOM'); ?></option></select></div><div class="df-library" id="df-library"></div></div></section>
-51: 
-52:     <section class="df-section"><div class="df-section-head"><h3><?php echo Text::_('COM_DECAROFORMS_SECTION_MANAGEMENT'); ?></h3></div><div class="df-section-body"><div class="df-manage-grid">
-53:       <div class="df-manage-box"><h4><?php echo Text::_('COM_DECAROFORMS_CUSTOM_STATUSES'); ?></h4><p class="df-note"><?php echo Text::_('COM_DECAROFORMS_CUSTOM_STATUSES_HELP'); ?></p><div id="df-status-editor" class="df-status-editor"></div><button type="button" class="df-btn df-add-status" id="df-add-status">+ <?php echo Text::_('COM_DECAROFORMS_ADD_STATUS'); ?></button></div>
----
-71:     </div></div></section>
-72: 
-73:     <div class="df-email-modal" id="df-email-modal" hidden>
-74:       <div class="df-email-modal-backdrop" data-email-close></div>
-75:       <div class="df-email-dialog" role="dialog" aria-modal="true" aria-labelledby="df-email-modal-title">
-76:         <div class="df-email-modal-head"><div><h3 id="df-email-modal-title"><?php echo Text::_('COM_DECAROFORMS_EMAIL_PREVIEW'); ?></h3><span class="df-email-template-name" id="df-email-template-name"></span></div><button class="df-email-x" type="button" data-email-close aria-label="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_CLOSE'),ENT_QUOTES,'UTF-8'); ?>">×</button></div>
-77:         <div class="df-email-modal-body">
----
-78:           <div class="df-email-tabs"><button type="button" class="df-email-tab is-active" data-email-audience="admin"><?php echo Text::_('COM_DECAROFORMS_PREVIEW_ADMIN'); ?></button><button type="button" class="df-email-tab" data-email-audience="user"><?php echo Text::_('COM_DECAROFORMS_PREVIEW_USER'); ?></button></div>
-79:           <div class="df-email-subject"><small><?php echo Text::_('COM_DECAROFORMS_EMAIL_PREVIEW_SUBJECT'); ?></small><strong id="df-email-preview-subject"></strong></div>
----
-80:           <div class="df-email-canvas" id="df-email-preview-canvas"></div>
-81:         </div>
-82:         <div class="df-email-modal-actions"><button class="df-btn" type="button" data-email-close><?php echo Text::_('COM_DECAROFORMS_CLOSE'); ?></button><button class="df-btn df-primary" type="button" id="df-email-use-template"><?php echo Text::_('COM_DECAROFORMS_USE_TEMPLATE'); ?></button></div>
-83:       </div>
-84:     </div>
-85: 
----
-92: (()=>{
-93: const tr=<?php echo json_encode([
-94: 'add'=>Text::_('COM_DECAROFORMS_ADD'),'empty'=>Text::_('COM_DECAROFORMS_NO_FIELDS_SELECTED'),'options'=>Text::_('COM_DECAROFORMS_OPTIONS_ONE_LINE'),'moveUp'=>Text::_('COM_DECAROFORMS_MOVE_UP'),'moveDown'=>Text::_('COM_DECAROFORMS_MOVE_DOWN'),'remove'=>Text::_('COM_DECAROFORMS_REMOVE'),'label'=>Text::_('COM_DECAROFORMS_LABEL'),'key'=>Text::_('COM_DECAROFORMS_FIELD_KEY'),'type'=>Text::_('COM_DECAROFORMS_TYPE'),'placeholder'=>Text::_('COM_DECAROFORMS_PLACEHOLDER'),'help'=>Text::_('COM_DECAROFORMS_HELP_TEXT'),'required'=>Text::_('COM_DECAROFORMS_REQUIRED_FIELD'),
-95: 'cats'=>['personal'=>Text::_('COM_DECAROFORMS_CATEGORY_PERSONAL'),'contact'=>Text::_('COM_DECAROFORMS_CATEGORY_CONTACT'),'address'=>Text::_('COM_DECAROFORMS_CATEGORY_ADDRESS'),'organisation'=>Text::_('COM_DECAROFORMS_CATEGORY_ORGANISATION'),'sport'=>Text::_('COM_DECAROFORMS_CATEGORY_SPORT'),'event'=>Text::_('COM_DECAROFORMS_CATEGORY_EVENT'),'message'=>Text::_('COM_DECAROFORMS_CATEGORY_MESSAGE'),'document'=>Text::_('COM_DECAROFORMS_CATEGORY_DOCUMENT'),'consent'=>Text::_('COM_DECAROFORMS_CATEGORY_CONSENT'),'custom'=>Text::_('COM_DECAROFORMS_CATEGORY_CUSTOM')],
-96: 'types'=>['text'=>Text::_('COM_DECAROFORMS_TYPE_TEXT'),'email'=>Text::_('COM_DECAROFORMS_TYPE_EMAIL'),'tel'=>Text::_('COM_DECAROFORMS_TYPE_TEL'),'number'=>Text::_('COM_DECAROFORMS_TYPE_NUMBER'),'date'=>Text::_('COM_DECAROFORMS_TYPE_DATE'),'time'=>Text::_('COM_DECAROFORMS_TYPE_TIME'),'textarea'=>Text::_('COM_DECAROFORMS_TYPE_TEXTAREA'),'select'=>Text::_('COM_DECAROFORMS_TYPE_SELECT'),'radio'=>Text::_('COM_DECAROFORMS_TYPE_RADIO'),'checkboxes'=>Text::_('COM_DECAROFORMS_TYPE_CHECKBOXES'),'consent'=>Text::_('COM_DECAROFORMS_TYPE_CONSENT'),'file'=>Text::_('COM_DECAROFORMS_TYPE_FILE')]
-97: ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
-98: const library=<?php echo json_encode($this->library,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
----
-110:  d.querySelector('[data-act="up"]').onclick=()=>{if(i>0){[selected[i-1],selected[i]]=[selected[i],selected[i-1]];renderSelected();}};d.querySelector('[data-act="down"]').onclick=()=>{if(i<selected.length-1){[selected[i+1],selected[i]]=[selected[i],selected[i+1]];renderSelected();}};d.querySelector('[data-act="remove"]').onclick=()=>{selected.splice(i,1);renderSelected();};sel.appendChild(d);});sync();renderColumns();}
-111: function slugStatus(v){return String(v||'status').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,30)||'status';}
-112: const statusPalette=['#0d6efd','#f59e0b','#198754','#6c757d','#dc3545','#7c3aed','#0891b2'];
-113: function defaultStatusColor(key,index){const known={new:'#0d6efd',processing:'#f59e0b',replied:'#198754',closed:'#6c757d',spam:'#dc3545'};return known[key]||statusPalette[index%statusPalette.length];}
-114: function renderStatuses(){statusEditor.innerHTML='';statuses.forEach((st,i)=>{st.color=/^#[0-9a-fA-F]{6}$/.test(st.color||'')?st.color:defaultStatusColor(st.key||'',i);const r=document.createElement('div');r.className='df-status-row';r.innerHTML=`<input data-status-label placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_STATUS_LABEL'),ENT_QUOTES,'UTF-8'); ?>" value="${esc(st.label||'')}"><input data-status-key placeholder="key" value="${esc(st.key||'')}"><div class="df-status-color-wrap"><input class="df-status-color" data-status-color type="color" value="${esc(st.color)}" title="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_STATUS_COLOR'),ENT_QUOTES,'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_STATUS_COLOR'),ENT_QUOTES,'UTF-8'); ?>"><span class="df-status-color-value">${esc(st.color)}</span></div><button type="button" class="df-status-remove" title="${esc(tr.remove)}">×</button>`;const li=r.querySelector('[data-status-label]'),ki=r.querySelector('[data-status-key]'),ci=r.querySelector('[data-status-color]'),cv=r.querySelector('.df-status-color-value');li.addEventListener('input',()=>{statuses[i].label=li.value;if(!statuses[i].key){statuses[i].key=slugStatus(li.value);ki.value=statuses[i].key;}sync();});ki.addEventListener('input',()=>{statuses[i].key=slugStatus(ki.value);sync();});ci.addEventListener('input',()=>{statuses[i].color=ci.value.toLowerCase();cv.textContent=statuses[i].color;sync();});r.querySelector('button').onclick=()=>{if(statuses.length>1){statuses.splice(i,1);renderStatuses();}};statusEditor.appendChild(r);});sync();}
-115: function renderColumns(){const standard=[['_reference','<?php echo addslashes(Text::_('COM_DECAROFORMS_REFERENCE')); ?>'],['_email','<?php echo addslashes(Text::_('COM_DECAROFORMS_EMAIL')); ?>'],['_status','<?php echo addslashes(Text::_('COM_DECAROFORMS_STATUS')); ?>'],['_created_at','<?php echo addslashes(Text::_('COM_DECAROFORMS_DATE')); ?>']];const items=[...standard,...selected.map(x=>[x.key,x.label])];columnList.innerHTML='';items.forEach(([key,label])=>{const d=document.createElement('label');d.className='df-column-item';d.innerHTML=`<input type="checkbox" value="${esc(key)}" ${columns.includes(key)?'checked':''}><span>${esc(label)}</span>`;d.querySelector('input').addEventListener('change',e=>{if(e.target.checked){if(!columns.includes(key))columns.push(key);}else columns=columns.filter(x=>x!==key);sync();});columnList.appendChild(d);});columns=columns.filter(k=>items.some(i=>i[0]===k));if(!columns.length)columns=['_reference'];sync();}
-116: function sync(){hidden.value=JSON.stringify(selected);statusesHidden.value=JSON.stringify(statuses);columnsHidden.value=JSON.stringify(columns);}
----
-119: const emailTemplateNames=<?php echo json_encode(['standard'=>Text::_('COM_DECAROFORMS_TEMPLATE_STANDARD'),'minimal'=>Text::_('COM_DECAROFORMS_TEMPLATE_MINIMAL'),'institutional'=>Text::_('COM_DECAROFORMS_TEMPLATE_INSTITUTIONAL'),'card'=>Text::_('COM_DECAROFORMS_TEMPLATE_CARD'),'compact'=>Text::_('COM_DECAROFORMS_TEMPLATE_COMPACT')],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
-120: const emailLabels=<?php echo json_encode(['yes'=>Text::_('JYES'),'selected'=>Text::_('COM_DECAROFORMS_TEMPLATE_SELECTED'),'use'=>Text::_('COM_DECAROFORMS_USE_TEMPLATE')],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
-121: let emailTemplate='standard',emailAudience='admin';
-122: function emailValue(field){const key=String(field.key||'').toLowerCase(),type=String(field.type||'text');const map={first_name:'Mario',last_name:'Rossi',full_name:'Mario Rossi',birth_date:'15/05/1990',email:'mario.rossi@example.com',phone:'+39 333 123 4567',address:'Via Roma',street_number:'10',postcode:'00100',city:'Roma',country:'Italia',organisation:'Organizzazione esempio',club:'Associazione esempio',role:'Referente',member_number:'12345',sport:'Pallavolo',team_name:'Squadra esempio',event_date:'15/09/2026',arrival_date:'15/09/2026',departure_date:'16/09/2026',participants:'2',subject:'Richiesta informazioni',message:'Questo è un testo di esempio inviato tramite il modulo.',notes:'Nota di esempio',motivation:'Testo di esempio.',attachment:'documento.pdf',identity_document:'documento-identita.pdf',photo:'foto.jpg',payment_proof:'ricevuta.pdf'};if(map[key])return map[key];if(Array.isArray(field.options)&&field.options.length)return String(field.options[0]);if(type==='consent')return emailLabels.yes;if(type==='file')return 'documento.pdf';if(type==='date')return '03/09/2026';if(type==='time')return '10:30';if(type==='number')return '1';if(type==='email')return 'mario.rossi@example.com';if(type==='tel')return '+39 333 123 4567';return 'Esempio';}
-123: function emailRowsHtml(){return selected.map(field=>`<tr><td style="padding:8px 10px;border-bottom:1px solid #e6e9ed;color:#68717d;width:40%;font-size:13px">${esc(field.label||field.key)}</td><td style="padding:8px 10px;border-bottom:1px solid #e6e9ed;color:#17202a;font-weight:600;font-size:13px">${esc(emailValue(field))}</td></tr>`).join('')||'<tr><td style="padding:12px;color:#68717d">—</td></tr>';}
-124: function emailCurrentSelect(){return emailAudience==='user'?emailUserSelect:emailAdminSelect;}
-125: function emailMarkCards(){const active=emailCurrentSelect()?.value||'';document.querySelectorAll('[data-email-template]').forEach(card=>card.classList.toggle('is-active',card.dataset.emailTemplate===active));}
----
-126: function emailRender(){const title=(document.querySelector('[name="title"]')?.value||'Modulo').trim()||'Modulo';const rawSubject=(emailAudience==='user'?document.querySelector('[name="email_subject_user"]')?.value:document.querySelector('[name="email_subject_admin"]')?.value)||'';const fallback=emailAudience==='user'?'Abbiamo ricevuto il tuo invio – {form_title}':'Nuovo invio – {form_title}';const subject=(rawSubject.trim()||fallback).replaceAll('{form_title}',title);const intro=emailAudience==='user'?`Abbiamo ricevuto correttamente il tuo invio per <strong>${esc(title)}</strong>.`:`È stato ricevuto un nuovo invio dal modulo <strong>${esc(title)}</strong>.`;const rows=emailRowsHtml(),ref='FRM-20260903-DEMO',accent='#e60046',dark='#182433';emailSubject.textContent=subject;emailTemplateName.textContent=emailTemplateNames[emailTemplate]||emailTemplate;let html='';if(emailTemplate==='minimal'){html=`<div style="max-width:680px;background:#fff;padding:24px;font-family:Arial,sans-serif;color:#17202a"><h2 style="margin:0 0 9px;font-size:22px">${esc(subject)}</h2><p style="margin:0 0 14px;line-height:1.55">${intro}</p><div style="margin-bottom:12px;font-size:12px;color:#68717d">Riferimento: <strong style="color:#17202a">${ref}</strong></div><table style="width:100%;border-collapse:collapse">${rows}</table></div>`;}else if(emailTemplate==='institutional'){html=`<div style="max-width:680px;background:#fff;font-family:Arial,sans-serif;color:#17202a"><div style="background:${dark};padding:22px 24px"><h2 style="margin:0;color:#fff;font-size:23px">${esc(subject)}</h2></div><div style="padding:20px 24px"><p style="margin:0 0 14px;line-height:1.55">${intro}</p><div style="padding:9px 11px;background:#f2f4f6;margin-bottom:12px;font-size:12px">Riferimento: <strong>${ref}</strong></div><table style="width:100%;border-collapse:collapse">${rows}</table></div></div>`;}else if(emailTemplate==='card'){html=`<div style="max-width:680px;background:#eef1f4;padding:22px;font-family:Arial,sans-serif;color:#17202a"><div style="background:#fff;border:1px solid #dfe3e8;border-radius:8px;padding:22px"><h2 style="margin:0 0 10px;color:${accent};font-size:23px">${esc(subject)}</h2><p style="margin:0 0 14px;line-height:1.55">${intro}</p><div style="padding:9px 11px;border:1px solid #e1e5e9;border-radius:5px;margin-bottom:12px;font-size:12px">Riferimento: <strong>${ref}</strong></div><table style="width:100%;border-collapse:collapse">${rows}</table></div></div>`;}else if(emailTemplate==='compact'){html=`<div style="max-width:620px;background:#fff;border-left:6px solid ${accent};padding:18px 20px;font-family:Arial,sans-serif;color:#17202a"><h2 style="margin:0 0 8px;font-size:20px">${esc(subject)}</h2><p style="margin:0 0 10px;line-height:1.45;font-size:13px">${intro}</p><div style="margin-bottom:9px;font-size:11px;color:#68717d">Riferimento: <strong>${ref}</strong></div><table style="width:100%;border-collapse:collapse">${rows}</table></div>`;}else{html=`<div style="max-width:680px;background:#fff;border-radius:6px;overflow:hidden;font-family:Arial,sans-serif;color:#17202a"><div style="height:8px;background:${accent}"></div><div style="padding:22px 24px"><h2 style="margin:0 0 10px;font-size:24px">${esc(subject)}</h2><p style="margin:0 0 14px;line-height:1.55">${intro}</p><div style="padding:9px 11px;background:#f2f4f6;border-radius:4px;margin-bottom:12px;font-size:12px">Riferimento: <strong>${ref}</strong></div><table style="width:100%;border-collapse:collapse">${rows}</table></div></div>`;}emailCanvas.innerHTML=html;emailMarkCards();emailUse.textContent=(emailCurrentSelect()?.value===emailTemplate)?emailLabels.selected:emailLabels.use;}
-127: function emailOpen(template){emailTemplate=template||'standard';emailAudience='admin';document.querySelectorAll('[data-email-audience]').forEach(x=>x.classList.toggle('is-active',x.dataset.emailAudience===emailAudience));emailModal.hidden=false;document.body.style.overflow='hidden';emailRender();}
-128: function emailClose(){emailModal.hidden=true;document.body.style.overflow='';}
-129: document.querySelectorAll('[data-email-template]').forEach(card=>card.addEventListener('click',()=>emailOpen(card.dataset.emailTemplate)));
-130: document.querySelectorAll('[data-email-close]').forEach(btn=>btn.addEventListener('click',emailClose));
-131: document.querySelectorAll('[data-email-audience]').forEach(btn=>btn.addEventListener('click',()=>{emailAudience=btn.dataset.emailAudience||'admin';document.querySelectorAll('[data-email-audience]').forEach(x=>x.classList.toggle('is-active',x===btn));emailRender();}));
----
-132: emailUse.addEventListener('click',()=>{const select=emailCurrentSelect();if(select){select.value=emailTemplate;select.dispatchEvent(new Event('change',{bubbles:true}));}emailRender();});
-133: [emailAdminSelect,emailUserSelect,document.querySelector('[name="email_subject_admin"]'),document.querySelector('[name="email_subject_user"]'),document.querySelector('[name="title"]')].filter(Boolean).forEach(el=>el.addEventListener('input',()=>{if(!emailModal.hidden)emailRender();}));
----
-134: document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!emailModal.hidden)emailClose();});
-135: 
-136: document.getElementById('df-add-status').onclick=()=>{statuses.push({key:'',label:'',color:statusPalette[statuses.length%statusPalette.length]});renderStatuses();};
-137: const templates={contact:['full_name','email','subject','message','privacy_consent'],registration:['first_name','last_name','email','phone','birth_date','organisation','notes','privacy_consent'],event:['first_name','last_name','email','phone','event_date','participants','notes','privacy_consent'],membership:['first_name','last_name','birth_date','email','phone','address','postcode','city','club','member_number','sport','identity_document','privacy_consent'],reservation:['first_name','last_name','email','phone','arrival_date','departure_date','participants','notes','privacy_consent'],blank:[]};
----
-138: document.querySelectorAll('[data-template]').forEach(b=>b.onclick=()=>{const names=templates[b.dataset.template]||[];selected=names.map(n=>JSON.parse(JSON.stringify(library.find(x=>x.key===n)))).filter(Boolean);renderSelected();});
-139: search.addEventListener('input',renderLibrary);filter.addEventListener('change',renderLibrary);document.getElementById('df-builder-form').addEventListener('submit',sync);renderLibrary();renderSelected();renderStatuses();renderColumns();
-140: })();
----
+=== exact closed_reason / closed_message matches ===
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/tmpl/builder/default.php:42:      <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_WHEN_DISABLED'); ?></label><select name="closed_reason"><option value="closed" <?php echo $val('closed_reason','closed')==='closed'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CLOSED_REGISTRATIONS'); ?></option><option value="limit" <?php echo $val('closed_reason')==='limit'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_LIMIT_REACHED'); ?></option><option value="deadline" <?php echo $val('closed_reason')==='deadline'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_DEADLINE_EXPIRED'); ?></option><option value="temporary" <?php echo $val('closed_reason')==='temporary'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_TEMPORARILY_CLOSED'); ?></option><option value="custom" <?php echo $val('closed_reason')==='custom'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CUSTOM_MESSAGE'); ?></option></select></div>
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/tmpl/builder/default.php:43:      <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_CLOSED_MESSAGE'); ?></label><input name="closed_message" value="<?php echo $val('closed_message'); ?>" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_OPTIONAL_CUSTOM_TEXT'),ENT_QUOTES,'UTF-8'); ?>"></div>
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php:59:            'closed_reason' => trim($input->post->getCmd('closed_reason', 'closed')),
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php:60:            'closed_message' => trim($input->post->getString('closed_message', '')),
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Helper/MigrationHelper.php:73:            'success_message'=>(string)$params->get($def['success_param'],$def['success_default']),'closed_reason'=>(string)$params->get($key.'_closed_reason','closed'),'closed_message'=>(string)$params->get($key.'_closed_message',''),
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Helper/ImportHelper.php:317:        $form=(object)['title'=>$title,'slug'=>$slug,'description'=>'Imported data source. Review field settings before publishing this form.','enabled'=>0,'show_heading'=>1,'success_message'=>'','closed_reason'=>'closed','closed_message'=>'','admin_email'=>'','user_confirmation'=>0,'email_template_user'=>'standard','email_template_admin'=>'standard','email_subject_user'=>'','email_subject_admin'=>'','created_at'=>$now,'updated_at'=>$now];
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Message de fermeture"
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Messaggio di chiusura"
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Closed message"
 
-=== src/Controller/BuilderController.php ===
-27:         $id = $input->post->getInt('id', 0);
-28:         $title = trim($input->post->getString('title', ''));
-29:         if ($title === '') {
-30:             $app->enqueueMessage(Text::_('COM_DECAROFORMS_ERR_TITLE_REQUIRED'), 'error');
-31:             $app->redirect(Route::_('index.php?option=com_decaroforms&view=builder&id=' . $id, false));
-32:             return;
-33:         }
----
-53:             'title' => $title,
-54:             'slug' => $slug,
-55:             'description' => trim($input->post->getString('description', '')),
-56:             'enabled' => $input->post->getInt('enabled', 0) ? 1 : 0,
-57:             'show_heading' => $input->post->getInt('show_heading', 0) ? 1 : 0,
-58:             'success_message' => trim($input->post->getString('success_message', Text::_('COM_DECAROFORMS_SUCCESS_DEFAULT'))),
-59:             'closed_reason' => trim($input->post->getCmd('closed_reason', 'closed')),
----
-60:             'closed_message' => trim($input->post->getString('closed_message', '')),
-61:             'admin_email' => trim($input->post->getString('admin_email', '')),
----
-62:             'user_confirmation' => $input->post->getInt('user_confirmation', 0) ? 1 : 0,
----
-63:             'email_template_user' => trim($input->post->getCmd('email_template_user', 'standard')),
----
-117:             $db->insertObject('#__decaroforms_fields', $record);
-118:         }
-119: 
-120:         $app->enqueueMessage(Text::_('COM_DECAROFORMS_MSG_FORM_SAVED'), 'message');
-121:         $app->redirect(Route::_('index.php?option=com_decaroforms&view=builder&id=' . $id, false));
-122:     }
-123: 
----
-144:             ['key'=>'new','label'=>Text::_('COM_DECAROFORMS_STATUS_NEW'),'color'=>'#0d6efd'],
-145:             ['key'=>'processing','label'=>Text::_('COM_DECAROFORMS_STATUS_PROCESSING'),'color'=>'#f59e0b'],
-146:             ['key'=>'replied','label'=>Text::_('COM_DECAROFORMS_STATUS_REPLIED'),'color'=>'#198754'],
-147:             ['key'=>'closed','label'=>Text::_('COM_DECAROFORMS_STATUS_CLOSED'),'color'=>'#6c757d'],
-148:             ['key'=>'spam','label'=>Text::_('COM_DECAROFORMS_STATUS_SPAM'),'color'=>'#dc3545'],
-149:         ];
-150:         // Keep the built-in workflow untranslated in DB so it continues to follow Joomla language changes.
----
-179:         $db->setQuery($q);
-180:         $source = $db->loadAssoc();
-181:         if (!$source) {
-182:             $app->enqueueMessage(Text::_('COM_DECAROFORMS_ERR_COPY_FORM_NOT_FOUND'), 'error');
-183:             $app->redirect(Route::_('index.php?option=com_decaroforms&view=forms', false));
-184:             return;
-185:         }
----
-228:             $db->transactionCommit();
-229:         } catch (Throwable $e) {
-230:             $db->transactionRollback();
-231:             $app->enqueueMessage(Text::sprintf('COM_DECAROFORMS_ERR_DUPLICATE_FAILED', $e->getMessage()), 'error');
-232:             $app->redirect(Route::_('index.php?option=com_decaroforms&view=forms', false));
-233:             return;
-234:         }
----
-235: 
-236:         $app->enqueueMessage(Text::_('COM_DECAROFORMS_MSG_FORM_DUPLICATED'), 'message');
-237:         $app->redirect(Route::_('index.php?option=com_decaroforms&view=builder&id=' . $newId, false));
-238:     }
-239: 
----
-255:         $db->setQuery($q);
-256:         $form = $db->loadAssoc();
-257:         if (!$form) {
-258:             $app->enqueueMessage(Text::_('COM_DECAROFORMS_ERR_COPY_FORM_NOT_FOUND'), 'error');
-259:             $app->redirect(Route::_('index.php?option=com_decaroforms&view=forms', false));
-260:             return;
-261:         }
----
-262: 
-263:         $app->getSession()->set(self::COPY_SESSION_KEY, $id);
-264:         $app->enqueueMessage(Text::sprintf('COM_DECAROFORMS_MSG_FORM_COPIED', (string) $form['title']), 'message');
-265: 
-266:         $returnView = $app->getInput()->post->getCmd('return_view', 'forms');
-267:         if ($returnView === 'submissions') {
----
-280: 
-281:         $sourceId = (int) $app->getSession()->get(self::COPY_SESSION_KEY, 0);
-282:         if ($sourceId <= 0) {
-283:             $app->enqueueMessage(Text::_('COM_DECAROFORMS_ERR_NO_COPIED_FORM'), 'warning');
-284:             $app->redirect(Route::_('index.php?option=com_decaroforms&view=forms', false));
-285:             return;
-286:         }
----
-296:         $source = $db->loadAssoc();
-297:         if (!$source) {
-298:             $app->getSession()->set(self::COPY_SESSION_KEY, 0);
-299:             $app->enqueueMessage(Text::_('COM_DECAROFORMS_ERR_COPY_FORM_NOT_FOUND'), 'error');
-300:             $app->redirect(Route::_('index.php?option=com_decaroforms&view=forms', false));
-301:             return;
-302:         }
----
-349:             $db->insertObject('#__decaroforms_fields', $record);
-350:         }
-351: 
-352:         $app->enqueueMessage(Text::_('COM_DECAROFORMS_MSG_FORM_PASTED'), 'message');
-353:         $app->redirect(Route::_('index.php?option=com_decaroforms&view=builder&id=' . $newId, false));
-354:     }
-355: 
----
-383:             }
-384:             $q = $db->createQuery()->delete($db->quoteName('#__decaroforms_forms'))->where($db->quoteName('id') . ' = :id')->bind(':id', $id);
-385:             $db->setQuery($q)->execute();
-386:             $app->enqueueMessage(Text::_('COM_DECAROFORMS_MSG_FORM_DELETED'), 'message');
-387:         }
-388:         $app->redirect(Route::_('index.php?option=com_decaroforms&view=forms', false));
-389:     }
----
+=== forms/default.php lines 1-150 ===
+     1	<?php
+     2	
+     3	defined('_JEXEC') or die;
+     4	
+     5	use DeCaro\Component\Forms\Administrator\Helper\FormHelper;
+     6	use Joomla\CMS\Router\Route;
+     7	use Joomla\CMS\Language\Text;
+     8	use Joomla\CMS\HTML\HTMLHelper;
+     9	?>
+    10	<style>
+    11	.df-wrap{--df:#e60046;--df-dark:#b40038;--df-panel:var(--bs-body-bg,#fff);--df-panel-alt:var(--bs-tertiary-bg,#f6f7f9);--df-field:var(--bs-body-bg,#fff);--df-border:var(--bs-border-color,#dfe3e7);--df-hover:var(--bs-tertiary-bg,#eef1f4);--df-border-strong:#b8c1cc;max-width:none;color:var(--bs-body-color,#1f2937);container-type:inline-size;container-name:formslist}
+    12	.df-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin:4px 0 18px}.df-head h2{margin:0;font-size:27px}.df-head p{margin:5px 0 0;color:var(--bs-secondary-color,#667085)}
+    13	.df-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.df-actions form,.df-card-actions form{margin:0}.df-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid var(--df-border);border-radius:6px;background:var(--df-field);color:inherit!important;text-decoration:none;font-weight:700;cursor:pointer;text-align:center;line-height:1.2;transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease}.df-btn:not(.df-btn-primary):hover{background:var(--df-hover);border-color:var(--df-border-strong)}.df-btn:focus-visible{outline:2px solid #1683d8;outline-offset:2px}.df-btn-primary{background:var(--df);border-color:var(--df);color:#fff!important}.df-btn-primary:hover{background:var(--df-dark);border-color:var(--df-dark)}
+    14	.df-actions-menu{position:fixed;z-index:1200;width:min(240px,calc(100vw - 24px));padding:8px;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);color:inherit;box-shadow:0 14px 36px rgba(0,0,0,.28)}.df-actions-menu[hidden]{display:none!important}.df-dialog-links{display:grid;grid-template-columns:1fr;gap:6px;padding:0}.df-dialog-links .df-btn{width:100%;min-height:44px;justify-content:flex-start;padding-left:14px;padding-right:14px}
+    15	.df-filter-toggle{display:none;width:100%;margin-bottom:10px;justify-content:space-between}.df-filter-toggle .df-chevron{transition:transform .16s ease}.df-filter-toggle[aria-expanded="true"] .df-chevron{transform:rotate(180deg)}
+    16	.df-tools{display:grid;grid-template-columns:minmax(260px,2fr) minmax(155px,1fr) minmax(185px,1fr) 120px auto;gap:10px;align-items:end;padding:15px 16px;margin-bottom:14px;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);min-width:0}.df-tool{display:flex;flex-direction:column;gap:6px;min-width:0}.df-tool label{font-weight:800}.df-tool input,.df-tool select{width:100%;min-width:0;min-height:42px;border:1px solid var(--df-border);border-radius:6px;background:var(--df-field);color:inherit;padding:0 12px}.df-tool input::placeholder{font-style:italic;color:var(--bs-secondary-color,#87909b)}
+    17	.df-list{display:flex;flex-direction:column;gap:12px;min-width:0}.df-card{width:100%;max-width:100%;min-width:0;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.df-card-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:17px 18px;background:transparent}.df-card-main>div{min-width:0;background:none!important}.df-card h3{margin:0 0 4px;font-size:19px;overflow-wrap:anywhere;background:none!important;padding:0!important;border:0!important;box-shadow:none!important}.df-card h3::before,.df-card h3::after{content:none!important;display:none!important}.df-card p{margin:0;color:var(--bs-secondary-color,#667085);overflow-wrap:anywhere}.df-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;align-self:start}
+    18	.df-card-meta{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:11px 18px;border-top:1px solid var(--df-border);background:var(--df-panel-alt);min-width:0}.df-code{min-width:0}.df-code small,.df-count small{display:block;color:var(--bs-secondary-color,#667085);font-size:11px;font-weight:800;text-transform:uppercase}.df-code code{font-weight:700;overflow-wrap:anywhere}.df-count{text-align:right}.df-count strong{display:block;font-size:21px}.df-card-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;min-width:0}.df-card-actions>*{min-width:0}
+    19	.df-empty{padding:38px 20px;text-align:center;border:1px dashed var(--df-border);border-radius:8px}.df-admin-footer{margin:28px 0 10px;padding-top:16px;border-top:1px solid var(--df-border);text-align:center;color:var(--bs-secondary-color,#667085);font-size:12px}
+    20	html[data-bs-theme="dark"] .df-wrap,html[data-color-scheme="dark"] .df-wrap{--df:#9f1239;--df-dark:#7f0d2e;--df-panel:#1a232d;--df-panel-alt:#202b37;--df-field:#121a23;--df-border:#3b4857;--df-hover:#263443;--df-border-strong:#56677a;color:#f3f6fa}
+    21	html[data-bs-theme="dark"] .df-wrap .df-head p,html[data-color-scheme="dark"] .df-wrap .df-head p,html[data-bs-theme="dark"] .df-wrap .df-card p,html[data-color-scheme="dark"] .df-wrap .df-card p{color:#b5c0cc}
+    22	
+    23	.df-wrap.df-dark-theme{--df:#9f1239;--df-dark:#7f0d2e;--df-panel:#1a232d;--df-panel-alt:#202b37;--df-field:#121a23;--df-border:#3b4857;--df-hover:#263443;--df-border-strong:#56677a;color:#f3f6fa}
+    24	.df-wrap.df-dark-theme .df-head p,.df-wrap.df-dark-theme .df-card p{color:#b5c0cc}.df-wrap.df-dark-theme code{color:#f07a9b}.df-wrap.df-dark-theme .df-btn-primary{background:#9f1239!important;border-color:#9f1239!important;color:#fff!important}.df-wrap.df-dark-theme .df-btn-primary:hover{background:#7f0d2e!important;border-color:#7f0d2e!important}.df-wrap.df-dark-theme .df-btn:not(.df-btn-primary):hover{background:#263443;border-color:#56677a}
+    25	html[data-bs-theme="dark"] .df-wrap code,html[data-color-scheme="dark"] .df-wrap code{color:#f07a9b}html[data-bs-theme="dark"] .df-wrap .df-btn-primary,html[data-color-scheme="dark"] .df-wrap .df-btn-primary{background:#9f1239;border-color:#9f1239}html[data-bs-theme="dark"] .df-wrap .df-btn-primary:hover,html[data-color-scheme="dark"] .df-wrap .df-btn-primary:hover{background:#7f0d2e;border-color:#7f0d2e}
+    26	@container formslist (max-width:920px){.df-tools{grid-template-columns:repeat(3,minmax(0,1fr))}.df-tools>.df-btn{width:100%}.df-card-meta{grid-template-columns:minmax(0,1fr) auto}.df-card-actions{grid-column:1/-1;justify-content:flex-end}}
+    27	@container formslist (max-width:680px){.df-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.df-head{align-items:flex-start}.df-card-meta{grid-template-columns:1fr}.df-count{text-align:left}.df-card-actions{justify-content:flex-start}}
+    28	@container formslist (max-width:560px){.df-tools .df-tool input,.df-tools .df-tool select,.df-tools>.df-btn{height:46px;min-height:46px;line-height:normal}.df-tools .df-tool input,.df-tools .df-tool select{padding-top:0;padding-bottom:0}.df-head{flex-direction:column;align-items:stretch;gap:10px}.df-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.df-actions>.df-btn{width:100%;height:46px;min-height:46px;padding:0 8px;white-space:nowrap;font-size:inherit;line-height:normal}.df-filter-toggle{display:flex;position:relative;height:46px;min-height:46px;padding:0 42px 0 12px;align-items:center;justify-content:center;text-align:center;font-size:inherit;line-height:normal}.df-filter-toggle .df-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%)}.df-filter-toggle[aria-expanded="true"] .df-chevron{transform:translateY(-50%) rotate(180deg)}.df-tools{display:none;grid-template-columns:1fr;margin-bottom:14px}.df-tools.is-open{display:grid}.df-card-main{padding:15px 16px;gap:10px}.df-card-meta{padding:12px 16px}.df-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%}.df-card-actions>*{width:100%}.df-card-actions .df-btn,.df-card-actions form .df-btn,.df-card-actions>a{width:100%;height:46px;min-height:46px;padding:0 7px;white-space:nowrap;font-size:inherit;line-height:normal;align-items:center;justify-content:center;text-align:center}.df-card-actions>*:nth-child(3){grid-column:1/-1}.df-card-actions>*:nth-child(3).df-btn{width:100%}.df-badge{margin-top:1px}}
+    29	
+    30	html[data-bs-theme="dark"] .df-wrap .df-btn-primary,
+    31	html[data-color-scheme="dark"] .df-wrap .df-btn-primary,
+    32	body[data-bs-theme="dark"] .df-wrap .df-btn-primary,
+    33	body[data-color-scheme="dark"] .df-wrap .df-btn-primary,
+    34	.df-wrap.df-dark-theme .df-btn-primary{background:#9f1239!important;border-color:#9f1239!important;color:#fff!important}
+    35	html[data-bs-theme="dark"] .df-wrap .df-btn-primary:hover,
+    36	html[data-color-scheme="dark"] .df-wrap .df-btn-primary:hover,
+    37	body[data-bs-theme="dark"] .df-wrap .df-btn-primary:hover,
+    38	body[data-color-scheme="dark"] .df-wrap .df-btn-primary:hover,
+    39	.df-wrap.df-dark-theme .df-btn-primary:hover{background:#7f0d2e!important;border-color:#7f0d2e!important;color:#fff!important}
+    40	
+    41	/* Forms 1.2.14: canonical card title + semantic status colors */
+    42	.df-wrap .df-card-main>div,
+    43	.df-wrap .df-card h3,
+    44	html[data-bs-theme="dark"] .df-wrap .df-card-main>div,
+    45	html[data-bs-theme="dark"] .df-wrap .df-card h3,
+    46	html[data-color-scheme="dark"] .df-wrap .df-card-main>div,
+    47	html[data-color-scheme="dark"] .df-wrap .df-card h3,
+    48	.df-wrap.df-dark-theme .df-card-main>div,
+    49	.df-wrap.df-dark-theme .df-card h3{background:none!important;background-color:transparent!important}
+    50	
+    51	.df-wrap .df-badge.df-on,
+    52	html[data-bs-theme="dark"] .df-wrap .df-badge.df-on,
+    53	html[data-color-scheme="dark"] .df-wrap .df-badge.df-on,
+    54	.df-wrap.df-dark-theme .df-badge.df-on{background:#e8f7ee!important;color:#176b3a!important;border-color:#b7e3c8!important}
+    55	
+    56	.df-wrap .df-badge.df-off,
+    57	html[data-bs-theme="dark"] .df-wrap .df-badge.df-off,
+    58	html[data-color-scheme="dark"] .df-wrap .df-badge.df-off,
+    59	.df-wrap.df-dark-theme .df-badge.df-off{background:#fdebec!important;color:#9f2430!important;border-color:#f2c5ca!important}
+    60	
+    61	</style>
+    62	<div class="df-wrap">
+    63	  <div class="df-head">
+    64	    <div><h2><?php echo Text::_('COM_DECAROFORMS_FORMS'); ?></h2><p><?php echo Text::_('COM_DECAROFORMS_PAGE_FORMS_DESC'); ?></p></div>
+    65	    <div class="df-actions">
+    66	      <button class="df-btn" type="button" id="df-open-actions" aria-haspopup="menu" aria-expanded="false" aria-controls="df-actions-menu"><?php echo Text::_('COM_DECAROFORMS_MENU_SHORT'); ?> ▾</button>
+    67	      <a class="df-btn df-btn-primary" href="<?php echo $this->builderUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_CREATE_FORM'); ?></a>
+    68	    </div>
+    69	  </div>
+    70	  <div class="df-actions-menu" id="df-actions-menu" role="menu" hidden>
+    71	    <div class="df-dialog-links">
+    72	      <a class="df-btn" role="menuitem" href="<?php echo $this->dashboardUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_DASHBOARD'); ?></a>
+    73	      <a class="df-btn" role="menuitem" href="<?php echo $this->recentUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_RECENT'); ?></a>
+    74	      <a class="df-btn" role="menuitem" href="<?php echo $this->importUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_MENU_IMPORT'); ?></a>
+    75	      <a class="df-btn" role="menuitem" href="<?php echo $this->informationUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_INFORMATION'); ?></a>
+    76	    </div>
+    77	  </div>
+    78	
+    79	<button class="df-btn df-filter-toggle" type="button" id="df-filter-toggle" aria-expanded="false" aria-controls="df-tools"><span><?php echo Text::_('COM_DECAROFORMS_SEARCH_FILTER'); ?></span><span class="df-chevron" aria-hidden="true">▾</span></button>
+    80	  <div class="df-tools" id="df-tools">
+    81	    <div class="df-tool"><label for="df-search"><?php echo Text::_('COM_DECAROFORMS_SEARCH'); ?></label><input id="df-search" type="search" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_SEARCH_FORMS'),ENT_QUOTES,'UTF-8'); ?>" autocomplete="off"></div>
+    82	    <div class="df-tool"><label for="df-filter"><?php echo Text::_('COM_DECAROFORMS_STATUS'); ?></label><select id="df-filter"><option value="all"><?php echo Text::_('COM_DECAROFORMS_ALL_STATUSES'); ?></option><option value="enabled"><?php echo Text::_('COM_DECAROFORMS_ENABLED'); ?></option><option value="disabled"><?php echo Text::_('COM_DECAROFORMS_DISABLED'); ?></option></select></div>
+    83	    <div class="df-tool"><label for="df-sort"><?php echo Text::_('COM_DECAROFORMS_SORT'); ?></label><select id="df-sort"><option value="updated-desc"><?php echo Text::_('COM_DECAROFORMS_SORT_UPDATED_DESC'); ?></option><option value="updated-asc"><?php echo Text::_('COM_DECAROFORMS_SORT_UPDATED_ASC'); ?></option><option value="title-asc"><?php echo Text::_('COM_DECAROFORMS_SORT_TITLE_ASC'); ?></option><option value="title-desc"><?php echo Text::_('COM_DECAROFORMS_SORT_TITLE_DESC'); ?></option><option value="count-desc"><?php echo Text::_('COM_DECAROFORMS_SORT_SUBMISSIONS_DESC'); ?></option><option value="count-asc"><?php echo Text::_('COM_DECAROFORMS_SORT_SUBMISSIONS_ASC'); ?></option></select></div>
+    84	    <div class="df-tool"><label for="df-limit"><?php echo Text::_('COM_DECAROFORMS_SHOW'); ?></label><select id="df-limit"><option>10</option><option>25</option><option selected>50</option><option>100</option><option value="all"><?php echo Text::_('COM_DECAROFORMS_ALL'); ?></option></select></div>
+    85	    <button class="df-btn" type="button" id="df-clear"><?php echo Text::_('COM_DECAROFORMS_CLEAR'); ?></button>
+    86	  </div>
+    87	
+    88	  <div class="df-list" id="df-list">
+    89	  <?php if (!$this->forms): ?>
+    90	    <div class="df-empty"><?php echo Text::_('COM_DECAROFORMS_NO_FORMS'); ?></div>
+    91	  <?php endif; ?>
+    92	  <?php foreach ($this->forms as $form):
+    93	      $enabled=(int)$form['enabled']===1;
+    94	      $updated=(int)(strtotime((string)($form['updated_at']??''))?:0);
+    95	      $id=(int)$form['id'];
+    96	      $titleSort=mb_strtolower((string)$form['title'],'UTF-8');
+    97	      $searchText=mb_strtolower((string)$form['title'].' '.(string)$form['description'].' '.(string)$form['slug'].' '.$id.' form id="'.$id.'" {form id="'.$id.'"}', 'UTF-8');
+    98	  ?>
+    99	    <article class="df-card" data-search="<?php echo htmlspecialchars($searchText,ENT_QUOTES,'UTF-8'); ?>" data-title="<?php echo htmlspecialchars($titleSort,ENT_QUOTES,'UTF-8'); ?>" data-status="<?php echo $enabled?'enabled':'disabled'; ?>" data-updated="<?php echo $updated; ?>" data-count="<?php echo (int)$form['submission_count']; ?>">
+   100	      <div class="df-card-main"><div><h3><?php echo htmlspecialchars($form['title'],ENT_QUOTES,'UTF-8'); ?></h3><p><?php echo htmlspecialchars((string)$form['description'],ENT_QUOTES,'UTF-8'); ?></p></div><span class="df-badge <?php echo $enabled?'df-on':'df-off'; ?>"><?php echo $enabled?Text::_('COM_DECAROFORMS_ENABLED'):Text::_('COM_DECAROFORMS_DISABLED'); ?></span></div>
+   101	      <div class="df-card-meta">
+   102	        <div class="df-code"><small><?php echo Text::_('COM_DECAROFORMS_SHORTCODE'); ?></small><code>{form id="<?php echo $id; ?>"}</code></div>
+   103	        <div class="df-count"><small><?php echo Text::_('COM_DECAROFORMS_SUBMISSIONS'); ?></small><strong><?php echo (int)$form['submission_count']; ?></strong></div>
+   104	        <div class="df-card-actions"><a class="df-btn" href="<?php echo Route::_('index.php?option=com_decaroforms&view=builder&id='.$id,false); ?>"><?php echo Text::_('COM_DECAROFORMS_EDIT'); ?></a><form method="post" action="index.php?option=com_decaroforms&task=builder.duplicate"><input type="hidden" name="id" value="<?php echo $id; ?>"><button class="df-btn" type="submit"><?php echo Text::_('COM_DECAROFORMS_DUPLICATE_FORM'); ?></button><?php echo HTMLHelper::_('form.token'); ?></form><a class="df-btn df-btn-primary" href="<?php echo Route::_('index.php?option=com_decaroforms&view=submissions&form_id='.$id,false); ?>"><?php echo Text::_('COM_DECAROFORMS_OPEN_SUBMISSIONS'); ?></a></div>
+   105	      </div>
+   106	    </article>
+   107	  <?php endforeach; ?>
+   108	  <?php if ($this->forms): ?><div class="df-empty" id="df-no-results" hidden><?php echo Text::_('COM_DECAROFORMS_NO_RESULTS'); ?></div><?php endif; ?>
+   109	  </div>
+   110	  <?php echo FormHelper::footer(); ?>
+   111	</div>
+   112	<script>
+   113	(()=>{
+   114	 const wrap=document.querySelector('.df-wrap'),root=document.documentElement,body=document.body;
+   115	 const darkState=()=>{
+   116	   const values=[root?.dataset?.bsTheme,root?.dataset?.colorScheme,body?.dataset?.bsTheme,body?.dataset?.colorScheme].filter(Boolean).map(v=>String(v).toLowerCase());
+   117	   if(values.includes('dark')) return true;
+   118	   if(values.includes('light')) return false;
+   119	   const rgb=(getComputedStyle(body).backgroundColor.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
+   120	   return rgb.length===3 && (0.2126*rgb[0]+0.7152*rgb[1]+0.0722*rgb[2])<128;
+   121	 };
+   122	 const syncTheme=()=>wrap?.classList.toggle('df-dark-theme',darkState());
+   123	 syncTheme();
+   124	 const observer=new MutationObserver(syncTheme);
+   125	 observer.observe(root,{attributes:true,attributeFilter:['data-bs-theme','data-color-scheme','class']});
+   126	 if(body) observer.observe(body,{attributes:true,attributeFilter:['data-bs-theme','data-color-scheme','class']});
+   127	 const q=document.getElementById('df-search'),f=document.getElementById('df-filter'),sort=document.getElementById('df-sort'),limit=document.getElementById('df-limit'),clear=document.getElementById('df-clear'),list=document.getElementById('df-list'),cards=[...document.querySelectorAll('.df-card')],empty=document.getElementById('df-no-results');
+   128	 const dialog=document.getElementById('df-actions-dialog'),openActions=document.getElementById('df-open-actions'),closeActions=document.getElementById('df-close-actions'),filterToggle=document.getElementById('df-filter-toggle'),tools=document.getElementById('df-tools');
+   129	 openActions?.addEventListener('click',()=>dialog?.showModal());closeActions?.addEventListener('click',()=>dialog?.close());dialog?.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+   130	 filterToggle?.addEventListener('click',()=>{const open=!tools.classList.contains('is-open');tools.classList.toggle('is-open',open);filterToggle.setAttribute('aria-expanded',open?'true':'false');});
+   131	 function cmp(a,b){const mode=sort.value;if(mode==='updated-asc')return Number(a.dataset.updated)-Number(b.dataset.updated);if(mode==='title-asc')return a.dataset.title.localeCompare(b.dataset.title);if(mode==='title-desc')return b.dataset.title.localeCompare(a.dataset.title);if(mode==='count-desc')return Number(b.dataset.count)-Number(a.dataset.count);if(mode==='count-asc')return Number(a.dataset.count)-Number(b.dataset.count);return Number(b.dataset.updated)-Number(a.dataset.updated);}
+   132	 function apply(){const s=(q.value||'').toLowerCase().trim(),st=f.value,max=limit.value==='all'?Infinity:parseInt(limit.value||'50',10);const ordered=[...cards].sort(cmp);ordered.forEach(card=>list.insertBefore(card,empty||null));let shown=0;ordered.forEach(card=>{const match=(!s||card.dataset.search.includes(s))&&(st==='all'||card.dataset.status===st);const visible=match&&shown<max;card.hidden=!visible;if(visible)shown++;});if(empty)empty.hidden=shown!==0;}
+   133	 let liveTimer=null;function schedule(){clearTimeout(liveTimer);liveTimer=setTimeout(apply,180);}q?.addEventListener('input',schedule);f?.addEventListener('change',apply);sort?.addEventListener('change',apply);limit?.addEventListener('change',apply);clear?.addEventListener('click',()=>{clearTimeout(liveTimer);q.value='';f.value='all';sort.value='updated-desc';limit.value='50';apply();});apply();
+   134	
+   135	 const menuNav=document.getElementById('df-actions-menu'),menuBtnNav=document.getElementById('df-open-actions');
+   136	 const closeMenuNav=()=>{if(!menuNav)return;menuNav.hidden=true;menuBtnNav?.setAttribute('aria-expanded','false');};
+   137	 const placeMenuNav=()=>{if(!menuNav||!menuBtnNav||menuNav.hidden)return;const r=menuBtnNav.getBoundingClientRect();const w=menuNav.offsetWidth||240;const left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));menuNav.style.left=`${left}px`;const maxTop=Math.max(12,window.innerHeight-menuNav.offsetHeight-12);menuNav.style.top=`${Math.min(r.bottom+8,maxTop)}px`;};
+   138	 menuBtnNav?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!menuNav)return;const opening=menuNav.hidden;if(opening){menuNav.hidden=false;menuBtnNav.setAttribute('aria-expanded','true');requestAnimationFrame(placeMenuNav);}else closeMenuNav();});
+   139	 menuNav?.addEventListener('click',e=>e.stopPropagation());
+   140	 menuNav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenuNav));
+   141	 document.addEventListener('click',closeMenuNav);
+   142	 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenuNav();});
+   143	 window.addEventListener('resize',placeMenuNav);
+   144	 window.addEventListener('scroll',placeMenuNav,true);
+   145	})();
+   146	</script>
 
-=== tmpl/forms/default.php ===
-79: <button class="df-btn df-filter-toggle" type="button" id="df-filter-toggle" aria-expanded="false" aria-controls="df-tools"><span><?php echo Text::_('COM_DECAROFORMS_SEARCH_FILTER'); ?></span><span class="df-chevron" aria-hidden="true">▾</span></button>
-80:   <div class="df-tools" id="df-tools">
-81:     <div class="df-tool"><label for="df-search"><?php echo Text::_('COM_DECAROFORMS_SEARCH'); ?></label><input id="df-search" type="search" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_SEARCH_FORMS'),ENT_QUOTES,'UTF-8'); ?>" autocomplete="off"></div>
-82:     <div class="df-tool"><label for="df-filter"><?php echo Text::_('COM_DECAROFORMS_STATUS'); ?></label><select id="df-filter"><option value="all"><?php echo Text::_('COM_DECAROFORMS_ALL_STATUSES'); ?></option><option value="enabled"><?php echo Text::_('COM_DECAROFORMS_ENABLED'); ?></option><option value="disabled"><?php echo Text::_('COM_DECAROFORMS_DISABLED'); ?></option></select></div>
-83:     <div class="df-tool"><label for="df-sort"><?php echo Text::_('COM_DECAROFORMS_SORT'); ?></label><select id="df-sort"><option value="updated-desc"><?php echo Text::_('COM_DECAROFORMS_SORT_UPDATED_DESC'); ?></option><option value="updated-asc"><?php echo Text::_('COM_DECAROFORMS_SORT_UPDATED_ASC'); ?></option><option value="title-asc"><?php echo Text::_('COM_DECAROFORMS_SORT_TITLE_ASC'); ?></option><option value="title-desc"><?php echo Text::_('COM_DECAROFORMS_SORT_TITLE_DESC'); ?></option><option value="count-desc"><?php echo Text::_('COM_DECAROFORMS_SORT_SUBMISSIONS_DESC'); ?></option><option value="count-asc"><?php echo Text::_('COM_DECAROFORMS_SORT_SUBMISSIONS_ASC'); ?></option></select></div>
-84:     <div class="df-tool"><label for="df-limit"><?php echo Text::_('COM_DECAROFORMS_SHOW'); ?></label><select id="df-limit"><option>10</option><option>25</option><option selected>50</option><option>100</option><option value="all"><?php echo Text::_('COM_DECAROFORMS_ALL'); ?></option></select></div>
-85:     <button class="df-btn" type="button" id="df-clear"><?php echo Text::_('COM_DECAROFORMS_CLEAR'); ?></button>
----
-86:   </div>
-87: 
----
-90:     <div class="df-empty"><?php echo Text::_('COM_DECAROFORMS_NO_FORMS'); ?></div>
-91:   <?php endif; ?>
-92:   <?php foreach ($this->forms as $form):
-93:       $enabled=(int)$form['enabled']===1;
-94:       $updated=(int)(strtotime((string)($form['updated_at']??''))?:0);
-95:       $id=(int)$form['id'];
-96:       $titleSort=mb_strtolower((string)$form['title'],'UTF-8');
----
-97:       $searchText=mb_strtolower((string)$form['title'].' '.(string)$form['description'].' '.(string)$form['slug'].' '.$id.' form id="'.$id.'" {form id="'.$id.'"}', 'UTF-8');
-98:   ?>
-99:     <article class="df-card" data-search="<?php echo htmlspecialchars($searchText,ENT_QUOTES,'UTF-8'); ?>" data-title="<?php echo htmlspecialchars($titleSort,ENT_QUOTES,'UTF-8'); ?>" data-status="<?php echo $enabled?'enabled':'disabled'; ?>" data-updated="<?php echo $updated; ?>" data-count="<?php echo (int)$form['submission_count']; ?>">
-100:       <div class="df-card-main"><div><h3><?php echo htmlspecialchars($form['title'],ENT_QUOTES,'UTF-8'); ?></h3><p><?php echo htmlspecialchars((string)$form['description'],ENT_QUOTES,'UTF-8'); ?></p></div><span class="df-badge <?php echo $enabled?'df-on':'df-off'; ?>"><?php echo $enabled?Text::_('COM_DECAROFORMS_ENABLED'):Text::_('COM_DECAROFORMS_DISABLED'); ?></span></div>
-101:       <div class="df-card-meta">
-102:         <div class="df-code"><small><?php echo Text::_('COM_DECAROFORMS_SHORTCODE'); ?></small><code>{form id="<?php echo $id; ?>"}</code></div>
----
-103:         <div class="df-count"><small><?php echo Text::_('COM_DECAROFORMS_SUBMISSIONS'); ?></small><strong><?php echo (int)$form['submission_count']; ?></strong></div>
----
-124:  const observer=new MutationObserver(syncTheme);
-125:  observer.observe(root,{attributes:true,attributeFilter:['data-bs-theme','data-color-scheme','class']});
-126:  if(body) observer.observe(body,{attributes:true,attributeFilter:['data-bs-theme','data-color-scheme','class']});
-127:  const q=document.getElementById('df-search'),f=document.getElementById('df-filter'),sort=document.getElementById('df-sort'),limit=document.getElementById('df-limit'),clear=document.getElementById('df-clear'),list=document.getElementById('df-list'),cards=[...document.querySelectorAll('.df-card')],empty=document.getElementById('df-no-results');
-128:  const dialog=document.getElementById('df-actions-dialog'),openActions=document.getElementById('df-open-actions'),closeActions=document.getElementById('df-close-actions'),filterToggle=document.getElementById('df-filter-toggle'),tools=document.getElementById('df-tools');
-129:  openActions?.addEventListener('click',()=>dialog?.showModal());closeActions?.addEventListener('click',()=>dialog?.close());dialog?.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
-130:  filterToggle?.addEventListener('click',()=>{const open=!tools.classList.contains('is-open');tools.classList.toggle('is-open',open);filterToggle.setAttribute('aria-expanded',open?'true':'false');});
----
-131:  function cmp(a,b){const mode=sort.value;if(mode==='updated-asc')return Number(a.dataset.updated)-Number(b.dataset.updated);if(mode==='title-asc')return a.dataset.title.localeCompare(b.dataset.title);if(mode==='title-desc')return b.dataset.title.localeCompare(a.dataset.title);if(mode==='count-desc')return Number(b.dataset.count)-Number(a.dataset.count);if(mode==='count-asc')return Number(a.dataset.count)-Number(b.dataset.count);return Number(b.dataset.updated)-Number(a.dataset.updated);}
----
-132:  function apply(){const s=(q.value||'').toLowerCase().trim(),st=f.value,max=limit.value==='all'?Infinity:parseInt(limit.value||'50',10);const ordered=[...cards].sort(cmp);ordered.forEach(card=>list.insertBefore(card,empty||null));let shown=0;ordered.forEach(card=>{const match=(!s||card.dataset.search.includes(s))&&(st==='all'||card.dataset.status===st);const visible=match&&shown<max;card.hidden=!visible;if(visible)shown++;});if(empty)empty.hidden=shown!==0;}
----
-133:  let liveTimer=null;function schedule(){clearTimeout(liveTimer);liveTimer=setTimeout(apply,180);}q?.addEventListener('input',schedule);f?.addEventListener('change',apply);sort?.addEventListener('change',apply);limit?.addEventListener('change',apply);clear?.addEventListener('click',()=>{clearTimeout(liveTimer);q.value='';f.value='all';sort.value='updated-desc';limit.value='50';apply();});apply();
-134: 
-135:  const menuNav=document.getElementById('df-actions-menu'),menuBtnNav=document.getElementById('df-open-actions');
----
-136:  const closeMenuNav=()=>{if(!menuNav)return;menuNav.hidden=true;menuBtnNav?.setAttribute('aria-expanded','false');};
----
-137:  const placeMenuNav=()=>{if(!menuNav||!menuBtnNav||menuNav.hidden)return;const r=menuBtnNav.getBoundingClientRect();const w=menuNav.offsetWidth||240;const left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));menuNav.style.left=`${left}px`;const maxTop=Math.max(12,window.innerHeight-menuNav.offsetHeight-12);menuNav.style.top=`${Math.min(r.bottom+8,maxTop)}px`;};
-138:  menuBtnNav?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!menuNav)return;const opening=menuNav.hidden;if(opening){menuNav.hidden=false;menuBtnNav.setAttribute('aria-expanded','true');requestAnimationFrame(placeMenuNav);}else closeMenuNav();});
-139:  menuNav?.addEventListener('click',e=>e.stopPropagation());
----
-140:  menuNav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenuNav));
-141:  document.addEventListener('click',closeMenuNav);
----
-142:  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenuNav();});
-143:  window.addEventListener('resize',placeMenuNav);
----
-144:  window.addEventListener('scroll',placeMenuNav,true);
----
-145: })();
----
-
-=== builder form control names ===
-statuses_json => <input type="hidden" name="statuses_json" id="df-statuses-json" value="">
-enabled => <input type="checkbox" name="enabled" value="1" <?php echo $checked('enabled',true)?'checked':''; ?>
-success_message => <input name="success_message" value="<?php echo $val('success_message',Text::_('COM_DECAROFORMS_SUCCESS_DEFAULT')); ?>
-closed_reason => <select name="closed_reason">
-closed_message => <input name="closed_message" value="<?php echo $val('closed_message'); ?>
+=== possible forms list model/view ===
+--- /tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/View/Forms/HtmlView.php
+     1	<?php
+     2	
+     3	namespace DeCaro\Component\Forms\Administrator\View\Forms;
+     4	
+     5	defined('_JEXEC') or die;
+     6	
+     7	use Joomla\CMS\Factory;
+     8	use Joomla\CMS\Language\Text;
+     9	use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+    10	use Joomla\CMS\Router\Route;
+    11	use Joomla\Database\DatabaseInterface;
+    12	
+    13	final class HtmlView extends BaseHtmlView
+    14	{
+    15	    public array $forms = [];
+    16	    public string $builderUrl = '';
+    17	    public string $recentUrl = '';
+    18	    public string $informationUrl = '';
+    19	    public string $importUrl = '';
+    20	    public string $dashboardUrl = '';
+    21	
+    22	    public function display($tpl = null): void
+    23	    {
+    24	        /** @var DatabaseInterface $db */
+    25	        $db = Factory::getContainer()->get(DatabaseInterface::class);
+    26	        $q = $db->createQuery()
+    27	            ->select(['f.*','COUNT(s.id) AS submission_count'])
+    28	            ->from($db->quoteName('#__decaroforms_forms','f'))
+    29	            ->leftJoin($db->quoteName('#__decaroforms_submissions','s') . ' ON s.form_id = f.id')
+    30	            ->group('f.id')
+    31	            ->order('f.updated_at DESC, f.id DESC');
+    32	        $db->setQuery($q);
+    33	        $this->forms = $db->loadAssocList() ?: [];
+    34	        $this->builderUrl = Route::_('index.php?option=com_decaroforms&view=builder', false);
+    35	        $this->recentUrl = Route::_('index.php?option=com_decaroforms&view=recent', false);
+    36	        $this->informationUrl = Route::_('index.php?option=com_decaroforms&view=information', false);
+    37	        $this->importUrl = Route::_('index.php?option=com_decaroforms&view=import', false);
+    38	        $this->dashboardUrl = Route::_('index.php?option=com_decaroforms&view=dashboard', false);
+    39	        Factory::getApplication()->getDocument()->setTitle(Text::_('COM_DECAROFORMS_FORMS'));
+    40	        parent::display($tpl);
+    41	    }
+    42	}

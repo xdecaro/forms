@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.14</version>
+    <change><item>Removed card-title background in all themes.</item><item>Consolidated duplicate enabled/disabled badge CSS into canonical semantic rules.</item><item>Prevented generic Joomla dark badge rules from overriding form status colors.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.13</version>
     <change><item>Renamed the Forms list navigation action from Azioni to Menu.</item><item>Replaced the central modal with a compact anchored dropdown menu.</item><item>The navigation menu closes on outside click, selection, or Escape.</item></change>
   </changelog>

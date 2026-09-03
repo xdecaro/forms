@@ -1,0 +1,7 @@
+administrator/components/com_decaroforms/tmpl/forms/default.php
+administrator/components/com_decaroforms/tmpl/submissions/default.php
+administrator/components/com_decaroforms/tmpl/recent/default.php
+administrator/components/com_decaroforms/tmpl/submission/default.php
+administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini
+administrator/components/com_decaroforms/src/Helper/FormHelper.php
+com_decaroforms.xml

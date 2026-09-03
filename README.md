@@ -4,7 +4,7 @@ Reusable Joomla 6 form builder, submissions manager and data importer.
 
 Developed by **Luca De Caro**.
 
-## Current stable version
+## Current development version
 
 **1.1.0**
 
@@ -19,7 +19,7 @@ Developed by **Luca De Caro**.
 - import into an existing form or create a new disabled form from source columns;
 - repeat-safe import log;
 - optional legacy LSFS Forms migration preset;
-- package-level Joomla automatic updates from this repository.
+- package-level Joomla update server (release feed enabled only after the full package ZIP is published).
 
 ### Google Forms note
 

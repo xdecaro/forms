@@ -13,10 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild ZIP from compressed Base64 chunks
+      - name: Forms release operation
         shell: bash
         run: |
           set -euo pipefail
+          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
+          if [ "$MODE" = "inspect-1.2.8" ]; then
+            ROOT=/tmp/forms128
+            rm -rf "$ROOT" && mkdir -p "$ROOT/outer" "$ROOT/component"
+            unzip -q releases/1.2.8/pkg_decaroforms_1.2.8.zip -d "$ROOT/outer"
+            unzip -q "$ROOT/outer/com_decaroforms_1.2.8.zip" -d "$ROOT/component"
+            echo '===== forms/default.php ====='
+            cat "$ROOT/component/administrator/components/com_decaroforms/tmpl/forms/default.php"
+            echo '===== BuilderController duplicate section ====='
+            grep -n -A180 -B20 'function duplicate\|function copy\|function paste' "$ROOT/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php" || true
+            echo '===== it language tail ====='
+            tail -n 80 "$ROOT/component/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini"
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
@@ -28,6 +42,8 @@ jobs:
       - name: Commit rebuilt package
         shell: bash
         run: |
+          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
+          if [ "$MODE" = "inspect-1.2.8" ]; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add releases

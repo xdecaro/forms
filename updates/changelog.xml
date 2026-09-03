@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.12</version>
+    <change><item>Shortened form action label from Modifica modulo to Modifica.</item><item>Renamed Vedi invii to Apri invii.</item><item>Unified smartphone filter controls to a 46-pixel height.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.11</version>
     <fix><item>Smartphone form-list actions now use the normal Joomla font size.</item><item>Active and inactive badges retain their semantic colours in both light and dark modes.</item><item>Dark primary form-list actions keep their dark red colour in the normal state.</item></fix>
   </changelog>

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.5</version>
+    <addition><item>Clickable summary cards that act as immediate status filters.</item><item>Export icons for CSV, Excel and PDF.</item></addition>
+    <change><item>Forms list title aligned with the Elenco moduli menu label.</item><item>Back navigation moved into the submissions page header.</item><item>Larger live status badge moved into the Gestisci invio heading.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
     <version>1.2.4</version>

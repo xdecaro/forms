@@ -6,18 +6,16 @@
         <element>pkg_decaroforms</element>
         <type>package</type>
         <client>site</client>
-        <version>1.2.3</version>
+        <version>1.2.4</version>
         <downloads>
-            <downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.2.3/pkg_decaroforms_1.2.3.zip</downloadurl>
+            <downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.2.4/pkg_decaroforms_1.2.4.zip</downloadurl>
         </downloads>
         <changelogurl>https://raw.githubusercontent.com/xdecaro/forms/main/updates/changelog.xml</changelogurl>
-        <tags>
-            <tag>stable</tag>
-        </tags>
+        <tags><tag>stable</tag></tags>
         <maintainer>Luca De Caro</maintainer>
         <maintainerurl>https://github.com/xdecaro/forms</maintainerurl>
         <targetplatform name="joomla" version="6\.[0-9]+" />
         <php_minimum>8.3.0</php_minimum>
-        <sha256>99aca8e1ba27b9e3798a7ea9304a4b8efae303598e924cdbff3c97afad609ea1</sha256>
+        <sha256>4c66c6823ac27761d7e1b2b7eb0c0cee8c5ffccf6a7a294bf72a3247ee3654cc</sha256>
     </update>
 </updates>

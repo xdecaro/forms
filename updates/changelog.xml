@@ -3,6 +3,15 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.2.4</version>
+    <fix>
+      <item>Fixed PHP runtime error when opening a single submission from the administrator list.</item>
+      <item>Fixed status preview generation in the single-submission management panel.</item>
+    </fix>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.2.3</version>
     <addition>
       <item>Configurable per-status badge colors with sensible defaults.</item>

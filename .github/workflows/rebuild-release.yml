@@ -13,10 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild ZIP from compressed Base64 chunks
+      - name: Forms release operation
         shell: bash
         run: |
           set -euo pipefail
+          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
+          if [ "$MODE" = "inspect-1.2.13-css" ]; then
+            bash tools/inspect-1.2.13-css.sh
+            exit 0
+          fi
+          if [ "$MODE" = "build-1.2.14" ]; then
+            bash tools/release-1.2.14/build.sh
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
@@ -30,6 +39,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add releases
+          git add -A
           git commit -m "Publish Forms release package" || exit 0
           git push

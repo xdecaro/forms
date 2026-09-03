@@ -3,6 +3,22 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.2.2</version>
+    <addition>
+      <item>Recent submissions dashboard with summary cards and combined filters.</item>
+      <item>Submission row selection and selected-only CSV, Excel and PDF export.</item>
+      <item>Two-column submission detail with management panel and internal note.</item>
+      <item>Email template modal preview built from the current form fields.</item>
+    </addition>
+    <change>
+      <item>Simplified administrator terminology in Italian.</item>
+      <item>Table column configuration is presented as Colonne della tabella.</item>
+      <item>Saving a submission now closes the detail and returns to the submissions list.</item>
+    </change>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.2.1</version>
     <addition>
       <item>Email template cards are clickable and open a modal facsimile preview.</item>

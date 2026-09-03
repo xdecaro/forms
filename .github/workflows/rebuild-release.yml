@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild ZIP from Base64 chunks
+      - name: Rebuild ZIP from compressed Base64 chunks
         shell: bash
         run: |
           set -euo pipefail
@@ -21,7 +21,7 @@ jobs:
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
           mkdir -p "releases/${VERSION}"
-          cat releases/_upload/part-*.b64 | base64 -d > "$TARGET"
+          cat releases/_upload/part-*.b64 | base64 -d | xz -d > "$TARGET"
           ACTUAL="$(sha256sum "$TARGET" | awk '{print $1}')"
           test "$ACTUAL" = "$EXPECTED"
           rm -rf releases/_upload

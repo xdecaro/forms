@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.11</version>
+    <fix><item>Smartphone form-list actions now use the normal Joomla font size.</item><item>Active and inactive badges retain their semantic colours in both light and dark modes.</item><item>Dark primary form-list actions keep their dark red colour in the normal state.</item></fix>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.10</version>
     <fix><item>Dark accent buttons now use the intended dark red variant.</item><item>Neutral form actions now provide visible hover and keyboard focus feedback.</item><item>Removed residual title-strip styling from form cards.</item></fix>
     <change><item>Smartphone header actions are displayed in two equal columns.</item><item>Search and filter accordion matches the main action controls.</item><item>Smartphone card actions use a consistent 46-pixel height.</item></change>

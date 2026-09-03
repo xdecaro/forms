@@ -3,6 +3,20 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
+    <version>1.2.3</version>
+    <addition>
+      <item>Configurable per-status badge colors with sensible defaults.</item>
+      <item>Summary cards, full filters and Back navigation on each form submissions page.</item>
+      <item>Recent submissions table column selector with remembered browser preference.</item>
+    </addition>
+    <change>
+      <item>Table-column settings are displayed as one boxed row per column.</item>
+      <item>Status colors are shown consistently in lists and submission detail.</item>
+    </change>
+  </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
     <version>1.2.2</version>
     <addition>
       <item>Recent submissions dashboard with summary cards and combined filters.</item>

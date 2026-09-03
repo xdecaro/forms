@@ -14,6 +14,7 @@ Developed by **Luca De Caro**.
 - Dashboard with form/submission overview;
 - full-width Joomla administrator layout;
 - submissions management with a custom status workflow for each form;
+- configurable badge colors for each form status;
 - configurable submission-list columns for each form;
 - Joomla administrator dark-mode support across all Forms views;
 - clickable email template cards with modal facsimile preview;

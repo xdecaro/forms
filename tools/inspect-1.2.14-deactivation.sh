@@ -11,14 +11,9 @@ COM_ZIP="$(find "$OUTER" -maxdepth 1 -type f -name 'com_decaroforms_*.zip' | hea
 unzip -q "$COM_ZIP" -d "$COMP"
 ROOTC="$COMP/administrator/components/com_decaroforms"
 {
+  echo '=== forms/default.php lines 80-115 ==='
+  nl -ba "$ROOTC/tmpl/forms/default.php" | sed -n '80,115p'
+  echo
   echo '=== exact closed_reason / closed_message matches ==='
-  grep -RniE 'closed_reason|closed_message' "$ROOTC" | head -n 250 || true
-  echo
-  echo '=== forms/default.php lines 1-150 ==='
-  nl -ba "$ROOTC/tmpl/forms/default.php" | sed -n '1,150p'
-  echo
-  echo '=== possible forms list model/view ==='
-  for f in "$ROOTC/src/View/Forms/HtmlView.php" "$ROOTC/src/Model/FormsModel.php" "$ROOTC/src/Controller/FormsController.php"; do
-    if [ -f "$f" ]; then echo "--- $f"; nl -ba "$f" | sed -n '1,240p'; fi
-  done
+  grep -RniE 'closed_reason|closed_message' "$ROOTC" | head -n 80 || true
 } > "$OUT"

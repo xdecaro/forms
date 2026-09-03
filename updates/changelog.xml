@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
-    <changelog>
-        <element>com_decaroforms</element>
-        <type>component</type>
-        <version>1.0.0</version>
-        <addition><item>First official stable release of Forms.</item></addition>
-        <addition><item>Reusable Form Builder, submissions management, migration tools, IT/EN/FR localization and email templates.</item></addition>
-        <addition><item>GitHub update server support for automatic Joomla updates.</item></addition>
-    </changelog>
-    <changelog>
-        <element>decaroforms</element>
-        <type>plugin</type>
-        <folder>system</folder>
-        <version>1.0.0</version>
-        <addition><item>First official stable release of the Forms System Plugin.</item></addition>
-    </changelog>
+  <changelog>
+    <element>pkg_decaroforms</element>
+    <type>package</type>
+    <version>1.1.0</version>
+    <security>
+      <item>Import operations require a Joomla CSRF token and core.create permission.</item>
+    </security>
+    <addition>
+      <item>Generic Data Import wizard for Joomla database tables, CSV/TSV, Google Sheets, Google Forms response sheets and external MySQL/MariaDB databases.</item>
+      <item>Source preview and column-to-field mapping.</item>
+      <item>Repeat-safe generic import log.</item>
+    </addition>
+    <change>
+      <item>LSFS migration moved to an optional preset inside Data Import.</item>
+      <item>Localized component and package names in Italian, English and French.</item>
+    </change>
+  </changelog>
 </changelogs>

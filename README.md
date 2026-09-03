@@ -1,24 +1,31 @@
 # Forms
 
-Componente Joomla neutrale per creare e gestire moduli riutilizzabili.
+Reusable Joomla 6 form builder, submissions manager and data importer.
 
-## Versione stabile
+Developed by **Luca De Caro**.
 
-**1.0.0**
+## Current stable version
 
-## Funzioni principali
+**1.1.0**
 
-- Form Builder con libreria di campi riutilizzabili
-- gestione invii e stati
-- ricerca e filtri
-- migrazione da LSFS Forms
-- interfaccia e frontend in Italiano, English e Français
-- template email
-- motivi di chiusura modulo
-- aggiornamenti automatici Joomla tramite GitHub
+### Main features
 
-## Sviluppatore
+- reusable Form Builder and field library;
+- submissions management;
+- IT / EN / FR interface following the active Joomla language;
+- generic Data Import wizard;
+- import from the current Joomla database, CSV/TSV, Google Sheets, Google Forms through the linked response sheet, and external MySQL/MariaDB;
+- source preview and column-to-field mapping;
+- import into an existing form or create a new disabled form from source columns;
+- repeat-safe import log;
+- optional legacy LSFS Forms migration preset;
+- package-level Joomla automatic updates from this repository.
 
-**Luca De Caro**
+### Google Forms note
 
-Requisiti: Joomla 6.0+ e PHP 8.3+.
+Google Forms responses are imported through the Google Sheets response sheet linked to the form. Direct private Google API/OAuth access is not included in 1.1.0.
+
+## Joomla requirements
+
+- Joomla 6.0+
+- PHP 8.3+

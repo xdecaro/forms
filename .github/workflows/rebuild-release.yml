@@ -13,32 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Forms release operation
+      - name: Rebuild ZIP from compressed Base64 chunks
         shell: bash
         run: |
           set -euo pipefail
-          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
-          if [ "$MODE" = "inspect-1.2.5-live" ]; then
-            ROOT=/tmp/forms125inspect
-            rm -rf "$ROOT"
-            mkdir -p "$ROOT/outer" "$ROOT/component"
-            unzip -q releases/1.2.5/pkg_decaroforms_1.2.5.zip -d "$ROOT/outer"
-            unzip -q "$ROOT/outer/com_decaroforms_1.2.5.zip" -d "$ROOT/component"
-            for f in \
-              administrator/components/com_decaroforms/tmpl/recent/default.php \
-              administrator/components/com_decaroforms/tmpl/submissions/default.php \
-              administrator/components/com_decaroforms/tmpl/forms/default.php; do
-              echo "===== $f ====="
-              grep -nE "df-r-search|df-r-form|df-r-status|df-r-limit|addEventListener|function apply|Cerca moduli|search|filter|input|change" "$ROOT/component/$f" | tail -n 160 || true
-            done
-            exit 0
-          fi
-
-          if [ "$MODE" = "build-1.2.6" ]; then
-            bash tools/release-1.2.6/build_retry.sh
-            exit 0
-          fi
-
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
@@ -50,12 +28,8 @@ jobs:
       - name: Commit rebuilt package
         shell: bash
         run: |
-          MODE="$(cat releases/_upload/MODE.txt 2>/dev/null || true)"
-          if [ "$MODE" = "inspect-1.2.5-live" ]; then
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add releases
           git commit -m "Publish Forms release package" || exit 0
           git push

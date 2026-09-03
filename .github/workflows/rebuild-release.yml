@@ -35,7 +35,7 @@ jobs:
           fi
 
           if [ "$MODE" = "build-1.2.6" ]; then
-            bash tools/release-1.2.6/build.sh
+            bash tools/release-1.2.6/build_retry.sh
             exit 0
           fi
 

@@ -15,6 +15,6 @@
         <maintainerurl>https://github.com/xdecaro/forms</maintainerurl>
         <targetplatform name="joomla" version="6\.[0-9]+" />
         <php_minimum>8.3.0</php_minimum>
-        <sha256>c9a420a24735813eac80e338105b038f955a500eb7bb3ce5d0a97e2877efb634</sha256>
+        <sha256>fd7f37e2416fbd67ad4ca12e37b83caca783e1cc3f0408647f2cc78ef009a17c</sha256>
     </update>
 </updates>

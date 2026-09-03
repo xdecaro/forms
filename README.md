@@ -6,7 +6,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.1.0**
+**1.1.1**
 
 ### Main features
 
@@ -19,11 +19,13 @@ Developed by **Luca De Caro**.
 - import into an existing form or create a new disabled form from source columns;
 - repeat-safe import log;
 - optional legacy LSFS Forms migration preset;
+- submissions export to Excel (.xlsx), CSV and PDF;
+- export respects active search and status filters;
 - package-level Joomla update server (release feed enabled only after the full package ZIP is published).
 
 ### Google Forms note
 
-Google Forms responses are imported through the Google Sheets response sheet linked to the form. Direct private Google API/OAuth access is not included in 1.1.0.
+Google Forms responses are imported through the Google Sheets response sheet linked to the form. Direct private Google API/OAuth access is not included in 1.1.x.
 
 ## Joomla requirements
 

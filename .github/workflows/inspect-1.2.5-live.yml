@@ -1,0 +1,31 @@
+name: Inspect Forms 1.2.5 live filters
+
+on:
+  push:
+    paths:
+      - 'tools/inspect-1.2.5-live/READY'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print list/search source snippets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/forms125inspect
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/outer" "$ROOT/component"
+          unzip -q releases/1.2.5/pkg_decaroforms_1.2.5.zip -d "$ROOT/outer"
+          unzip -q "$ROOT/outer/com_decaroforms_1.2.5.zip" -d "$ROOT/component"
+          for f in \
+            administrator/components/com_decaroforms/tmpl/recent/default.php \
+            administrator/components/com_decaroforms/tmpl/submissions/default.php \
+            administrator/components/com_decaroforms/tmpl/forms/default.php; do
+            echo "===== $f ====="
+            sed -n '1,320p' "$ROOT/component/$f"
+          done

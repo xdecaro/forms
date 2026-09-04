@@ -8,7 +8,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.3.2**
+**1.3.3**
 
 ## What is Forms?
 

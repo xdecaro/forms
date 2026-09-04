@@ -22,8 +22,8 @@ jobs:
             bash tools/inspect-update-link.sh
             exit 0
           fi
-          if [ "$MODE" = "inspect-builder-1.3.18" ]; then
-            bash tools/inspect-builder-1.3.18.sh
+          if [ "$MODE" = "release-1.3.19" ]; then
+            bash tools/release-1.3.19/build.sh
             rm -rf releases/_upload
             exit 0
           fi
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "4189828+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Publish Forms release package" || exit 0
           git push

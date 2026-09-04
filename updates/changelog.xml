@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.4</version>
-<change>Intestazioni accordion del Builder con sfondo scuro uniforme e testo bianco.</change>
-<change>Hover e focus neutri, senza evidenziazione rossa o rosa.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.5</version>
+<fix>Accordion indipendenti anche su smartphone.</fix>
+<fix>Dark mode corretto per Gestione invii, Email e Validazione e conferma.</fix>
+<fix>Blocco di chiusura del modulo adattato al dark mode.</fix>
+<change>Aggiunto padding alla nota degli editor CSS e JavaScript personalizzati.</change>
 <language>it-IT</language>
 </changelog></changelogs>

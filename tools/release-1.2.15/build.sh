@@ -18,16 +18,14 @@ FORM_VIEW="$COMP/administrator/components/com_decaroforms/tmpl/forms/default.php
 
 python3 - <<'PY'
 from pathlib import Path
-import re
 p=Path('/tmp/forms1215/component/administrator/components/com_decaroforms/tmpl/forms/default.php')
 s=p.read_text()
 
-# Add the existing builder close-reason mapping once before the forms loop.
-loop_pat=r'(<div class="df-list" id="df-list">\s*)(<\?php foreach\s*\(\$this->forms\s+as\s+\$form\)\s*:)'
-m=re.search(loop_pat,s,re.S)
-if not m:
-    raise SystemExit('Forms loop anchor not found')
-reason_php=r'''<?php
+# Add the existing builder close-reason mapping before the cards list.
+anchor='  <div class="df-list" id="df-list">\n'
+if anchor not in s:
+    raise SystemExit('Forms list anchor not found')
+reason_php='''<?php
 $closedReasonLabels = [
     'closed' => Text::_('COM_DECAROFORMS_CLOSED_REGISTRATIONS'),
     'limit' => Text::_('COM_DECAROFORMS_LIMIT_REACHED'),
@@ -44,33 +42,29 @@ $closedReasonClasses = [
 ];
 ?>
 '''
-s=s[:m.start(2)] + reason_php + s[m.start(2):]
+s=s.replace(anchor,reason_php+anchor,1)
 
-# Add per-card reason state after the enabled assignment.
-enabled_pat=r'(\$enabled\s*=\s*[^;]+;)'
-m=re.search(enabled_pat,s)
-if not m:
+# Add per-card reason state after the real enabled assignment.
+enabled_line="      $enabled=(int)$form['enabled']===1;\n"
+if enabled_line not in s:
     raise SystemExit('Enabled assignment not found')
-reason_state=r'''
-$closedReason = (string) ($form['closed_reason'] ?? 'closed');
-if (!isset($closedReasonLabels[$closedReason])) {
-    $closedReason = 'closed';
-}
-$closedReasonLabel = $closedReasonLabels[$closedReason];
-$closedReasonClass = $closedReasonClasses[$closedReason];
-$closedReasonTitle = $closedReason === 'custom' ? trim((string) ($form['closed_message'] ?? '')) : '';
+reason_state='''      $closedReason=(string)($form['closed_reason']??'closed');
+      if(!isset($closedReasonLabels[$closedReason])){$closedReason='closed';}
+      $closedReasonLabel=$closedReasonLabels[$closedReason];
+      $closedReasonClass=$closedReasonClasses[$closedReason];
+      $closedReasonTitle=$closedReason==='custom'?trim((string)($form['closed_message']??'')):'';
 '''
-s=s[:m.end()] + reason_state + s[m.end():]
+s=s.replace(enabled_line,enabled_line+reason_state,1)
 
 # Replace the old single status badge with a status + reason badge group.
-old=r'''<div class="df-card-main"><div><h3><?php echo htmlspecialchars($form['title'],ENT_QUOTES,'UTF-8'); ?></h3><p><?php echo htmlspecialchars((string)$form['description'],ENT_QUOTES,'UTF-8'); ?></p></div><span class="df-badge <?php echo $enabled?'df-on':'df-off'; ?>"><?php echo $enabled?Text::_('COM_DECAROFORMS_ENABLED'):Text::_('COM_DECAROFORMS_DISABLED'); ?></span></div>'''
-new=r'''<div class="df-card-main"><div><h3><?php echo htmlspecialchars($form['title'],ENT_QUOTES,'UTF-8'); ?></h3><p><?php echo htmlspecialchars((string)$form['description'],ENT_QUOTES,'UTF-8'); ?></p></div><div class="df-card-badges"><span class="df-badge <?php echo $enabled?'df-on':'df-off'; ?>"><?php echo $enabled?Text::_('COM_DECAROFORMS_ENABLED'):Text::_('COM_DECAROFORMS_DISABLED'); ?></span><?php if(!$enabled): ?><span class="df-badge df-reason <?php echo htmlspecialchars($closedReasonClass,ENT_QUOTES,'UTF-8'); ?>"<?php echo $closedReasonTitle!==''?' title="'.htmlspecialchars($closedReasonTitle,ENT_QUOTES,'UTF-8').'"':''; ?>><?php echo htmlspecialchars($closedReasonLabel,ENT_QUOTES,'UTF-8'); ?></span><?php endif; ?></div></div>'''
+old='''<div class="df-card-main"><div><h3><?php echo htmlspecialchars($form['title'],ENT_QUOTES,'UTF-8'); ?></h3><p><?php echo htmlspecialchars((string)$form['description'],ENT_QUOTES,'UTF-8'); ?></p></div><span class="df-badge <?php echo $enabled?'df-on':'df-off'; ?>"><?php echo $enabled?Text::_('COM_DECAROFORMS_ENABLED'):Text::_('COM_DECAROFORMS_DISABLED'); ?></span></div>'''
+new='''<div class="df-card-main"><div><h3><?php echo htmlspecialchars($form['title'],ENT_QUOTES,'UTF-8'); ?></h3><p><?php echo htmlspecialchars((string)$form['description'],ENT_QUOTES,'UTF-8'); ?></p></div><div class="df-card-badges"><span class="df-badge <?php echo $enabled?'df-on':'df-off'; ?>"><?php echo $enabled?Text::_('COM_DECAROFORMS_ENABLED'):Text::_('COM_DECAROFORMS_DISABLED'); ?></span><?php if(!$enabled): ?><span class="df-badge df-reason <?php echo htmlspecialchars($closedReasonClass,ENT_QUOTES,'UTF-8'); ?>"<?php echo $closedReasonTitle!==''?' title="'.htmlspecialchars($closedReasonTitle,ENT_QUOTES,'UTF-8').'"':''; ?>><?php echo htmlspecialchars($closedReasonLabel,ENT_QUOTES,'UTF-8'); ?></span><?php endif; ?></div></div>'''
 if old not in s:
     raise SystemExit('Card status badge block not found')
 s=s.replace(old,new,1)
 
 # Append visual rules: reason colors, subtle open animation, dark small-label contrast.
-css=r'''
+css='''
 /* Forms 1.2.15: disabled reason badge + lightweight motion */
 .df-card-badges{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:flex-end;gap:6px;max-width:100%}
 .df-badge.df-reason{border:1px solid transparent}
@@ -96,7 +90,6 @@ if '</style>' not in s:
     raise SystemExit('Style end not found')
 s=s.replace('</style>',css+'\n</style>',1)
 
-# Validation inside source.
 for needle in ['df-card-badges','df-reason-closed','COM_DECAROFORMS_CLOSED_REGISTRATIONS','df-menu-in','prefers-reduced-motion']:
     if needle not in s:
         raise SystemExit(f'Missing expected marker: {needle}')

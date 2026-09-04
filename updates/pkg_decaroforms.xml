@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <updates><update>
 <name>Forms</name><description>Reusable Joomla form builder, submissions manager, data importer and export tools.</description>
-<element>pkg_decaroforms</element><type>package</type><client>site</client><version>1.3.2</version>
-<downloads><downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.3.2/pkg_decaroforms_1.3.2.zip</downloadurl></downloads>
+<element>pkg_decaroforms</element><type>package</type><client>site</client><version>1.3.3</version>
+<downloads><downloadurl type="full" format="zip">https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.3.3/pkg_decaroforms_1.3.3.zip</downloadurl></downloads>
 <changelogurl>https://raw.githubusercontent.com/xdecaro/forms/main/updates/changelog.xml</changelogurl><tags><tag>stable</tag></tags>
 <maintainer>Luca De Caro</maintainer><maintainerurl>https://github.com/xdecaro/forms</maintainerurl>
-<targetplatform name="joomla" version="6\.[0-9]+" /><php_minimum>8.3.0</php_minimum><sha256>7ce83856b64e08fce3d98d0092f95d0a07997a76802ea0105d30e2aef05892b4</sha256>
+<targetplatform name="joomla" version="6\.[0-9]+" /><php_minimum>8.3.0</php_minimum><sha256>9e96a21cb220f3815e23e95e9b5a074f44d02295260289243066fde90fcf5dcd</sha256>
 </update></updates>

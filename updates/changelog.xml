@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.17</version>
-<feature>Aggiunto Salva struttura per trasformare la struttura corrente del modulo in un modello rapido riutilizzabile.</feature>
-<fix>Corretti colori e contrasto dei pulsanti categoria della Libreria campi.</fix>
-<fix>Corretti i colori del testo nelle Colonne dell’elenco in light mode.</fix>
-<change>I pulsanti elimina degli Stati degli invii ora usano un chiaro fondo rosso distruttivo.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.18</version>
+<fix>Corretto il salvataggio Builder con gestione distinta di token scaduto e autorizzazioni.</fix>
+<feature>Aggiunto recupero automatico della bozza locale dopo errori o sessione scaduta.</feature>
+<change>Il salvataggio Builder usa risposta AJAX e cancella la bozza solo dopo conferma positiva.</change>
+<change>Il pannello del campo renderizza solo il campo attivo e le anteprime email vengono caricate in modo lazy.</change>
+<feature>Aggiunto formato Testo/HTML per il messaggio di conferma e vera modal frontend.</feature>
+<change>Le impostazioni di chiusura sono visibili solo quando il modulo è disattivato.</change>
 <language>it-IT</language>
 </changelog></changelogs>

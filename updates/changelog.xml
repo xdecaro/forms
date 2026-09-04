@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.16</version>
-<fix>Corretti contrasto e colori della barra Annulla, Ripristina, Bloccato e Modifica in dark mode.</fix>
-<fix>Corretti i colori delle etichette Quando disattivato e Messaggio di chiusura in light mode.</fix>
-<change>Ripristinato Salva modulo nella barra superiore e uniformato Elenco moduli allo stile neutro di navigazione.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.17</version>
+<feature>Aggiunto Salva struttura per trasformare la struttura corrente del modulo in un modello rapido riutilizzabile.</feature>
+<fix>Corretti colori e contrasto dei pulsanti categoria della Libreria campi.</fix>
+<fix>Corretti i colori del testo nelle Colonne dell’elenco in light mode.</fix>
+<change>I pulsanti elimina degli Stati degli invii ora usano un chiaro fondo rosso distruttivo.</change>
 <language>it-IT</language>
 </changelog></changelogs>

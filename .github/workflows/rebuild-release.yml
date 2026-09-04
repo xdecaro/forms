@@ -22,15 +22,6 @@ jobs:
             bash tools/inspect-update-link.sh
             exit 0
           fi
-          if [ "$MODE" = "inspect-1.2.19-card-header" ]; then
-            bash tools/inspect-1.2.19-card-header.sh
-            rm -rf releases/_upload
-            exit 0
-          fi
-          if [ "$MODE" = "build-1.2.20" ]; then
-            bash tools/release-1.2.20/build.sh
-            exit 0
-          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

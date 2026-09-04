@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <fieldset name="general" label="COM_DECAROFORMS_CONFIG_GENERAL">
+        <field name="accent_color" type="text" default="#e60046" label="COM_DECAROFORMS_CONFIG_ACCENT" description="COM_DECAROFORMS_CONFIG_ACCENT_DESC" />
+        <field name="brand_name" type="text" default="" label="COM_DECAROFORMS_CONFIG_BRAND" description="COM_DECAROFORMS_CONFIG_BRAND_DESC" />
+        <field name="default_admin_email" type="email" default="" label="COM_DECAROFORMS_CONFIG_EMAIL" description="COM_DECAROFORMS_CONFIG_EMAIL_DESC" />
+    </fieldset>
+</config>

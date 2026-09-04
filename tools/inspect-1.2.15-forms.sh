@@ -11,9 +11,9 @@ COM_ZIP="$(find "$OUTER" -maxdepth 1 -type f -name 'com_decaroforms_*.zip' | hea
 unzip -q "$COM_ZIP" -d "$COMP"
 ROOTC="$COMP/administrator/components/com_decaroforms"
 {
-  echo '=== forms/default.php lines 1-260 ==='
-  nl -ba "$ROOTC/tmpl/forms/default.php" | sed -n '1,260p'
+  echo '=== forms/default.php lines 90-230 ==='
+  nl -ba "$ROOTC/tmpl/forms/default.php" | sed -n '90,230p'
   echo
-  echo '=== language status labels ==='
-  grep -RniE 'COM_DECAROFORMS_(ENABLED|DISABLED|CLOSED_REGISTRATIONS|LIMIT_REACHED|DEADLINE_EXPIRED|TEMPORARILY_CLOSED|CUSTOM_MESSAGE|COP)' "$ROOTC/language" || true
+  echo '=== Italian language relevant labels ==='
+  grep -nE 'COM_DECAROFORMS_(ENABLED|DISABLED|CLOSED_REGISTRATIONS|LIMIT_REACHED|DEADLINE_EXPIRED|TEMPORARILY_CLOSED|CUSTOM_MESSAGE|COPY|COPIED)' "$ROOTC/language/it-IT/com_decaroforms.ini" || true
 } > "$OUT"

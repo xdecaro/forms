@@ -3,9 +3,9 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
-    <version>1.2.19</version>
+    <version>1.2.20</version>
     <security></security>
-    <fix>Elenco moduli: badge motivi di chiusura più grandi e uniformi su tutti i dispositivi.</fix>
+    <fix>Smartphone: badge su riga propria e titolo card a larghezza piena.</fix>
     <language>it-IT</language>
   </changelog>
 </changelogs>

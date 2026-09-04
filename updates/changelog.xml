@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.13</version>
-<change>Campi selezionati e layout riuniti in un unico Form Builder visuale compatto.</change>
-<change>Trascinamento, larghezza, modifica, duplicazione ed eliminazione disponibili direttamente sui campi.</change>
-<change>Pannello proprietà dedicato al solo campo selezionato e interfaccia responsive.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.14</version>
+<change>Larghezze dei campi bilanciate automaticamente al 100% per ogni riga.</change>
+<change>Modalità Bloccato/Modifica e storico Annulla/Ripristina fino a 50 modifiche.</change>
+<change>Proprietà campo, condizioni, stati e anteprime email resi più chiari.</change>
+<change>Aggiunti Provincia e controllo dedicato del Codice fiscale.</change>
 <language>it-IT</language>
 </changelog></changelogs>

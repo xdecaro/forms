@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.16</version>
+    <change><item>Simplified form status badges: In progress for enabled forms and only the configured closed reason for disabled forms.</item><item>Added one-click shortcode copy with visual confirmation.</item><item>Added smooth live-search card transitions and a slower five-row mobile filter accordion.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.15</version>
     <change><item>Added a second semantic badge showing the configured disabled reason.</item><item>Added lightweight Menu and filter accordion open animations with reduced-motion support.</item><item>Improved dark-mode contrast for SHORTCODE and INVII labels.</item></change>
   </changelog>

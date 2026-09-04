@@ -28,7 +28,7 @@ method=r'''    private function countryOptions(): string
     }
 
     private function italianRegionOptions'''
-t,n=pat.subn(method,t,count=1)
+t,n=pat.subn(lambda _m: method,t,count=1)
 if n!=1: raise RuntimeError('countryOptions method not found')
 p.write_text(t)
 print('Forms plugin final fixes applied')

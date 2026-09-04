@@ -111,7 +111,7 @@ cat > "$ROOT/updates/changelog.xml" <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
 <element>pkg_decaroforms</element><type>package</type><version>1.3.2</version>
-<addition>Layout visuale drag & drop, campi selezionati ad accordion e libreria categorie compatte.</addition>
+<addition>Layout visuale drag &amp; drop, campi selezionati ad accordion e libreria categorie compatte.</addition>
 <addition>Campi pagamento separati, incluso IBAN e riferimento pagamento.</addition>
 <change>Validazione semplificata con spiegazioni informative cliccabili.</change>
 <change>Email: sette template predefiniti più Personalizzato, HTML libero e AI.</change>

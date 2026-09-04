@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.10</version>
-<fix>Anteprima facsimile dei template email resa chiaramente cliccabile e più robusta.</fix>
-<change>La selezione radio del template resta separata dall'apertura dell'anteprima.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.11</version>
+<fix>Correzione robusta dell'apertura modal facsimile per i template email.</fix>
+<change>Aggiunto pulsante Anteprima sempre visibile e gestione eventi delegata.</change>
 <language>it-IT</language>
 </changelog></changelogs>

@@ -8,22 +8,9 @@ mkdir -p "$TMP/o" "$TMP/c"
 unzip -q "$BASE" -d "$TMP/o"
 unzip -q "$TMP/o/com_decaroforms_1.3.18.zip" -d "$TMP/c"
 B="$TMP/c/administrator/components/com_decaroforms/tmpl/builder/default.php"
-
-echo '=== DRAG / LAYOUT MATCHES ==='
-grep -n -E 'dragstart|dragover|dragleave|drop|dataTransfer|df-layout|renderLayout|layout-canvas|layout-row|layout-item|rowIndex|field_width|width' "$B" | head -n 420 || true
-
-echo '=== EDIT / PROPERTY RENDER MATCHES ==='
-grep -n -E 'Modifica campo|renderPropert|renderSelected|activeField|data-edit|editField|scrollIntoView|setTimeout|renderEmail|iframe' "$B" | head -n 320 || true
-
-echo '=== DELETE / CONFIRM MATCHES ==='
-grep -n -E 'confirm\(|delete|remove|trash|saved-quick|quick-template|status-remove|field-remove|additional.*remove' "$B" | head -n 360 || true
-
-echo '=== CSS RELEVANT ==='
-grep -n -E 'df-save-structure|df-btn-primary|df-btn-secondary|df-btn-danger|df-field-badge|df-chip|df-prop|df-inner|df-subaccordion|df-layout-item|df-layout-row|df-layout-drop' "$B" | head -n 420 || true
-
-echo '=== SNIPPET 1080-1450 ==='
-sed -n '1080,1450p' "$B"
-echo '=== SNIPPET 1450-1870 ==='
-sed -n '1450,1870p' "$B"
-echo '=== SNIPPET 1870-2280 ==='
-sed -n '1870,2280p' "$B"
+echo '=== 680-780 CSS ==='
+sed -n '680,780p' "$B"
+echo '=== 930-1080 SAVED ==='
+sed -n '930,1080p' "$B"
+echo '=== 1145-1180 EMAIL ==='
+sed -n '1145,1180p' "$B"

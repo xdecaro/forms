@@ -27,6 +27,14 @@ new = "// Quick templates.\nconst libByKey=()=>Object.fromEntries(library.map(x=
 if old not in t:
     raise RuntimeError('quick template handler pattern not found')
 t = t.replace(old, new, 1)
+
+# A newly added status starts empty: avoid showing a confusing duplicate "Nuovo stato" next to the built-in "Nuovo" status.
+old_status = "document.getElementById('df-add-status').onclick=()=>{statuses.push({key:'status_'+(statuses.length+1),label:'Nuovo stato',color:statusPalette[statuses.length%statusPalette.length]});renderStatuses();};"
+new_status = "document.getElementById('df-add-status').onclick=()=>{statuses.push({key:'',label:'',color:statusPalette[statuses.length%statusPalette.length]});renderStatuses();};"
+if old_status not in t:
+    raise RuntimeError('add status pattern not found')
+t = t.replace(old_status, new_status, 1)
+
 builder.write_text(t)
 
 # Bump component, plugin and helper version references.

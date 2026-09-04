@@ -22,8 +22,8 @@ jobs:
             bash tools/inspect-update-link.sh
             exit 0
           fi
-          if [ "$MODE" = "inspect-builder-1.3.4" ]; then
-            bash tools/inspect-builder-1.3.4.sh
+          if [ "$MODE" = "release-1.3.5" ]; then
+            bash tools/release-1.3.5/build.sh
             rm -rf releases/_upload
             exit 0
           fi

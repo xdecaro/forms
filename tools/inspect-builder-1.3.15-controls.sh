@@ -10,7 +10,9 @@ unzip -q "$TMP/o/com_decaroforms_1.3.15.zip" -d "$TMP/c"
 B="$TMP/c/administrator/components/com_decaroforms/tmpl/builder/default.php"
 echo '=== TOP / TOOLBAR ==='
 grep -n -E 'Elenco moduli|Annulla|Ripristina|Bloccato|Modifica|Salva modulo|df-history|df-lock|df-mode|df-toolbar|df-actions|df-builder-head|df-top' "$B" | head -n 260 || true
+echo '=== FORM / SAVE ==='
+grep -n -E '<form|</form>|task|builder\.save|save|Salva|submit|formToken' "$B" | head -n 260 || true
+echo '=== SOURCE 600-735 ==='
+sed -n '600,735p' "$B"
 echo '=== CLOSED REASON ==='
 grep -n -E 'Quando disattivato|Messaggio di chiusura|closed_reason|closure|df-close|df-warning|df-disabled' "$B" | head -n 220 || true
-echo '=== STYLE RELATED ==='
-grep -n -E 'df-section-toggle|df-toolbar|df-history|df-mode|df-warning|btn-secondary|Elenco moduli' "$B" | head -n 320 || true

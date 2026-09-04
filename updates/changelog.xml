@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs>
   <changelog>
+    <element>pkg_decaroforms</element><type>package</type><version>1.2.15</version>
+    <change><item>Added a second semantic badge showing the configured disabled reason.</item><item>Added lightweight Menu and filter accordion open animations with reduced-motion support.</item><item>Improved dark-mode contrast for SHORTCODE and INVII labels.</item></change>
+  </changelog>
+  <changelog>
     <element>pkg_decaroforms</element><type>package</type><version>1.2.14</version>
     <change><item>Removed card-title background in all themes.</item><item>Consolidated duplicate enabled/disabled badge CSS into canonical semantic rules.</item><item>Prevented generic Joomla dark badge rules from overriding form status colors.</item></change>
   </changelog>

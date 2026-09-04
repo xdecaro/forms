@@ -26,6 +26,10 @@ jobs:
             bash tools/inspect-1.2.15-forms.sh
             exit 0
           fi
+          if [ "$MODE" = "build-1.2.16" ]; then
+            bash tools/release-1.2.16/build.sh
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

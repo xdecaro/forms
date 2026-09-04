@@ -1,0 +1,82 @@
+    public static function fieldLibrary(): array
+    {
+        return [
+            ['key'=>'first_name','type'=>'text','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_FIRST_NAME'),'placeholder'=>'','required'=>true],
+            ['key'=>'last_name','type'=>'text','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_LAST_NAME'),'placeholder'=>'','required'=>true],
+            ['key'=>'full_name','type'=>'text','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_FULL_NAME'),'placeholder'=>'','required'=>false],
+            ['key'=>'birth_date','type'=>'date','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_BIRTH_DATE'),'placeholder'=>'','required'=>false],
+            ['key'=>'gender','type'=>'select','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_GENDER'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_OPT_FEMALE'),Text::_('COM_DECAROFORMS_OPT_MALE'),Text::_('COM_DECAROFORMS_OPT_OTHER'),Text::_('COM_DECAROFORMS_OPT_NOT_SAY')]],
+            ['key'=>'nationality','type'=>'nationality','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_NATIONALITY'),'placeholder'=>'','required'=>false],
+            ['key'=>'tax_code','type'=>'text','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_TAX_CODE'),'placeholder'=>'','required'=>false],
+            ['key'=>'member_number','type'=>'member_number','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_MEMBER_NUMBER'),'placeholder'=>'','required'=>false,'config'=>['min_length'=>1,'max_length'=>20]],
+            ['key'=>'role','type'=>'select','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_ROLE'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_ROLE_PRESIDENT'),Text::_('COM_DECAROFORMS_ROLE_VICEPRESIDENT'),Text::_('COM_DECAROFORMS_ROLE_SECRETARY'),Text::_('COM_DECAROFORMS_ROLE_TREASURER'),Text::_('COM_DECAROFORMS_ROLE_COUNCILLOR'),Text::_('COM_DECAROFORMS_ROLE_MANAGER'),Text::_('COM_DECAROFORMS_OPT_OTHER')]],
+            ['key'=>'organisation','type'=>'text','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_ORGANISATION'),'placeholder'=>'','required'=>false],
+            ['key'=>'club','type'=>'text','category'=>'personal','label'=>Text::_('COM_DECAROFORMS_FIELD_CLUB'),'placeholder'=>'','required'=>false],
+
+            ['key'=>'email','type'=>'email','category'=>'contact','label'=>Text::_('COM_DECAROFORMS_FIELD_EMAIL'),'placeholder'=>'name@example.com','required'=>true],
+            ['key'=>'phone','type'=>'tel','category'=>'contact','label'=>Text::_('COM_DECAROFORMS_FIELD_PHONE'),'placeholder'=>'','required'=>false],
+            ['key'=>'mobile','type'=>'tel','category'=>'contact','label'=>Text::_('COM_DECAROFORMS_FIELD_MOBILE'),'placeholder'=>'','required'=>false],
+            ['key'=>'pec','type'=>'email','category'=>'contact','label'=>Text::_('COM_DECAROFORMS_FIELD_PEC'),'placeholder'=>'','required'=>false],
+            ['key'=>'website','type'=>'url','category'=>'contact','label'=>Text::_('COM_DECAROFORMS_FIELD_WEBSITE'),'placeholder'=>'https://','required'=>false],
+
+            ['key'=>'address','type'=>'text','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_ADDRESS'),'placeholder'=>'','required'=>false],
+            ['key'=>'street_number','type'=>'text','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_STREET_NUMBER'),'placeholder'=>'','required'=>false],
+            ['key'=>'box','type'=>'text','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_BOX'),'placeholder'=>'','required'=>false],
+            ['key'=>'postcode','type'=>'postcode','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_POSTCODE'),'placeholder'=>'00100','required'=>false],
+            ['key'=>'city','type'=>'city','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_CITY'),'placeholder'=>'','required'=>false,'options'=>[]],
+            ['key'=>'region','type'=>'region','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_REGION'),'placeholder'=>'','required'=>false,'default'=>'Lazio'],
+            ['key'=>'country','type'=>'country','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_COUNTRY'),'placeholder'=>'','required'=>false,'default'=>'Italia'],
+            ['key'=>'map_location','type'=>'map','category'=>'address','label'=>Text::_('COM_DECAROFORMS_FIELD_MAP'),'placeholder'=>Text::_('COM_DECAROFORMS_ADDRESS_SEARCH_PLACEHOLDER'),'required'=>false,'config'=>['lat'=>41.9028,'lng'=>12.4964,'zoom'=>12,'use_location'=>true]],
+
+            ['key'=>'custom_select','type'=>'select','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_SELECT'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_OPT_1'),Text::_('COM_DECAROFORMS_OPT_2')]],
+            ['key'=>'custom_radio','type'=>'radio','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_RADIO'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_OPT_1'),Text::_('COM_DECAROFORMS_OPT_2')]],
+            ['key'=>'custom_checkboxes','type'=>'checkboxes','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_CHECKBOXES'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_OPT_1'),Text::_('COM_DECAROFORMS_OPT_2')]],
+            ['key'=>'custom_multiselect','type'=>'multiselect','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_MULTISELECT'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_OPT_1'),Text::_('COM_DECAROFORMS_OPT_2')]],
+            ['key'=>'custom_checkbox','type'=>'checkbox','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_CHECKBOX'),'placeholder'=>'','required'=>false],
+            ['key'=>'custom_toggle','type'=>'toggle','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_TOGGLE'),'placeholder'=>'','required'=>false],
+            ['key'=>'level','type'=>'select','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_LEVEL'),'placeholder'=>'','required'=>false,'options'=>[Text::_('COM_DECAROFORMS_OPT_BEGINNER'),Text::_('COM_DECAROFORMS_OPT_INTERMEDIATE'),Text::_('COM_DECAROFORMS_OPT_ADVANCED'),Text::_('COM_DECAROFORMS_OPT_OTHER')]],
+            ['key'=>'sport','type'=>'select','category'=>'choices','label'=>Text::_('COM_DECAROFORMS_FIELD_SPORT'),'placeholder'=>'','required'=>false,'options'=>[]],
+
+            ['key'=>'custom_number','type'=>'number','category'=>'values','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_NUMBER'),'placeholder'=>'','required'=>false],
+            ['key'=>'participants','type'=>'number','category'=>'values','label'=>Text::_('COM_DECAROFORMS_FIELD_PARTICIPANTS'),'placeholder'=>'','required'=>false],
+            ['key'=>'range_slider','type'=>'range','category'=>'values','label'=>Text::_('COM_DECAROFORMS_FIELD_RANGE'),'placeholder'=>'','required'=>false,'config'=>['min'=>0,'max'=>100,'step'=>1,'unit'=>'','dual'=>false]],
+            ['key'=>'calculation','type'=>'calculated','category'=>'values','label'=>Text::_('COM_DECAROFORMS_FIELD_CALCULATION'),'placeholder'=>'','required'=>false,'config'=>['formula'=>'','decimals'=>2,'prefix'=>'','suffix'=>'','visible'=>true]],
+
+            ['key'=>'custom_date','type'=>'date','category'=>'datetime','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_DATE'),'placeholder'=>'','required'=>false],
+            ['key'=>'custom_time','type'=>'time','category'=>'datetime','label'=>Text::_('COM_DECAROFORMS_FIELD_TIME'),'placeholder'=>'','required'=>false],
+            ['key'=>'custom_datetime','type'=>'datetime','category'=>'datetime','label'=>Text::_('COM_DECAROFORMS_FIELD_DATETIME'),'placeholder'=>'','required'=>false],
+            ['key'=>'event_date','type'=>'date','category'=>'datetime','label'=>Text::_('COM_DECAROFORMS_FIELD_EVENT_DATE'),'placeholder'=>'','required'=>false],
+            ['key'=>'arrival_date','type'=>'date','category'=>'datetime','label'=>Text::_('COM_DECAROFORMS_FIELD_ARRIVAL_DATE'),'placeholder'=>'','required'=>false],
+            ['key'=>'departure_date','type'=>'date','category'=>'datetime','label'=>Text::_('COM_DECAROFORMS_FIELD_DEPARTURE_DATE'),'placeholder'=>'','required'=>false],
+
+            ['key'=>'attachment','type'=>'upload','category'=>'document','label'=>Text::_('COM_DECAROFORMS_FIELD_ATTACHMENT'),'placeholder'=>'','required'=>false,'config'=>['accept'=>'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx','max_mb'=>5,'max_files'=>1,'multiple'=>false]],
+            ['key'=>'identity_document','type'=>'upload','category'=>'document','label'=>Text::_('COM_DECAROFORMS_FIELD_IDENTITY_DOCUMENT'),'placeholder'=>'','required'=>false,'config'=>['accept'=>'.pdf,.jpg,.jpeg,.png','max_mb'=>5,'max_files'=>2,'multiple'=>true]],
+            ['key'=>'photo','type'=>'upload','category'=>'document','label'=>Text::_('COM_DECAROFORMS_FIELD_PHOTO'),'placeholder'=>'','required'=>false,'config'=>['accept'=>'.jpg,.jpeg,.png,.webp','max_mb'=>5,'max_files'=>1,'multiple'=>false]],
+            ['key'=>'certificate','type'=>'upload','category'=>'document','label'=>Text::_('COM_DECAROFORMS_FIELD_CERTIFICATE'),'placeholder'=>'','required'=>false,'config'=>['accept'=>'.pdf,.jpg,.jpeg,.png','max_mb'=>5,'max_files'=>2,'multiple'=>true]],
+            ['key'=>'payment_proof','type'=>'upload','category'=>'document','label'=>Text::_('COM_DECAROFORMS_FIELD_PAYMENT_PROOF'),'placeholder'=>'','required'=>false,'config'=>['accept'=>'.pdf,.jpg,.jpeg,.png','max_mb'=>5,'max_files'=>2,'multiple'=>true]],
+            ['key'=>'custom_upload','type'=>'upload','category'=>'document','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_UPLOAD'),'placeholder'=>'','required'=>false,'config'=>['accept'=>'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx','max_mb'=>5,'max_files'=>1,'multiple'=>false,'button_label'=>'']],
+
+            ['key'=>'payment','type'=>'payment','category'=>'payment','label'=>Text::_('COM_DECAROFORMS_PAYMENT'),'placeholder'=>'','required'=>false,'config'=>['method'=>'bank','iban'=>'','holder'=>'','amount'=>'','cause'=>'{last_name} {first_name} - {riferimento}']],
+
+            ['key'=>'section_heading','type'=>'heading','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_HEADING'),'placeholder'=>'','required'=>false,'config'=>['content'=>'']],
+            ['key'=>'info_text','type'=>'info','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_INFO'),'placeholder'=>'','required'=>false,'config'=>['content'=>'']],
+            ['key'=>'separator','type'=>'separator','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_SEPARATOR'),'placeholder'=>'','required'=>false,'config'=>['color'=>'#dfe3e7','border_width'=>1,'border_style'=>'solid','line_width'=>100,'margin'=>20]],
+            ['key'=>'pagebreak','type'=>'pagebreak','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_PAGEBREAK'),'placeholder'=>'','required'=>false,'config'=>['color'=>'#dfe3e7','border_width'=>1,'border_style'=>'solid','line_width'=>100,'margin'=>20,'show_line'=>true]],
+            ['key'=>'page','type'=>'page','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_MULTIPAGE'),'placeholder'=>'','required'=>false,'config'=>['page_title'=>Text::_('COM_DECAROFORMS_PAGE_TITLE_DEFAULT'),'page_description'=>'','show_progress'=>true]],
+            ['key'=>'fieldset','type'=>'fieldset','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_FIELDSET'),'placeholder'=>'','required'=>false,'config'=>['content'=>'']],
+            ['key'=>'hidden_field','type'=>'hidden','category'=>'structure','label'=>Text::_('COM_DECAROFORMS_FIELD_HIDDEN'),'placeholder'=>'','required'=>false],
+
+            ['key'=>'privacy_consent','type'=>'consent','category'=>'consent','label'=>Text::_('COM_DECAROFORMS_FIELD_PRIVACY'),'placeholder'=>'','required'=>true],
+            ['key'=>'terms_consent','type'=>'consent','category'=>'consent','label'=>Text::_('COM_DECAROFORMS_FIELD_TERMS'),'placeholder'=>'','required'=>true],
+            ['key'=>'newsletter_consent','type'=>'consent','category'=>'consent','label'=>Text::_('COM_DECAROFORMS_FIELD_NEWSLETTER'),'placeholder'=>'','required'=>false],
+
+            ['key'=>'custom_text','type'=>'text','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_TEXT'),'placeholder'=>'','required'=>false],
+            ['key'=>'custom_textarea','type'=>'textarea','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_CUSTOM_TEXTAREA'),'placeholder'=>'','required'=>false],
+            ['key'=>'subject','type'=>'text','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_SUBJECT'),'placeholder'=>'','required'=>false],
+            ['key'=>'message','type'=>'textarea','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_MESSAGE'),'placeholder'=>'','required'=>false],
+            ['key'=>'notes','type'=>'textarea','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_NOTES'),'placeholder'=>'','required'=>false],
+            ['key'=>'motivation','type'=>'textarea','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_MOTIVATION'),'placeholder'=>'','required'=>false],
+            ['key'=>'team_name','type'=>'text','category'=>'custom','label'=>Text::_('COM_DECAROFORMS_FIELD_TEAM_NAME'),'placeholder'=>'','required'=>false],
+        ];
+    }
+}

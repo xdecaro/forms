@@ -3,9 +3,9 @@
   <changelog>
     <element>pkg_decaroforms</element>
     <type>package</type>
-    <version>1.2.21</version>
+    <version>1.2.22</version>
     <security></security>
-    <fix>Smartphone: titolo e descrizione prima del badge, con badge allineato a destra sotto la descrizione.</fix>
+    <fix>Smartphone: badge di stato/motivo allineato a sinistra sotto la descrizione.</fix>
     <language>it-IT</language>
   </changelog>
 </changelogs>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.11</version>
-<fix>Correzione robusta dell'apertura modal facsimile per i template email.</fix>
-<change>Aggiunto pulsante Anteprima sempre visibile e gestione eventi delegata.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.12</version>
+<fix>Anteprima facsimile email ricostruita come overlay dinamico indipendente dal DOM del Builder.</fix>
+<change>Click diretto su miniatura e pulsante Anteprima.</change>
 <language>it-IT</language>
 </changelog></changelogs>

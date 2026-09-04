@@ -1,94 +1,4 @@
-=== exact closed_reason / closed_message matches ===
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/tmpl/builder/default.php:42:      <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_WHEN_DISABLED'); ?></label><select name="closed_reason"><option value="closed" <?php echo $val('closed_reason','closed')==='closed'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CLOSED_REGISTRATIONS'); ?></option><option value="limit" <?php echo $val('closed_reason')==='limit'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_LIMIT_REACHED'); ?></option><option value="deadline" <?php echo $val('closed_reason')==='deadline'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_DEADLINE_EXPIRED'); ?></option><option value="temporary" <?php echo $val('closed_reason')==='temporary'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_TEMPORARILY_CLOSED'); ?></option><option value="custom" <?php echo $val('closed_reason')==='custom'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CUSTOM_MESSAGE'); ?></option></select></div>
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/tmpl/builder/default.php:43:      <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_CLOSED_MESSAGE'); ?></label><input name="closed_message" value="<?php echo $val('closed_message'); ?>" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_OPTIONAL_CUSTOM_TEXT'),ENT_QUOTES,'UTF-8'); ?>"></div>
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php:59:            'closed_reason' => trim($input->post->getCmd('closed_reason', 'closed')),
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php:60:            'closed_message' => trim($input->post->getString('closed_message', '')),
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Helper/MigrationHelper.php:73:            'success_message'=>(string)$params->get($def['success_param'],$def['success_default']),'closed_reason'=>(string)$params->get($key.'_closed_reason','closed'),'closed_message'=>(string)$params->get($key.'_closed_message',''),
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Helper/ImportHelper.php:317:        $form=(object)['title'=>$title,'slug'=>$slug,'description'=>'Imported data source. Review field settings before publishing this form.','enabled'=>0,'show_heading'=>1,'success_message'=>'','closed_reason'=>'closed','closed_message'=>'','admin_email'=>'','user_confirmation'=>0,'email_template_user'=>'standard','email_template_admin'=>'standard','email_subject_user'=>'','email_subject_admin'=>'','created_at'=>$now,'updated_at'=>$now];
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Message de fermeture"
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Messaggio di chiusura"
-/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Closed message"
-
-=== forms/default.php lines 1-150 ===
-     1	<?php
-     2	
-     3	defined('_JEXEC') or die;
-     4	
-     5	use DeCaro\Component\Forms\Administrator\Helper\FormHelper;
-     6	use Joomla\CMS\Router\Route;
-     7	use Joomla\CMS\Language\Text;
-     8	use Joomla\CMS\HTML\HTMLHelper;
-     9	?>
-    10	<style>
-    11	.df-wrap{--df:#e60046;--df-dark:#b40038;--df-panel:var(--bs-body-bg,#fff);--df-panel-alt:var(--bs-tertiary-bg,#f6f7f9);--df-field:var(--bs-body-bg,#fff);--df-border:var(--bs-border-color,#dfe3e7);--df-hover:var(--bs-tertiary-bg,#eef1f4);--df-border-strong:#b8c1cc;max-width:none;color:var(--bs-body-color,#1f2937);container-type:inline-size;container-name:formslist}
-    12	.df-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin:4px 0 18px}.df-head h2{margin:0;font-size:27px}.df-head p{margin:5px 0 0;color:var(--bs-secondary-color,#667085)}
-    13	.df-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.df-actions form,.df-card-actions form{margin:0}.df-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid var(--df-border);border-radius:6px;background:var(--df-field);color:inherit!important;text-decoration:none;font-weight:700;cursor:pointer;text-align:center;line-height:1.2;transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease}.df-btn:not(.df-btn-primary):hover{background:var(--df-hover);border-color:var(--df-border-strong)}.df-btn:focus-visible{outline:2px solid #1683d8;outline-offset:2px}.df-btn-primary{background:var(--df);border-color:var(--df);color:#fff!important}.df-btn-primary:hover{background:var(--df-dark);border-color:var(--df-dark)}
-    14	.df-actions-menu{position:fixed;z-index:1200;width:min(240px,calc(100vw - 24px));padding:8px;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);color:inherit;box-shadow:0 14px 36px rgba(0,0,0,.28)}.df-actions-menu[hidden]{display:none!important}.df-dialog-links{display:grid;grid-template-columns:1fr;gap:6px;padding:0}.df-dialog-links .df-btn{width:100%;min-height:44px;justify-content:flex-start;padding-left:14px;padding-right:14px}
-    15	.df-filter-toggle{display:none;width:100%;margin-bottom:10px;justify-content:space-between}.df-filter-toggle .df-chevron{transition:transform .16s ease}.df-filter-toggle[aria-expanded="true"] .df-chevron{transform:rotate(180deg)}
-    16	.df-tools{display:grid;grid-template-columns:minmax(260px,2fr) minmax(155px,1fr) minmax(185px,1fr) 120px auto;gap:10px;align-items:end;padding:15px 16px;margin-bottom:14px;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);min-width:0}.df-tool{display:flex;flex-direction:column;gap:6px;min-width:0}.df-tool label{font-weight:800}.df-tool input,.df-tool select{width:100%;min-width:0;min-height:42px;border:1px solid var(--df-border);border-radius:6px;background:var(--df-field);color:inherit;padding:0 12px}.df-tool input::placeholder{font-style:italic;color:var(--bs-secondary-color,#87909b)}
-    17	.df-list{display:flex;flex-direction:column;gap:12px;min-width:0}.df-card{width:100%;max-width:100%;min-width:0;border:1px solid var(--df-border);border-radius:8px;background:var(--df-panel);box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.df-card-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:17px 18px;background:transparent}.df-card-main>div{min-width:0;background:none!important}.df-card h3{margin:0 0 4px;font-size:19px;overflow-wrap:anywhere;background:none!important;padding:0!important;border:0!important;box-shadow:none!important}.df-card h3::before,.df-card h3::after{content:none!important;display:none!important}.df-card p{margin:0;color:var(--bs-secondary-color,#667085);overflow-wrap:anywhere}.df-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;align-self:start}
-    18	.df-card-meta{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:11px 18px;border-top:1px solid var(--df-border);background:var(--df-panel-alt);min-width:0}.df-code{min-width:0}.df-code small,.df-count small{display:block;color:var(--bs-secondary-color,#667085);font-size:11px;font-weight:800;text-transform:uppercase}.df-code code{font-weight:700;overflow-wrap:anywhere}.df-count{text-align:right}.df-count strong{display:block;font-size:21px}.df-card-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;min-width:0}.df-card-actions>*{min-width:0}
-    19	.df-empty{padding:38px 20px;text-align:center;border:1px dashed var(--df-border);border-radius:8px}.df-admin-footer{margin:28px 0 10px;padding-top:16px;border-top:1px solid var(--df-border);text-align:center;color:var(--bs-secondary-color,#667085);font-size:12px}
-    20	html[data-bs-theme="dark"] .df-wrap,html[data-color-scheme="dark"] .df-wrap{--df:#9f1239;--df-dark:#7f0d2e;--df-panel:#1a232d;--df-panel-alt:#202b37;--df-field:#121a23;--df-border:#3b4857;--df-hover:#263443;--df-border-strong:#56677a;color:#f3f6fa}
-    21	html[data-bs-theme="dark"] .df-wrap .df-head p,html[data-color-scheme="dark"] .df-wrap .df-head p,html[data-bs-theme="dark"] .df-wrap .df-card p,html[data-color-scheme="dark"] .df-wrap .df-card p{color:#b5c0cc}
-    22	
-    23	.df-wrap.df-dark-theme{--df:#9f1239;--df-dark:#7f0d2e;--df-panel:#1a232d;--df-panel-alt:#202b37;--df-field:#121a23;--df-border:#3b4857;--df-hover:#263443;--df-border-strong:#56677a;color:#f3f6fa}
-    24	.df-wrap.df-dark-theme .df-head p,.df-wrap.df-dark-theme .df-card p{color:#b5c0cc}.df-wrap.df-dark-theme code{color:#f07a9b}.df-wrap.df-dark-theme .df-btn-primary{background:#9f1239!important;border-color:#9f1239!important;color:#fff!important}.df-wrap.df-dark-theme .df-btn-primary:hover{background:#7f0d2e!important;border-color:#7f0d2e!important}.df-wrap.df-dark-theme .df-btn:not(.df-btn-primary):hover{background:#263443;border-color:#56677a}
-    25	html[data-bs-theme="dark"] .df-wrap code,html[data-color-scheme="dark"] .df-wrap code{color:#f07a9b}html[data-bs-theme="dark"] .df-wrap .df-btn-primary,html[data-color-scheme="dark"] .df-wrap .df-btn-primary{background:#9f1239;border-color:#9f1239}html[data-bs-theme="dark"] .df-wrap .df-btn-primary:hover,html[data-color-scheme="dark"] .df-wrap .df-btn-primary:hover{background:#7f0d2e;border-color:#7f0d2e}
-    26	@container formslist (max-width:920px){.df-tools{grid-template-columns:repeat(3,minmax(0,1fr))}.df-tools>.df-btn{width:100%}.df-card-meta{grid-template-columns:minmax(0,1fr) auto}.df-card-actions{grid-column:1/-1;justify-content:flex-end}}
-    27	@container formslist (max-width:680px){.df-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.df-head{align-items:flex-start}.df-card-meta{grid-template-columns:1fr}.df-count{text-align:left}.df-card-actions{justify-content:flex-start}}
-    28	@container formslist (max-width:560px){.df-tools .df-tool input,.df-tools .df-tool select,.df-tools>.df-btn{height:46px;min-height:46px;line-height:normal}.df-tools .df-tool input,.df-tools .df-tool select{padding-top:0;padding-bottom:0}.df-head{flex-direction:column;align-items:stretch;gap:10px}.df-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.df-actions>.df-btn{width:100%;height:46px;min-height:46px;padding:0 8px;white-space:nowrap;font-size:inherit;line-height:normal}.df-filter-toggle{display:flex;position:relative;height:46px;min-height:46px;padding:0 42px 0 12px;align-items:center;justify-content:center;text-align:center;font-size:inherit;line-height:normal}.df-filter-toggle .df-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%)}.df-filter-toggle[aria-expanded="true"] .df-chevron{transform:translateY(-50%) rotate(180deg)}.df-tools{display:none;grid-template-columns:1fr;margin-bottom:14px}.df-tools.is-open{display:grid}.df-card-main{padding:15px 16px;gap:10px}.df-card-meta{padding:12px 16px}.df-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%}.df-card-actions>*{width:100%}.df-card-actions .df-btn,.df-card-actions form .df-btn,.df-card-actions>a{width:100%;height:46px;min-height:46px;padding:0 7px;white-space:nowrap;font-size:inherit;line-height:normal;align-items:center;justify-content:center;text-align:center}.df-card-actions>*:nth-child(3){grid-column:1/-1}.df-card-actions>*:nth-child(3).df-btn{width:100%}.df-badge{margin-top:1px}}
-    29	
-    30	html[data-bs-theme="dark"] .df-wrap .df-btn-primary,
-    31	html[data-color-scheme="dark"] .df-wrap .df-btn-primary,
-    32	body[data-bs-theme="dark"] .df-wrap .df-btn-primary,
-    33	body[data-color-scheme="dark"] .df-wrap .df-btn-primary,
-    34	.df-wrap.df-dark-theme .df-btn-primary{background:#9f1239!important;border-color:#9f1239!important;color:#fff!important}
-    35	html[data-bs-theme="dark"] .df-wrap .df-btn-primary:hover,
-    36	html[data-color-scheme="dark"] .df-wrap .df-btn-primary:hover,
-    37	body[data-bs-theme="dark"] .df-wrap .df-btn-primary:hover,
-    38	body[data-color-scheme="dark"] .df-wrap .df-btn-primary:hover,
-    39	.df-wrap.df-dark-theme .df-btn-primary:hover{background:#7f0d2e!important;border-color:#7f0d2e!important;color:#fff!important}
-    40	
-    41	/* Forms 1.2.14: canonical card title + semantic status colors */
-    42	.df-wrap .df-card-main>div,
-    43	.df-wrap .df-card h3,
-    44	html[data-bs-theme="dark"] .df-wrap .df-card-main>div,
-    45	html[data-bs-theme="dark"] .df-wrap .df-card h3,
-    46	html[data-color-scheme="dark"] .df-wrap .df-card-main>div,
-    47	html[data-color-scheme="dark"] .df-wrap .df-card h3,
-    48	.df-wrap.df-dark-theme .df-card-main>div,
-    49	.df-wrap.df-dark-theme .df-card h3{background:none!important;background-color:transparent!important}
-    50	
-    51	.df-wrap .df-badge.df-on,
-    52	html[data-bs-theme="dark"] .df-wrap .df-badge.df-on,
-    53	html[data-color-scheme="dark"] .df-wrap .df-badge.df-on,
-    54	.df-wrap.df-dark-theme .df-badge.df-on{background:#e8f7ee!important;color:#176b3a!important;border-color:#b7e3c8!important}
-    55	
-    56	.df-wrap .df-badge.df-off,
-    57	html[data-bs-theme="dark"] .df-wrap .df-badge.df-off,
-    58	html[data-color-scheme="dark"] .df-wrap .df-badge.df-off,
-    59	.df-wrap.df-dark-theme .df-badge.df-off{background:#fdebec!important;color:#9f2430!important;border-color:#f2c5ca!important}
-    60	
-    61	</style>
-    62	<div class="df-wrap">
-    63	  <div class="df-head">
-    64	    <div><h2><?php echo Text::_('COM_DECAROFORMS_FORMS'); ?></h2><p><?php echo Text::_('COM_DECAROFORMS_PAGE_FORMS_DESC'); ?></p></div>
-    65	    <div class="df-actions">
-    66	      <button class="df-btn" type="button" id="df-open-actions" aria-haspopup="menu" aria-expanded="false" aria-controls="df-actions-menu"><?php echo Text::_('COM_DECAROFORMS_MENU_SHORT'); ?> ▾</button>
-    67	      <a class="df-btn df-btn-primary" href="<?php echo $this->builderUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_CREATE_FORM'); ?></a>
-    68	    </div>
-    69	  </div>
-    70	  <div class="df-actions-menu" id="df-actions-menu" role="menu" hidden>
-    71	    <div class="df-dialog-links">
-    72	      <a class="df-btn" role="menuitem" href="<?php echo $this->dashboardUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_DASHBOARD'); ?></a>
-    73	      <a class="df-btn" role="menuitem" href="<?php echo $this->recentUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_RECENT'); ?></a>
-    74	      <a class="df-btn" role="menuitem" href="<?php echo $this->importUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_MENU_IMPORT'); ?></a>
-    75	      <a class="df-btn" role="menuitem" href="<?php echo $this->informationUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_INFORMATION'); ?></a>
-    76	    </div>
-    77	  </div>
-    78	
-    79	<button class="df-btn df-filter-toggle" type="button" id="df-filter-toggle" aria-expanded="false" aria-controls="df-tools"><span><?php echo Text::_('COM_DECAROFORMS_SEARCH_FILTER'); ?></span><span class="df-chevron" aria-hidden="true">▾</span></button>
+=== forms/default.php lines 80-115 ===
     80	  <div class="df-tools" id="df-tools">
     81	    <div class="df-tool"><label for="df-search"><?php echo Text::_('COM_DECAROFORMS_SEARCH'); ?></label><input id="df-search" type="search" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_SEARCH_FORMS'),ENT_QUOTES,'UTF-8'); ?>" autocomplete="off"></div>
     82	    <div class="df-tool"><label for="df-filter"><?php echo Text::_('COM_DECAROFORMS_STATUS'); ?></label><select id="df-filter"><option value="all"><?php echo Text::_('COM_DECAROFORMS_ALL_STATUSES'); ?></option><option value="enabled"><?php echo Text::_('COM_DECAROFORMS_ENABLED'); ?></option><option value="disabled"><?php echo Text::_('COM_DECAROFORMS_DISABLED'); ?></option></select></div>
@@ -125,79 +35,14 @@
    113	(()=>{
    114	 const wrap=document.querySelector('.df-wrap'),root=document.documentElement,body=document.body;
    115	 const darkState=()=>{
-   116	   const values=[root?.dataset?.bsTheme,root?.dataset?.colorScheme,body?.dataset?.bsTheme,body?.dataset?.colorScheme].filter(Boolean).map(v=>String(v).toLowerCase());
-   117	   if(values.includes('dark')) return true;
-   118	   if(values.includes('light')) return false;
-   119	   const rgb=(getComputedStyle(body).backgroundColor.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
-   120	   return rgb.length===3 && (0.2126*rgb[0]+0.7152*rgb[1]+0.0722*rgb[2])<128;
-   121	 };
-   122	 const syncTheme=()=>wrap?.classList.toggle('df-dark-theme',darkState());
-   123	 syncTheme();
-   124	 const observer=new MutationObserver(syncTheme);
-   125	 observer.observe(root,{attributes:true,attributeFilter:['data-bs-theme','data-color-scheme','class']});
-   126	 if(body) observer.observe(body,{attributes:true,attributeFilter:['data-bs-theme','data-color-scheme','class']});
-   127	 const q=document.getElementById('df-search'),f=document.getElementById('df-filter'),sort=document.getElementById('df-sort'),limit=document.getElementById('df-limit'),clear=document.getElementById('df-clear'),list=document.getElementById('df-list'),cards=[...document.querySelectorAll('.df-card')],empty=document.getElementById('df-no-results');
-   128	 const dialog=document.getElementById('df-actions-dialog'),openActions=document.getElementById('df-open-actions'),closeActions=document.getElementById('df-close-actions'),filterToggle=document.getElementById('df-filter-toggle'),tools=document.getElementById('df-tools');
-   129	 openActions?.addEventListener('click',()=>dialog?.showModal());closeActions?.addEventListener('click',()=>dialog?.close());dialog?.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
-   130	 filterToggle?.addEventListener('click',()=>{const open=!tools.classList.contains('is-open');tools.classList.toggle('is-open',open);filterToggle.setAttribute('aria-expanded',open?'true':'false');});
-   131	 function cmp(a,b){const mode=sort.value;if(mode==='updated-asc')return Number(a.dataset.updated)-Number(b.dataset.updated);if(mode==='title-asc')return a.dataset.title.localeCompare(b.dataset.title);if(mode==='title-desc')return b.dataset.title.localeCompare(a.dataset.title);if(mode==='count-desc')return Number(b.dataset.count)-Number(a.dataset.count);if(mode==='count-asc')return Number(a.dataset.count)-Number(b.dataset.count);return Number(b.dataset.updated)-Number(a.dataset.updated);}
-   132	 function apply(){const s=(q.value||'').toLowerCase().trim(),st=f.value,max=limit.value==='all'?Infinity:parseInt(limit.value||'50',10);const ordered=[...cards].sort(cmp);ordered.forEach(card=>list.insertBefore(card,empty||null));let shown=0;ordered.forEach(card=>{const match=(!s||card.dataset.search.includes(s))&&(st==='all'||card.dataset.status===st);const visible=match&&shown<max;card.hidden=!visible;if(visible)shown++;});if(empty)empty.hidden=shown!==0;}
-   133	 let liveTimer=null;function schedule(){clearTimeout(liveTimer);liveTimer=setTimeout(apply,180);}q?.addEventListener('input',schedule);f?.addEventListener('change',apply);sort?.addEventListener('change',apply);limit?.addEventListener('change',apply);clear?.addEventListener('click',()=>{clearTimeout(liveTimer);q.value='';f.value='all';sort.value='updated-desc';limit.value='50';apply();});apply();
-   134	
-   135	 const menuNav=document.getElementById('df-actions-menu'),menuBtnNav=document.getElementById('df-open-actions');
-   136	 const closeMenuNav=()=>{if(!menuNav)return;menuNav.hidden=true;menuBtnNav?.setAttribute('aria-expanded','false');};
-   137	 const placeMenuNav=()=>{if(!menuNav||!menuBtnNav||menuNav.hidden)return;const r=menuBtnNav.getBoundingClientRect();const w=menuNav.offsetWidth||240;const left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));menuNav.style.left=`${left}px`;const maxTop=Math.max(12,window.innerHeight-menuNav.offsetHeight-12);menuNav.style.top=`${Math.min(r.bottom+8,maxTop)}px`;};
-   138	 menuBtnNav?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!menuNav)return;const opening=menuNav.hidden;if(opening){menuNav.hidden=false;menuBtnNav.setAttribute('aria-expanded','true');requestAnimationFrame(placeMenuNav);}else closeMenuNav();});
-   139	 menuNav?.addEventListener('click',e=>e.stopPropagation());
-   140	 menuNav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenuNav));
-   141	 document.addEventListener('click',closeMenuNav);
-   142	 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenuNav();});
-   143	 window.addEventListener('resize',placeMenuNav);
-   144	 window.addEventListener('scroll',placeMenuNav,true);
-   145	})();
-   146	</script>
 
-=== possible forms list model/view ===
---- /tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/View/Forms/HtmlView.php
-     1	<?php
-     2	
-     3	namespace DeCaro\Component\Forms\Administrator\View\Forms;
-     4	
-     5	defined('_JEXEC') or die;
-     6	
-     7	use Joomla\CMS\Factory;
-     8	use Joomla\CMS\Language\Text;
-     9	use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-    10	use Joomla\CMS\Router\Route;
-    11	use Joomla\Database\DatabaseInterface;
-    12	
-    13	final class HtmlView extends BaseHtmlView
-    14	{
-    15	    public array $forms = [];
-    16	    public string $builderUrl = '';
-    17	    public string $recentUrl = '';
-    18	    public string $informationUrl = '';
-    19	    public string $importUrl = '';
-    20	    public string $dashboardUrl = '';
-    21	
-    22	    public function display($tpl = null): void
-    23	    {
-    24	        /** @var DatabaseInterface $db */
-    25	        $db = Factory::getContainer()->get(DatabaseInterface::class);
-    26	        $q = $db->createQuery()
-    27	            ->select(['f.*','COUNT(s.id) AS submission_count'])
-    28	            ->from($db->quoteName('#__decaroforms_forms','f'))
-    29	            ->leftJoin($db->quoteName('#__decaroforms_submissions','s') . ' ON s.form_id = f.id')
-    30	            ->group('f.id')
-    31	            ->order('f.updated_at DESC, f.id DESC');
-    32	        $db->setQuery($q);
-    33	        $this->forms = $db->loadAssocList() ?: [];
-    34	        $this->builderUrl = Route::_('index.php?option=com_decaroforms&view=builder', false);
-    35	        $this->recentUrl = Route::_('index.php?option=com_decaroforms&view=recent', false);
-    36	        $this->informationUrl = Route::_('index.php?option=com_decaroforms&view=information', false);
-    37	        $this->importUrl = Route::_('index.php?option=com_decaroforms&view=import', false);
-    38	        $this->dashboardUrl = Route::_('index.php?option=com_decaroforms&view=dashboard', false);
-    39	        Factory::getApplication()->getDocument()->setTitle(Text::_('COM_DECAROFORMS_FORMS'));
-    40	        parent::display($tpl);
-    41	    }
-    42	}
+=== exact closed_reason / closed_message matches ===
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/tmpl/builder/default.php:42:      <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_WHEN_DISABLED'); ?></label><select name="closed_reason"><option value="closed" <?php echo $val('closed_reason','closed')==='closed'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CLOSED_REGISTRATIONS'); ?></option><option value="limit" <?php echo $val('closed_reason')==='limit'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_LIMIT_REACHED'); ?></option><option value="deadline" <?php echo $val('closed_reason')==='deadline'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_DEADLINE_EXPIRED'); ?></option><option value="temporary" <?php echo $val('closed_reason')==='temporary'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_TEMPORARILY_CLOSED'); ?></option><option value="custom" <?php echo $val('closed_reason')==='custom'?'selected':''; ?>><?php echo Text::_('COM_DECAROFORMS_CUSTOM_MESSAGE'); ?></option></select></div>
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/tmpl/builder/default.php:43:      <div class="df-field"><label><?php echo Text::_('COM_DECAROFORMS_CLOSED_MESSAGE'); ?></label><input name="closed_message" value="<?php echo $val('closed_message'); ?>" placeholder="<?php echo htmlspecialchars(Text::_('COM_DECAROFORMS_OPTIONAL_CUSTOM_TEXT'),ENT_QUOTES,'UTF-8'); ?>"></div>
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Helper/ImportHelper.php:317:        $form=(object)['title'=>$title,'slug'=>$slug,'description'=>'Imported data source. Review field settings before publishing this form.','enabled'=>0,'show_heading'=>1,'success_message'=>'','closed_reason'=>'closed','closed_message'=>'','admin_email'=>'','user_confirmation'=>0,'email_template_user'=>'standard','email_template_admin'=>'standard','email_subject_user'=>'','email_subject_admin'=>'','created_at'=>$now,'updated_at'=>$now];
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Helper/MigrationHelper.php:73:            'success_message'=>(string)$params->get($def['success_param'],$def['success_default']),'closed_reason'=>(string)$params->get($key.'_closed_reason','closed'),'closed_message'=>(string)$params->get($key.'_closed_message',''),
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php:59:            'closed_reason' => trim($input->post->getCmd('closed_reason', 'closed')),
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php:60:            'closed_message' => trim($input->post->getString('closed_message', '')),
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Closed message"
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Messaggio di chiusura"
+/tmp/forms-inspect-1214/component/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.ini:54:COM_DECAROFORMS_CLOSED_MESSAGE="Message de fermeture"

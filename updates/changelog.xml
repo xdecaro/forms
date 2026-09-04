@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.9</version>
-<fix>Corretto il contrasto del testo e delle frecce degli accordion del Builder in light mode.</fix>
-<change>Mantenuto lo sfondo accordion #f6f7f9 con hover e stato aperto più discreti.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.10</version>
+<fix>Anteprima facsimile dei template email resa chiaramente cliccabile e più robusta.</fix>
+<change>La selezione radio del template resta separata dall'apertura dell'anteprima.</change>
 <language>it-IT</language>
 </changelog></changelogs>

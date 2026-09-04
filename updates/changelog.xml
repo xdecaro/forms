@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<changelogs>
-  <changelog>
-    <element>pkg_decaroforms</element>
-    <type>package</type>
-    <version>1.3.1</version>
-    <fix>Libreria campi, modelli rapidi e Applica ai campi resi immediatamente operativi e verificabili nel Builder.</fix>
-    <fix>Nuovo stato non viene più creato con etichetta duplicata; stati e colonne sono renderizzati subito.</fix>
-    <addition>Accordion rossi e conferma visiva dell'applicazione del layout.</addition>
-    <language>it-IT</language>
-  </changelog>
-</changelogs>
+<changelogs><changelog>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.2</version>
+<addition>Layout visuale drag &amp; drop, campi selezionati ad accordion e libreria categorie compatte.</addition>
+<addition>Campi pagamento separati, incluso IBAN e riferimento pagamento.</addition>
+<change>Validazione semplificata con spiegazioni informative cliccabili.</change>
+<change>Email: sette template predefiniti più Personalizzato, HTML libero e AI.</change>
+<fix>Ripristinato stile chiaro degli accordion e rafforzata la logica dei modelli rapidi.</fix>
+<language>it-IT</language>
+</changelog></changelogs>

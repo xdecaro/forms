@@ -22,10 +22,6 @@ jobs:
             bash tools/inspect-update-link.sh
             exit 0
           fi
-          if [ "$MODE" = "release-1.2.22" ]; then
-            bash tools/release-1.2.22/build.sh
-            exit 0
-          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

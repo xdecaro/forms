@@ -8,7 +8,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.3.7**
+**1.3.8**
 
 ## What is Forms?
 
@@ -44,6 +44,8 @@ Each form can have its own:
 - submission-list columns;
 - email configuration;
 - email templates.
+
+Configured fields can also be saved as reusable personal presets and re-added later from the custom field library.
 
 Forms are independent from each other, so different forms can use different fields, statuses and submission layouts.
 
@@ -188,6 +190,7 @@ Forms is designed to integrate with the Joomla administrator interface and inclu
 ## Main features
 
 - reusable Form Builder and field library;
+- reusable saved custom-field presets;
 - Dashboard with form/submission overview;
 - full-width Joomla administrator layout;
 - submissions management with a custom status workflow for each form;

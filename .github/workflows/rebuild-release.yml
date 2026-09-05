@@ -58,6 +58,10 @@ jobs:
             bash tools/inspect-1.3.37-row-icons.sh
             exit 0
           fi
+          if [ "$MODE" = "inspect-1.3.38-smart-add-filters" ]; then
+            bash tools/inspect-1.3.38-smart-add-filters.sh
+            exit 0
+          fi
           if [ "$MODE" = "debug-build-1.3.27-ai-import" ]; then
             set +e
             bash -x tools/run-build-1.3.27-ai-import.sh > tools/build-1.3.27-ai-debug.log 2>&1

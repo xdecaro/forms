@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.24</version>
-<addition>Aggiunto nel pacchetto il plugin Editor Button di Joomla: il pulsante Forms apre una finestra con ricerca ed elenco moduli e inserisce automaticamente lo shortcode nel punto del cursore.</addition>
-<fix>Il Builder sincronizza e verifica il numero dei campi prima del salvataggio e blocca richieste incoerenti per evitare la perdita dei campi del modulo.</fix>
-<fix>Il server rifiuta payload campi non validi invece di interpretarli come elenco vuoto.</fix>
-<change>Sostituite le emoji di salvataggio, modifica, duplica ed eliminazione con icone UI SVG coerenti.</change>
-<change>Il messaggio di salvataggio riuscito viene mostrato tramite il sistema messaggi nativo di Joomla dopo il redirect.</change>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.25</version>
+<fix>Corretto il render iniziale di Campi del modulo: i campi già salvati vengono disegnati immediatamente nel canvas e nell’ispettore senza dover premere Aggiungi campo.</fix>
+<fix>Aggiunto un secondo controllo automatico del canvas che forza il render se esistono campi caricati ma nessuna card è presente nel DOM.</fix>
+<fix>Resa tollerante l’inizializzazione delle integrazioni opzionali, evitando che elementi mancanti interrompano tutto il JavaScript del Builder.</fix>
+<fix>Le API di bozza automatica restano disponibili al gestore di salvataggio robusto.</fix>
+<fix>Ripristinati ed esplicitati CSS personalizzato e JavaScript personalizzato a larghezza 100%.</fix>
+<fix>Invalidata la cache opcode PHP dei file principali del Builder dopo l’aggiornamento per evitare combinazioni di file vecchi e nuovi.</fix>
 <language>it-IT</language>
 </changelog></changelogs>

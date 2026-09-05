@@ -111,6 +111,10 @@ jobs:
             bash tools/build-1.3.37-html-sections-translations-fixed.sh
             exit 0
           fi
+          if [ "$MODE" = "build-1.3.38-row-grouping-modern-icons" ]; then
+            bash tools/build-1.3.38-row-grouping-modern-icons.sh
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

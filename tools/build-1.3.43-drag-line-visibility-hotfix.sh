@@ -19,52 +19,54 @@ test -f "$B"
 
 python3 - "$B" <<'PY'
 from pathlib import Path
-import sys
+import sys,re
 p=Path(sys.argv[1])
 s=p.read_text(encoding='utf-8')
 
-old_restore="""function smartRestorePreviewDom(){
- layoutCanvas?.querySelectorAll('.df-smart-placeholder,.df-smart-newrow-preview').forEach(el=>el.remove());
- layoutCanvas?.querySelectorAll('.df-smart-target-left,.df-smart-target-right,.df-smart-row-target-before,.df-smart-row-target-after').forEach(el=>el.classList.remove('df-smart-target-left','df-smart-target-right','df-smart-row-target-before','df-smart-row-target-after'));
- layoutCanvas?.querySelectorAll('.df-layout-row[data-smart-original-grid]').forEach(row=>{row.style.gridTemplateColumns=row.getAttribute('data-smart-original-grid')||'';row.removeAttribute('data-smart-original-grid');});
- layoutCanvas?.querySelectorAll('.df-smart-source-row-empty').forEach(el=>el.classList.remove('df-smart-source-row-empty'));
- if(smartDrag.active)smartReflowSourceRow();
-}"""
-new_restore="""function smartRestorePreviewDom(){
- layoutCanvas?.querySelectorAll('.df-smart-placeholder,.df-smart-newrow-preview').forEach(el=>el.remove());
- layoutCanvas?.querySelectorAll('.df-smart-target-left,.df-smart-target-right,.df-smart-row-target-before,.df-smart-row-target-after').forEach(el=>el.classList.remove('df-smart-target-left','df-smart-target-right','df-smart-row-target-before','df-smart-row-target-after'));
- layoutCanvas?.querySelectorAll('.df-layout-row[data-smart-original-grid]').forEach(row=>{row.style.gridTemplateColumns=row.getAttribute('data-smart-original-grid')||'';row.removeAttribute('data-smart-original-grid');});
- layoutCanvas?.querySelectorAll('.df-smart-source-row-empty').forEach(el=>el.classList.remove('df-smart-source-row-empty'));
- layoutCanvas?.querySelectorAll('.df-smart-source-line-empty').forEach(el=>el.classList.remove('df-smart-source-line-empty'));
- if(smartDrag.active)smartReflowSourceRow();
-}"""
-if old_restore not in s:
-    raise SystemExit('1.3.43: smartRestorePreviewDom anchor missing')
-s=s.replace(old_restore,new_restore,1)
+# ---------------------------------------------------------------------------
+# 1.3.43 drag visibility hotfix
+# Browser/video diagnostics proved that a single empty VISUAL line caused the
+# whole LOGICAL row group to receive df-smart-source-row-empty and disappear.
+# Keep sibling visual lines visible and show only the source line as a placeholder.
+# ---------------------------------------------------------------------------
 
-old_reflow="function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];const group=row.closest('.df-layout-row-group');if(!visible.length){group?.classList.add('df-smart-source-row-empty');return;}group?.classList.remove('df-smart-source-row-empty');smartSetGrid(row,smartAutoWidths(visible.length));}"
-new_reflow="function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')],group=row.closest('.df-layout-row-group');group?.classList.remove('df-smart-source-row-empty');if(!visible.length){smartRememberGrid(row);row.classList.add('df-smart-source-line-empty');row.style.gridTemplateColumns='1fr';return;}row.classList.remove('df-smart-source-line-empty');smartSetGrid(row,smartAutoWidths(visible.length));}"
-if old_reflow not in s:
-    raise SystemExit('1.3.43: smartReflowSourceRow anchor missing')
-s=s.replace(old_reflow,new_reflow,1)
+# Preserve all newer preview cleanup added by 1.3.40/1.3.41; only append cleanup
+# for the new visual-line placeholder class.
+cleanup="layoutCanvas?.querySelectorAll('.df-smart-source-row-empty').forEach(el=>el.classList.remove('df-smart-source-row-empty'));"
+if cleanup not in s:
+    raise SystemExit('1.3.43: source-row cleanup anchor missing')
+line_cleanup="layoutCanvas?.querySelectorAll('.df-smart-source-line-empty').forEach(el=>el.classList.remove('df-smart-source-line-empty'));"
+if line_cleanup not in s:
+    s=s.replace(cleanup,cleanup+'\n '+line_cleanup,1)
 
-old_css=".df-smart-source-hidden{display:none!important}.df-smart-source-row-empty{display:none!important}"
-new_css=".df-smart-source-hidden{display:none!important}.df-smart-source-row-empty{display:block!important}.df-smart-source-line-empty{display:grid!important;grid-template-columns:1fr!important;min-height:52px!important;border:2px dashed color-mix(in srgb,var(--df) 48%,var(--df-border));border-radius:8px;background:color-mix(in srgb,var(--df) 5%,var(--bs-body-bg,#fff));align-items:center;position:relative}.df-smart-source-line-empty::after{content:'POSIZIONE ORIGINALE';display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none}"
+# Replace only smartReflowSourceRow, using stable function boundaries.
+a=s.find('function smartReflowSourceRow(){')
+if a<0:
+    raise SystemExit('1.3.43: smartReflowSourceRow start missing')
+b=s.find('function smartCreateGhost(',a)
+if b<0:
+    raise SystemExit('1.3.43: smartCreateGhost boundary missing')
+new_reflow="function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')],group=row.closest('.df-layout-row-group');group?.classList.remove('df-smart-source-row-empty');if(!visible.length){smartRememberGrid(row);row.classList.add('df-smart-source-line-empty');row.style.gridTemplateColumns='1fr';return;}row.classList.remove('df-smart-source-line-empty');smartSetGrid(row,smartAutoWidths(visible.length));}\n"
+s=s[:a]+new_reflow+s[b:]
+
+# Neutralize the legacy rule that could hide a whole logical row. Add a visible,
+# lightweight placeholder for the empty source visual line.
+old_css='.df-smart-source-row-empty{display:none!important}'
 if old_css not in s:
-    raise SystemExit('1.3.43: smart drag CSS anchor missing')
-s=s.replace(old_css,new_css,1)
+    raise SystemExit('1.3.43: legacy source-row CSS rule missing')
+line_css=".df-smart-source-row-empty{display:block!important}.df-smart-source-line-empty{display:grid!important;grid-template-columns:1fr!important;min-height:52px!important;border:2px dashed color-mix(in srgb,var(--df) 48%,var(--df-border));border-radius:8px;background:color-mix(in srgb,var(--df) 5%,var(--bs-body-bg,#fff));align-items:center;position:relative}.df-smart-source-line-empty::after{content:'POSIZIONE ORIGINALE';display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none}"
+s=s.replace(old_css,line_css,1)
 
 # Runtime marker.
 if "version:'1.3.42'" not in s:
     raise SystemExit('1.3.43: runtime 1.3.42 marker missing')
 s=s.replace("version:'1.3.42'","version:'1.3.43'")
 
-# Regression guarantees for the exact browser/video failure:
-# dragging a single visual line must never hide its entire logical row group.
+# Regression guarantees for the exact failure captured in Console/video.
 assert "group?.classList.add('df-smart-source-row-empty')" not in s
 assert ".df-smart-source-row-empty{display:none!important}" not in s
 assert "row.classList.add('df-smart-source-line-empty')" in s
-assert "layoutCanvas?.querySelectorAll('.df-smart-source-line-empty')" in s
+assert line_cleanup in s
 assert ".df-smart-source-line-empty{display:grid!important" in s
 assert "version:'1.3.43'" in s
 
@@ -114,9 +116,9 @@ import sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 start=s.find('function smartReflowSourceRow()')
 assert start>=0
-chunk=s[start:start+1200]
+chunk=s[start:start+1400]
 assert "df-smart-source-line-empty" in chunk
-assert "df-smart-source-row-empty');return" not in chunk
+assert "classList.add('df-smart-source-row-empty')" not in chunk
 assert "group?.classList.remove('df-smart-source-row-empty')" in chunk
 assert "version:'1.3.43'" in s
 print('1.3.43 drag-line visibility regression checks OK')

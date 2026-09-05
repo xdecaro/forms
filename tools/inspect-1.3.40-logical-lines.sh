@@ -30,6 +30,8 @@ for name,start,end in [
  ('fieldsInRow','function fieldsInRow(', 'function rowMeta('),
  ('smartAutoWidths','function smartAutoWidths(', 'function smartFitRow('),
  ('smartFitRow','function smartFitRow(', 'function repairInvalidRows('),
+ ('set width call context','setFieldWidth', None),
+ ('move field context','function moveFieldToRow', '/* Forms 1.3.40: intelligent field drag & drop.'),
  ('smart drag preview','function smartPreviewBesideWidths(', 'function smartShiftRowMeta('),
  ('smart moves','function smartMoveBeside(', 'function smartEndVisual('),
  ('structure blocks','function structureRowBlocks(', 'function structureClearTargets('),
@@ -39,28 +41,11 @@ for name,start,end in [
  ('sync','function sync()', 'function pushHistory('),
 ]:
     grab(name,start,end)
-
-patterns=(
- 'config.layout','layout.row','layout.width','layout.col','row_meta','grid-template-columns','gridTemplateColumns',
- "['layout']",'[\"layout\"]',"['row']",'[\"row\"]',"['width']",'[\"width\"]',"['col']",'[\"col\"]'
-)
-for p in sorted(root.rglob('*')):
-    if not p.is_file() or p.suffix.lower() not in {'.php','.js','.mjs','.xml'}: continue
-    try: text=p.read_text(encoding='utf-8')
-    except Exception: continue
-    hits=[]
-    for pat in patterns:
-        for m in re.finditer(re.escape(pat),text):
-            a=max(0,m.start()-900); b=min(len(text),m.end()+1600)
-            hits.append((m.start(),text[a:b]))
-    if hits:
-        out.append(f"\n=== FILE REFERENCES: {p.relative_to(root)} ===\n")
-        seen=set()
-        for _,chunk in sorted(hits)[:60]:
-            key=chunk[:200]
-            if key in seen: continue
-            seen.add(key); out.append(chunk+'\n---')
-
+out.append('\n=== FUNCTION NAMES AROUND WIDTH/MOVE/REMOVE ===\n')
+for m in re.finditer(r'function\s+[A-Za-z0-9_]+\s*\([^)]*\)',s):
+    sig=m.group(0)
+    if any(k.lower() in sig.lower() for k in ('width','movefield','remove','duplicate','add')):
+        out.append(sig)
 Path(sys.argv[2]).write_text('\n'.join(out),encoding='utf-8')
 PY
 rm -rf "$ROOT/releases/_upload"

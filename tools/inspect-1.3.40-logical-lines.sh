@@ -10,10 +10,11 @@ unzip -q "$BASE" -d "$TMP/outer"
 unzip -q "$TMP/outer/com_decaroforms_$VER.zip" -d "$TMP/component"
 B="$TMP/component/administrator/components/com_decaroforms/tmpl/builder/default.php"
 OUT="$ROOT/tools/inspect-1.3.40-logical-lines.txt"
-python3 - "$B" "$OUT" <<'PY'
+python3 - "$B" "$OUT" "$TMP/component" <<'PY'
 from pathlib import Path
-import sys
+import sys,re
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
+root=Path(sys.argv[3])
 out=[]
 def grab(name,start,end=None,limit=22000):
     i=s.find(start)
@@ -32,9 +33,27 @@ for name,start,end in [
  ('move existing row','function smartMoveToExistingRow(', 'function smartMoveNewRow('),
  ('render layout','function renderLayoutCanvas()', 'function renderColumns('),
  ('sync','function sync()', 'function pushHistory('),
- ('frontend renderer clue','config.layout.width', None),
 ]:
     grab(name,start,end)
+
+# Find every renderer/persistence reference to row/col/width in the unpacked component.
+patterns=('config.layout','layout.row','layout.width','layout.col','row_meta','grid-template-columns','gridTemplateColumns')
+for p in sorted(root.rglob('*')):
+    if not p.is_file() or p.suffix.lower() not in {'.php','.js','.mjs','.xml'}: continue
+    try: text=p.read_text(encoding='utf-8')
+    except Exception: continue
+    hits=[]
+    for pat in patterns:
+        for m in re.finditer(re.escape(pat),text):
+            a=max(0,m.start()-700); b=min(len(text),m.end()+1200)
+            hits.append((m.start(),text[a:b]))
+    if hits:
+        out.append(f"\n=== FILE REFERENCES: {p.relative_to(root)} ===\n")
+        seen=set()
+        for _,chunk in sorted(hits)[:30]:
+            key=chunk[:160]
+            if key in seen: continue
+            seen.add(key); out.append(chunk+'\n---')
 Path(sys.argv[2]).write_text('\n'.join(out),encoding='utf-8')
 PY
 rm -rf "$ROOT/releases/_upload"

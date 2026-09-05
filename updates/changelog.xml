@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.19</version>
-<feature>Aggiunta modal di conferma comune per tutte le eliminazioni del Builder.</feature>
-<feature>Salva struttura e Salva campo personalizzato ora usano una modal di conferma.</feature>
-<fix>Ripristinate le anteprime e il pulsante Anteprima dei template email.</fix>
-<performance>Ottimizzata l’apertura di Modifica campo evitando ricostruzioni duplicate del canvas e scansioni globali non necessarie.</performance>
-<feature>Layout visuale con drag and drop bidimensionale per righe e colonne.</feature>
-<fix>Migliorato il contrasto dei badge Tipo e Larghezza e compattati gli accordion interni.</fix>
-<fix>Uniformati i colori dei pulsanti principali, secondari e distruttivi in light e dark mode.</fix>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.20</version>
+<fix>CSS e JavaScript personalizzati ora usano tutta la larghezza disponibile nel Builder.</fix>
+<fix>Il footer del componente è stato spostato fuori dal contenuto del Builder e posizionato a fondo pagina.</fix>
 <language>it-IT</language>
 </changelog></changelogs>

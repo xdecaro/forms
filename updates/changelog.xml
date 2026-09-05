@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.29</version>
-<feature>Semplificato “Importa con AI”: eliminati copia/incolla del prompt e del JSON.</feature>
-<feature>Nuovo pulsante unico “Scarica file per ChatGPT”, che genera forms-ai-chatgpt.txt con tutte le istruzioni e lo schema compatibile.</feature>
-<feature>Il flusso ora è: screenshot + file istruzioni in ChatGPT → forms-ai-import.json → caricamento file in Forms → anteprima → importazione.</feature>
-<feature>Dopo un’importazione completata, file, anteprima e bozza AI vengono svuotati automaticamente; Annulla conserva invece il lavoro non ancora importato.</feature>
-<security>Restano attivi validazione JSON, allowlist dei tipi, limiti e sanificazione dell’importazione.</security>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.30</version>
+<feature>Nuova modalità “Da pagina HTML” in Importa con AI, completamente locale e senza API.</feature>
+<feature>Il parser HTML legge input, textarea, select, radio e checkbox; importa anche tutte le opzioni delle select presenti nel file.</feature>
+<feature>Riconoscimento euristico delle larghezze da Bootstrap, UIkit, style percentuali e classi comuni.</feature>
+<feature>I campi visibili ma nascosti nel markup vengono mantenuti e segnalati come possibili condizionali; i veri input type=hidden, token e honeypot restano esclusi.</feature>
+<feature>Supporto conditions, condition_logic e condition_action nel formato AI e nell’importazione nel Builder.</feature>
+<feature>Le condizioni HTML vengono importate solo quando il markup contiene una relazione esplicita semplice; altrimenti Forms mostra un avviso senza inventare la regola.</feature>
+<feature>Il file istruzioni per ChatGPT ora spiega anche come restituire condizioni osservabili da più screenshot.</feature>
+<security>L’HTML viene analizzato localmente con DOMParser senza eseguire script e senza richieste verso il sito origine.</security>
 <language>it-IT</language>
 </changelog></changelogs>

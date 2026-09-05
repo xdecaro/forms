@@ -8,7 +8,7 @@ mkdir -p "$TMP/o" "$TMP/c"
 unzip -q "$BASE" -d "$TMP/o"
 unzip -q "$TMP/o/com_decaroforms_1.3.19.zip" -d "$TMP/c"
 B="$TMP/c/administrator/components/com_decaroforms/tmpl/builder/default.php"
-echo '=== CUSTOM CODE / FOOTER MATCHES ==='
-grep -n -E 'Codice personalizzato|CUSTOM_CODE|custom_css|custom js|custom_js|df-footer|Sviluppato da|Versione|copyright|CSS personalizzato|df-codearea' "$B" | tail -n 120 || true
-echo '=== TAIL BUILDER ==='
-tail -n 220 "$B"
+echo '=== CUSTOM CODE CSS ==='
+grep -n -E 'df-custom-code-grid|df-footer|df-codearea' "$B" | head -n 120 || true
+echo '=== SECTION 8 + FOOTER ==='
+sed -n '870,930p' "$B"

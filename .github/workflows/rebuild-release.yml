@@ -30,6 +30,10 @@ jobs:
             bash tools/inspect-builder-1.3.26-ai.sh
             exit 0
           fi
+          if [ "$MODE" = "build-1.3.27-ai-import" ]; then
+            bash tools/run-build-1.3.27-ai-import.sh
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

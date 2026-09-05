@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.26</version>
-<fix>Eliminati gli avvisi ripetuti della Console generati dalle miniature di anteprima email in iframe sandboxati.</fix>
-<fix>Le anteprime email restano isolate in sandbox senza allow-same-origin, form, popup o navigazione.</fix>
-<security>L'HTML delle miniature viene sanificato prima del caricamento: script, object, embed, handler JavaScript inline e URL javascript: vengono rimossi.</security>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.27</version>
+<feature>Nuovo pulsante “Importa con AI” nel Form Builder, accanto ad “Aggiungi campo”.</feature>
+<feature>Flusso gratuito senza API: copia prompt per ChatGPT, apertura ChatGPT, incolla JSON o carica file JSON.</feature>
+<feature>Anteprima modificabile prima dell’importazione con etichetta, tipo, obbligatorio, larghezza, placeholder, opzioni e ordine.</feature>
+<feature>Controllo duplicati, livelli di sicurezza Alta/Media/Bassa, esclusione automatica dei campi incerti o duplicati e selezione “Solo sicuri”.</feature>
+<feature>Scelta fra importazione in fondo o dopo la riga corrente; tutta l’importazione entra nello storico come un’unica operazione annullabile.</feature>
+<feature>Descrizione rapida senza AI per creare strutture semplici senza consumi esterni.</feature>
+<security>Il JSON importato è validato con allowlist dei tipi, limiti di dimensione e quantità, sanificazione del testo e rifiuto degli elementi tecnici/decorativi.</security>
+<note>“Analizza direttamente” è predisposto nell’interfaccia come funzione API opzionale futura e non utilizza la normale chat ChatGPT come API.</note>
 <language>it-IT</language>
 </changelog></changelogs>

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.20</version>
-<fix>CSS e JavaScript personalizzati ora usano tutta la larghezza disponibile nel Builder.</fix>
-<fix>Il footer del componente è stato spostato fuori dal contenuto del Builder e posizionato a fondo pagina.</fix>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.21</version>
+<fix>Corretto il salvataggio del Builder quando il token Joomla cambia o scade.</fix>
+<security>Il controllo CSRF resta attivo; il Builder recupera il token corrente prima del POST e può riprovare una sola volta in caso di rotazione del token.</security>
+<fix>Il salvataggio è ora intercettato da un handler indipendente dal resto del JavaScript del Builder, evitando POST nativi e pagine 403 grezze.</fix>
+<fix>Il fallback server torna al Builder con un messaggio e mantiene disponibile la bozza locale.</fix>
 <language>it-IT</language>
 </changelog></changelogs>

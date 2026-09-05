@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.22</version>
-<fix>Corretto il salvataggio del Builder quando il token Joomla standard continua a risultare non valido dopo il refresh.</fix>
-<security>Aggiunto un nonce CSRF dedicato al Builder, casuale, legato alla sessione amministratore e verificato con hash_equals, mantenendo anche il controllo CSRF Joomla.</security>
-<fix>L'endpoint di refresh aggiorna sia il token Joomla sia il nonce Builder prima del salvataggio.</fix>
-<fix>La bozza locale viene mantenuta fino alla conferma del salvataggio riuscito.</fix>
+<element>pkg_decaroforms</element><type>package</type><version>1.3.23</version>
+<fix>Pulito il CSS dei pulsanti del Builder eliminando regole sovrapposte che potevano mostrare pulsanti neri in light mode.</fix>
+<fix>Consolidati pulsanti secondari, primari, distruttivi e pulsanti delle modal in un unico sistema light/dark.</fix>
+<fix>Salva struttura usa ora esplicitamente lo stile primario rosso Forms.</fix>
 <language>it-IT</language>
 </changelog></changelogs>

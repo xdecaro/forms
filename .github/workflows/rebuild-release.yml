@@ -22,6 +22,11 @@ jobs:
             bash tools/inspect-update-link.sh
             exit 0
           fi
+          if [ "$MODE" = "inspect-1.3.24-builder" ]; then
+            bash tools/inspect-1.3.24-builder.sh
+            rm -rf releases/_upload
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

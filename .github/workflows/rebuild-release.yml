@@ -120,7 +120,7 @@ jobs:
             exit 0
           fi
           if [ "$MODE" = "build-1.3.39-smart-add-preview-filters" ]; then
-            bash tools/build-1.3.39-smart-add-preview-filters.sh
+            bash tools/build-1.3.39-smart-add-preview-filters-fixed.sh
             exit 0
           fi
           VERSION="$(cat releases/_upload/VERSION.txt)"

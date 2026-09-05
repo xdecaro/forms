@@ -1,0 +1,1 @@
+No syntax errors detected in /tmp/tmp.jEWXbk6WWw/c/administrator/components/com_decaroforms/tmpl/builder/default.php

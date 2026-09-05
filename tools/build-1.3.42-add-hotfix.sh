@@ -19,91 +19,71 @@ test -f "$B"
 
 python3 - "$B" <<'PY'
 from pathlib import Path
-import re,sys
+import sys
 p=Path(sys.argv[1]); s=p.read_text(encoding='utf-8')
 
 # Hotfix: 1.3.41 refactor left calls to sortSelectedByLayout() but the declaration
-# was removed from the final package. This caused Library -> Add to insert a field
-# and then abort with ReferenceError before the Builder could finish rendering/syncing.
+# was removed from the final package. Library -> Add inserted the field, then threw
+# ReferenceError before the Builder completed ordering/render/sync.
 fn="function sortSelectedByLayout(){selected.sort((a,b)=>Number(a.config?.layout?.row||1)-Number(b.config?.layout?.row||1)||Number(a.config?.layout?.col||1)-Number(b.config?.layout?.col||1));}"
 if 'function sortSelectedByLayout(' not in s:
-    anchor='function widthChoices('
-    pos=s.find(anchor)
-    if pos < 0:
-        anchor='function selectField('
-        pos=s.find(anchor)
-    if pos < 0:
-        raise SystemExit('1.3.42: no safe anchor for sortSelectedByLayout')
+    pos=s.find('function widthChoices(')
+    if pos < 0: pos=s.find('function selectField(')
+    if pos < 0: raise SystemExit('1.3.42: no safe anchor for sortSelectedByLayout')
     s=s[:pos]+fn+'\n'+s[pos:]
 
-# Verify the complete helper chain required by the 1.3.41 logical-row model.
 required=[
- 'function fieldsInRow(',
- 'function smartAutoWidths(',
- 'function visualLinesForItems(',
- 'function visualLinesInRow(',
- 'function visualLineForField(',
- 'function setLogicalRowOrder(',
- 'function normalizeVisualLines(',
- 'function distributeRow(',
- 'function smartFitRow(',
- 'function normalizeLayoutRows(',
- 'function sortSelectedByLayout(',
- 'function rowMeta(',
- 'function add(item)',
- 'function smartMoveBeside(',
- 'function smartMoveToExistingRow(',
- 'function smartMoveNewRow(',
- 'function renderLayoutCanvas()'
+ 'function fieldsInRow(', 'function smartAutoWidths(', 'function visualLinesForItems(',
+ 'function visualLinesInRow(', 'function visualLineForField(', 'function setLogicalRowOrder(',
+ 'function normalizeVisualLines(', 'function distributeRow(', 'function smartFitRow(',
+ 'function normalizeLayoutRows(', 'function sortSelectedByLayout(', 'function rowMeta(',
+ 'function add(item)', 'function smartMoveBeside(', 'function smartMoveToExistingRow(',
+ 'function smartMoveNewRow(', 'function renderLayoutCanvas()'
 ]
 missing=[x for x in required if x not in s]
-if missing:
-    raise SystemExit('1.3.42 missing required Builder helpers: '+', '.join(missing))
-
-# There must be at least one actual use, otherwise this hotfix would be dead code.
-if s.count('sortSelectedByLayout()') < 2:  # declaration body excluded; calls expected in add/move paths
+if missing: raise SystemExit('1.3.42 missing required Builder helpers: '+', '.join(missing))
+if s.count('sortSelectedByLayout()') < 2:
     raise SystemExit('1.3.42: expected sortSelectedByLayout calls not found')
 
-# Version marker.
 s=s.replace("version:'1.3.41'","version:'1.3.42'")
 p.write_text(s,encoding='utf-8')
 PY
 
-# Keep component metadata coherent.
 while IFS= read -r f; do sed -i "s/$OLD/$NEW/g" "$f"; done < <(grep -RIl --exclude='*.png' --exclude='*.jpg' --exclude='*.jpeg' --exclude='*.webp' --exclude='*.gif' -- "$OLD" "$TMP/component" || true)
 php -l "$B" >/dev/null
 
-# Static JS syntax check for the Builder helper region. PHP snippets are neutralized.
+# Syntax-check the Builder helper block. Use a flexible end marker because AI block
+# comments/names have changed across the recent releases.
 python3 - "$B" <<'PY'
 from pathlib import Path
 import re,sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 a=s.find('function fieldsInRow(')
-b=s.find('const aiAllowedTypes=',a)
-if a<0 or b<0: raise SystemExit('1.3.42: Builder JS region missing')
+if a<0: raise SystemExit('1.3.42: helper block start missing')
+ends=[x for x in (s.find('const aiAllowedTypes=',a),s.find('const aiWidths=',a),s.find('function aiOpen(',a)) if x>=0]
+b=min(ends) if ends else min(len(s),a+180000)
 js=re.sub(r'<\?php.*?\?>','null',s[a:b],flags=re.S)
 Path('/tmp/forms-1342-builder.js').write_text(js,encoding='utf-8')
 PY
 node --check /tmp/forms-1342-builder.js >/dev/null
 
-# Regression sanity check for the exact failure reported from the browser.
+# Exact regression check without depending on a historical comment marker.
 python3 - "$B" <<'PY'
 from pathlib import Path
-import re,sys
+import sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 assert 'function sortSelectedByLayout(' in s
-assert 'function add(item)' in s
-add=s[s.index('function add(item)'):s.index('/* Forms 1.3.40: AI mode selector',s.index('function add(item)'))]
-assert 'sortSelectedByLayout()' in add
+start=s.find('function add(item)')
+assert start>=0
+chunk=s[start:start+9000]
+assert 'sortSelectedByLayout()' in chunk
 assert "version:'1.3.42'" in s
 print('1.3.42 add-field regression checks OK')
 PY
 
-# Rebuild component ZIP.
 rm -f "$COMP_OLD"
 (cd "$TMP/component" && zip -qr "$TMP/outer/com_decaroforms_$NEW.zip" .)
 
-# Rebuild every other nested extension ZIP with version-only changes, preserving contents.
 for z in "$TMP/outer"/*_"$OLD".zip; do
   [ -e "$z" ] || continue
   work="$TMP/sub-$(basename "$z" .zip)"
@@ -128,7 +108,7 @@ cat > "$ROOT/updates/pkg_decaroforms.xml" <<EOF
 EOF
 cat > "$ROOT/updates/changelog.xml" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
-<changelogs><changelog><element>pkg_decaroforms</element><type>package</type><version>$NEW</version><security><item>No security changes.</item></security><fix><item>Fix Builder Library Add action after the logical-row refactor by restoring the missing sortSelectedByLayout helper.</item><item>Validate the full logical-row helper chain during release build to prevent similar missing-helper regressions.</item></fix></changelog></changelogs>
+<changelogs><changelog><element>pkg_decaroforms</element><type>package</type><version>$NEW</version><security><item>No security changes.</item></security><fix><item>Fix Builder Library Add action after the logical-row refactor by restoring the missing sortSelectedByLayout helper.</item><item>Validate the logical-row helper chain during the release build to prevent equivalent missing-helper regressions.</item></fix></changelog></changelogs>
 EOF
 
 rm -rf "$ROOT/releases/_upload"

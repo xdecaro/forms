@@ -36,8 +36,10 @@ for name,start,end in [
 ]:
     grab(name,start,end)
 
-# Find every renderer/persistence reference to row/col/width in the unpacked component.
-patterns=('config.layout','layout.row','layout.width','layout.col','row_meta','grid-template-columns','gridTemplateColumns')
+patterns=(
+ 'config.layout','layout.row','layout.width','layout.col','row_meta','grid-template-columns','gridTemplateColumns',
+ "['layout']",'[\"layout\"]',"['row']",'[\"row\"]',"['width']",'[\"width\"]',"['col']",'[\"col\"]'
+)
 for p in sorted(root.rglob('*')):
     if not p.is_file() or p.suffix.lower() not in {'.php','.js','.mjs','.xml'}: continue
     try: text=p.read_text(encoding='utf-8')
@@ -45,15 +47,20 @@ for p in sorted(root.rglob('*')):
     hits=[]
     for pat in patterns:
         for m in re.finditer(re.escape(pat),text):
-            a=max(0,m.start()-700); b=min(len(text),m.end()+1200)
+            a=max(0,m.start()-900); b=min(len(text),m.end()+1600)
             hits.append((m.start(),text[a:b]))
     if hits:
         out.append(f"\n=== FILE REFERENCES: {p.relative_to(root)} ===\n")
         seen=set()
-        for _,chunk in sorted(hits)[:30]:
-            key=chunk[:160]
+        for _,chunk in sorted(hits)[:60]:
+            key=chunk[:200]
             if key in seen: continue
             seen.add(key); out.append(chunk+'\n---')
+
+out.append('\n=== SITE FILE LIST ===\n')
+for p in sorted(root.rglob('*')):
+    if p.is_file() and ('site/' in str(p.relative_to(root)).replace('\\','/') or 'components/com_decaroforms/' in str(p.relative_to(root)).replace('\\','/')):
+        out.append(str(p.relative_to(root)))
 Path(sys.argv[2]).write_text('\n'.join(out),encoding='utf-8')
 PY
 rm -rf "$ROOT/releases/_upload"

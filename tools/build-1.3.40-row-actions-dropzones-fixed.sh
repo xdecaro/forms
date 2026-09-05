@@ -35,6 +35,14 @@ if idx < 0:
     raise SystemExit('1.3.40 fixed wrapper: target splice anchor missing')
 s=s[:idx]+new2+s[idx+len(old2):]
 
+# The original syntax-check expected the AI block after smartDrag. In 1.3.39 the
+# AI declarations live elsewhere, so use stable smart-drag boundaries instead.
+old_js="a=s.index('const smartDrag=');b=s.index('const aiAllowedTypes=',a)"
+new_js="a=s.index('function smartClassifyCard(');b=s.index('function smartShiftRowMeta(',a)"
+if old_js not in s:
+    raise SystemExit('1.3.40 fixed wrapper: smart syntax-check anchor missing')
+s=s.replace(old_js,new_js,1)
+
 p.write_text(s,encoding='utf-8')
 PY
 bash "$TMP_SCRIPT"

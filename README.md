@@ -8,7 +8,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.3.23**
+**1.3.24**
 
 ## What is Forms?
 
@@ -64,6 +64,12 @@ For each form, administrators can:
 - export data.
 
 This keeps day-to-day form administration inside Joomla without requiring source-code changes for normal configuration tasks.
+
+## Joomla editor button
+
+The Forms package includes an **Editors-XTD** plugin for Joomla. In article and other supported editor screens, the **Forms** button opens a searchable form picker and inserts the selected shortcode (for example `{form id="1"}`) at the current cursor position.
+
+The editor button is installed with the package and is enabled automatically during the Forms component update.
 
 ## Submissions manager
 

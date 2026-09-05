@@ -39,12 +39,8 @@ b=b.replace('class="df-saved-quick-delete" data-saved-quick-delete="${esc(tpl.id
 b=b.replace('class="df-lib-delete" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}" class="df-icon-only"','class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}"')
 
 # Render the already-loaded field workspace immediately, before later optional initializers can fail.
-anchor="""  });sync();
-}
-layoutNewRow?.addEventListener('dragover',e=>{e.preventDefault();layoutNewRow.classList.add('is-over');});"""
-replacement="""  });sync();
-}
-function ensureInitialFieldWorkspace(){
+anchor="layoutNewRow?.addEventListener('dragover',e=>{e.preventDefault();layoutNewRow.classList.add('is-over');});"
+replacement="""function ensureInitialFieldWorkspace(){
   if(!selected.length)return;
   renderSelected();
   renderLayoutCanvas();

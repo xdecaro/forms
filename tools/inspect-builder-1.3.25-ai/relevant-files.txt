@@ -1,0 +1,15 @@
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.ini
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.sys.ini
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.ini
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/src/Controller/BuilderController.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/src/Helper/FormHelper.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/src/View/Builder/HtmlView.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/src/View/Dashboard/HtmlView.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/src/View/Forms/HtmlView.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/src/View/Information/HtmlView.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/tmpl/builder/default.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/tmpl/dashboard/default.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/tmpl/forms/default.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/tmpl/information/default.php
+/tmp/tmp.ZQwvC830OX/c/administrator/components/com_decaroforms/tmpl/submissions/default.php

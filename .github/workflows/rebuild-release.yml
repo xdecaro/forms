@@ -104,7 +104,7 @@ jobs:
             exit 0
           fi
           if [ "$MODE" = "build-1.3.37-html-sections-translations" ]; then
-            bash tools/build-1.3.37-html-sections-translations.sh
+            bash tools/build-1.3.37-html-sections-translations-fixed.sh
             exit 0
           fi
           VERSION="$(cat releases/_upload/VERSION.txt)"

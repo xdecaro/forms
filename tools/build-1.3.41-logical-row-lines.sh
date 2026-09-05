@@ -181,7 +181,7 @@ s=s.replace('</style>',css+'</style>',1)
 
 # Runtime marker and static checks.
 s=s.replace("window.dfBuilderRuntime={version:'1.3.40'","window.dfBuilderRuntime={version:'1.3.41'",1)
-checks=['function visualLinesForItems','function normalizeVisualLines','function smartMoveToExistingRow','data-line','AGGIUNGI A','100% / 100%',"version:'1.3.41'"]
+checks=['function visualLinesForItems','function normalizeVisualLines','function smartMoveToExistingRow','row.dataset.line','AGGIUNGI A','100% / 100%',"version:'1.3.41'"]
 # 100% / 100% is produced at runtime, not literal; check the separator expression instead.
 checks.remove('100% / 100%');checks.append(".join(' / ')")
 for c in checks:

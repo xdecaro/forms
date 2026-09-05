@@ -1,5 +1,50 @@
 
-=== smart drag engine MISSING ===
+=== smart drag engine ===
+/* Forms 1.3.39: intelligent field drag & drop. No external dependency. */
+const smartDrag={pending:null,active:false,pointerId:null,pointerType:'',fieldKey:'',sourceCard:null,sourceRow:null,ghost:null,spec:null,specKey:'',pressTimer:null,lastX:0,lastY:0};
+let smartSuppressClickUntil=0;
+const smartDragIgnoreSelector='button,select,input,textarea,a,label,[contenteditable="true"],summary,details';
+function smartFieldIndex(key){return selected.findIndex(f=>f.key===key);}
+function smartFieldByKey(key){const i=smartFieldIndex(key);return i>=0?selected[i]:null;}
+function smartSpecId(spec){return spec?`${spec.kind}:${spec.targetKey||''}:${spec.row||''}:${spec.position||''}`:'';}
+function smartCaptureRects(){const map=new Map();layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const r=el.getBoundingClientRect();if(r.width&&r.height)map.set(el.dataset.fieldKey,{left:r.left,top:r.top});});return map;}
+function smartAnimateFrom(before){if(!before?.size)return;requestAnimationFrame(()=>{layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const b=before.get(el.dataset.fieldKey);if(!b||!el.animate)return;const r=el.getBoundingClientRect(),dx=b.left-r.left,dy=b.top-r.top;if(Math.abs(dx)<1&&Math.abs(dy)<1)return;el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:175,easing:'cubic-bezier(.2,.75,.25,1)'});});});}
+function smartRememberGrid(row){if(row&&!row.hasAttribute('data-smart-original-grid'))row.setAttribute('data-smart-original-grid',row.style.gridTemplateColumns||'');}
+function smartSetGrid(row,widths){if(!row)return;smartRememberGrid(row);const vals=(Array.isArray(widths)&&widths.length?widths:[100]);row.style.gridTemplateColumns=vals.map(v=>`${Math.max(1,Number(v)||1)}fr`).join(' ');}
+function smartRestorePreviewDom(){
+ layoutCanvas?.querySelectorAll('.df-smart-placeholder,.df-smart-newrow-preview').forEach(el=>el.remove());
+ layoutCanvas?.querySelectorAll('.df-smart-target-left,.df-smart-target-right,.df-smart-row-target-before,.df-smart-row-target-after').forEach(el=>el.classList.remove('df-smart-target-left','df-smart-target-right','df-smart-row-target-before','df-smart-row-target-after'));
+ layoutCanvas?.querySelectorAll('.df-layout-row[data-smart-original-grid]').forEach(row=>{row.style.gridTemplateColumns=row.getAttribute('data-smart-original-grid')||'';row.removeAttribute('data-smart-original-grid');});
+ layoutCanvas?.querySelectorAll('.df-smart-source-row-empty').forEach(el=>el.classList.remove('df-smart-source-row-empty'));
+ if(smartDrag.active)smartReflowSourceRow();
+}
+function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];const group=row.closest('.df-layout-row-group');if(!visible.length){group?.classList.add('df-smart-source-row-empty');return;}group?.classList.remove('df-smart-source-row-empty');smartSetGrid(row,smartAutoWidths(visible.length));}
+function smartCreateGhost(card,key,x,y){const f=smartFieldByKey(key),rect=card.getBoundingClientRect(),g=document.createElement('div');g.className='df-smart-drag-ghost';g.style.width=`${Math.min(Math.max(rect.width,210),380)}px`;g.innerHTML=`<span class="df-smart-ghost-handle">${modernUiIcon('grip')}</span><strong>${esc(f?.label||'Campo')}</strong><span class="df-smart-ghost-meta">${esc(tr.types[f?.type]||f?.type||'')}</span>`;document.body.appendChild(g);smartDrag.ghost=g;smartPositionGhost(x,y);}
+function smartPositionGhost(x,y){const g=smartDrag.ghost;if(!g)return;const pad=14,maxX=Math.max(8,window.innerWidth-g.offsetWidth-8),maxY=Math.max(8,window.innerHeight-g.offsetHeight-8);g.style.left=`${Math.min(maxX,Math.max(8,x+pad))}px`;g.style.top=`${Math.min(maxY,Math.max(8,y+pad))}px`;}
+function smartPreviewBesideWidths(spec){const target=smartFieldByKey(spec.targetKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return[100];const row=Number(target.config?.layout?.row||1),same=Number(source.config?.layout?.row||1)===row,items=fieldsInRow(row).map(([f])=>f).filter(f=>f!==source),pos=Math.max(0,items.indexOf(target)+(spec.position==='after'?1:0));items.splice(pos,0,source);return same?items.map(f=>Math.max(1,Number(f.config?.layout?.width||100))):smartAutoWidths(items.length);}
+function smartRenderPreview(spec){const id=smartSpecId(spec);if(id===smartDrag.specKey)return;const before=smartCaptureRects();smartRestorePreviewDom();smartDrag.spec=spec;smartDrag.specKey=id;if(!spec){smartAnimateFrom(before);return;}
+ if(spec.kind==='beside'){
+  const target=layoutCanvas?.querySelector(`.df-layout-card[data-field-key="${CSS.escape(spec.targetKey)}"]`);if(target){const row=target.closest('.df-layout-row'),ph=document.createElement('div');ph.className='df-smart-placeholder '+(spec.position==='before'?'is-left':'is-right');ph.innerHTML=`<span>${spec.position==='before'?'SINISTRA':'DESTRA'}</span>`;if(spec.position==='before')target.before(ph);else target.after(ph);target.classList.add(spec.position==='before'?'df-smart-target-left':'df-smart-target-right');smartSetGrid(row,smartPreviewBesideWidths(spec));}
+ }else if(spec.kind==='newrow'){
+  const row=layoutCanvas?.querySelector(`.df-layout-row[data-row="${Number(spec.row)}"]`),group=row?.closest('.df-layout-row-group');if(group){const ph=document.createElement('div');ph.className='df-smart-newrow-preview';ph.innerHTML=`<span class="df-smart-newrow-label">${spec.position==='before'?'SOPRA':'SOTTO'} · NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;if(spec.position==='before')group.before(ph);else group.after(ph);group.classList.add(spec.position==='before'?'df-smart-row-target-before':'df-smart-row-target-after');}
+ }else if(spec.kind==='append'){
+  const ph=document.createElement('div');ph.className='df-smart-newrow-preview is-append';ph.innerHTML=`<span class="df-smart-newrow-label">NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;layoutCanvas?.appendChild(ph);
+ }
+ smartAnimateFrom(before);
+}
+function smartClassifyCard(card,x,y){if(!card||card.dataset.fieldKey===smartDrag.fieldKey)return null;const target=smartFieldByKey(card.dataset.fieldKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return null;const r=card.getBoundingClientRect(),rx=(x-r.left)/Math.max(1,r.width),ry=(y-r.top)/Math.max(1,r.height),targetRow=Number(target.config?.layout?.row||1),sourceRow=Number(source.config?.layout?.row||1),count=fieldsInRow(targetRow).length+(sourceRow===targetRow?0:1),canSide=count<=4;
+ if(canSide&&rx<=.28)return{kind:'beside',targetKey:target.key,position:'before'};
+ if(canSide&&rx>=.72)return{kind:'beside',targetKey:target.key,position:'after'};
+ return{kind:'newrow',row:targetRow,position:ry<.5?'before':'after'};
+}
+function smartNearestCardInRow(row,x,y){const cards=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];if(!cards.length)return null;let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect(),cx=Math.max(r.left,Math.min(x,r.right)),cy=Math.max(r.top,Math.min(y,r.bottom)),d=(x-cx)**2+(y-cy)**2;if(d<score){score=d;best=card;}}return best;}
+function smartFindDropSpec(x,y){const stack=document.elementsFromPoint?document.elementsFromPoint(x,y):[];let card=stack.find(el=>el?.classList?.contains('df-layout-card')&&!el.classList.contains('df-smart-source-hidden'));if(card)return smartClassifyCard(card,x,y);
+ const row=stack.map(el=>el?.closest?.('.df-layout-row')).find(Boolean);if(row){card=smartNearestCardInRow(row,x,y);if(card)return smartClassifyCard(card,x,y);const rr=row.getBoundingClientRect();return{kind:'newrow',row:Number(row.dataset.row||1),position:y<rr.top+rr.height/2?'before':'after'};}
+ const group=stack.map(el=>el?.closest?.('.df-layout-row-group')).find(Boolean);if(group){const rowEl=group.querySelector('.df-layout-row'),gr=group.getBoundingClientRect();if(rowEl)return{kind:'newrow',row:Number(rowEl.dataset.row||1),position:y<gr.top+gr.height/2?'before':'after'};}
+ if(layoutNewRow){const r=layoutNewRow.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top-20&&y<=r.bottom+30)return{kind:'append'};}
+ const groups=[...(layoutCanvas?.querySelectorAll('.df-layout-row-group')||[])].filter(g=>!g.classList.contains('df-smart-source-row-empty'));let nearest=null,dist=Infinity;for(const g of groups){const r=g.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<dist){dist=d;nearest=g;}}if(nearest&&dist<48){const rowEl=nearest.querySelector('.df-layout-row'),r=nearest.getBoundingClientRect();if(rowEl)return{kind:'newrow',row:Number(rowEl.dataset.row||1),position:y<r.top+r.height/2?'before':'after'};}
+ return null;
+}
 
 
 === smart commit ===
@@ -143,7 +188,44 @@ function smartRestorePreviewDom(){
  layoutCanvas?.querySelectorAll('.df-smart-source-row-empty').forEach(el=>el.classList.remove('df-smart-source-row-empty'));
  if(smartDrag.active)smartReflowSourceRow();
 }
-function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout
+function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];const group=row.closest('.df-layout-row-group');if(!visible.length){group?.classList.add('df-smart-source-row-empty');return;}group?.classList.remove('df-smart-source-row-empty');smartSetGrid(row,smartAutoWidths(visible.length));}
+function smartCreateGhost(card,key,x,y){const f=smartFieldByKey(key),rect=card.getBoundingClientRect(),g=document.createElement('div');g.className='df-smart-drag-ghost';g.style.width=`${Math.min(Math.max(rect.width,210),380)}px`;g.innerHTML=`<span class="df-smart-ghost-handle">${modernUiIcon('grip')}</span><strong>${esc(f?.label||'Campo')}</strong><span class="df-smart-ghost-meta">${esc(tr.types[f?.type]||f?.type||'')}</span>`;document.body.appendChild(g);smartDrag.ghost=g;smartPositionGhost(x,y);}
+function smartPositionGhost(x,y){const g=smartDrag.ghost;if(!g)return;const pad=14,maxX=Math.max(8,window.innerWidth-g.offsetWidth-8),maxY=Math.max(8,window.innerHeight-g.offsetHeight-8);g.style.left=`${Math.min(maxX,Math.max(8,x+pad))}px`;g.style.top=`${Math.min(maxY,Math.max(8,y+pad))}px`;}
+function smartPreviewBesideWidths(spec){const target=smartFieldByKey(spec.targetKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return[100];const row=Number(target.config?.layout?.row||1),same=Number(source.config?.layout?.row||1)===row,items=fieldsInRow(row).map(([f])=>f).filter(f=>f!==source),pos=Math.max(0,items.indexOf(target)+(spec.position==='after'?1:0));items.splice(pos,0,source);return same?items.map(f=>Math.max(1,Number(f.config?.layout?.width||100))):smartAutoWidths(items.length);}
+function smartRenderPreview(spec){const id=smartSpecId(spec);if(id===smartDrag.specKey)return;const before=smartCaptureRects();smartRestorePreviewDom();smartDrag.spec=spec;smartDrag.specKey=id;if(!spec){smartAnimateFrom(before);return;}
+ if(spec.kind==='beside'){
+  const target=layoutCanvas?.querySelector(`.df-layout-card[data-field-key="${CSS.escape(spec.targetKey)}"]`);if(target){const row=target.closest('.df-layout-row'),ph=document.createElement('div');ph.className='df-smart-placeholder '+(spec.position==='before'?'is-left':'is-right');ph.innerHTML=`<span>${spec.position==='before'?'SINISTRA':'DESTRA'}</span>`;if(spec.position==='before')target.before(ph);else target.after(ph);target.classList.add(spec.position==='before'?'df-smart-target-left':'df-smart-target-right');smartSetGrid(row,smartPreviewBesideWidths(spec));}
+ }else if(spec.kind==='newrow'){
+  const row=layoutCanvas?.querySelector(`.df-layout-row[data-row="${Number(spec.row)}"]`),group=row?.closest('.df-layout-row-group');if(group){const ph=document.createElement('div');ph.className='df-smart-newrow-preview';ph.innerHTML=`<span class="df-smart-newrow-label">${spec.position==='before'?'SOPRA':'SOTTO'} · NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;if(spec.position==='before')group.before(ph);else group.after(ph);group.classList.add(spec.position==='before'?'df-smart-row-target-before':'df-smart-row-target-after');}
+ }else if(spec.kind==='append'){
+  const ph=document.createElement('div');ph.className='df-smart-newrow-preview is-append';ph.innerHTML=`<span class="df-smart-newrow-label">NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;layoutCanvas?.appendChild(ph);
+ }
+ smartAnimateFrom(before);
+}
+function smartClassifyCard(card,x,y){if(!card||card.dataset.fieldKey===smartDrag.fieldKey)return null;const target=smartFieldByKey(card.dataset.fieldKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return null;const r=card.getBoundingClientRect(),rx=(x-r.left)/Math.max(1,r.width),ry=(y-r.top)/Math.max(1,r.height),targetRow=Number(target.config?.layout?.row||1),sourceRow=Number(source.config?.layout?.row||1),count=fieldsInRow(targetRow).length+(sourceRow===targetRow?0:1),canSide=count<=4;
+ if(canSide&&rx<=.28)return{kind:'beside',targetKey:target.key,position:'before'};
+ if(canSide&&rx>=.72)return{kind:'beside',targetKey:target.key,position:'after'};
+ return{kind:'newrow',row:targetRow,position:ry<.5?'before':'after'};
+}
+function smartNearestCardInRow(row,x,y){const cards=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];if(!cards.length)return null;let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect(),cx=Math.max(r.left,Math.min(x,r.right)),cy=Math.max(r.top,Math.min(y,r.bottom)),d=(x-cx)**2+(y-cy)**2;if(d<score){score=d;best=card;}}return best;}
+function smartFindDropSpec(x,y){const stack=document.elementsFromPoint?document.elementsFromPoint(x,y):[];let card=stack.find(el=>el?.classList?.contains('df-layout-card')&&!el.classList.contains('df-smart-source-hidden'));if(card)return smartClassifyCard(card,x,y);
+ const row=stack.map(el=>el?.closest?.('.df-layout-row')).find(Boolean);if(row){card=smartNearestCardInRow(row,x,y);if(card)return smartClassifyCard(card,x,y);const rr=row.getBoundingClientRect();return{kind:'newrow',row:Number(row.dataset.row||1),position:y<rr.top+rr.height/2?'before':'after'};}
+ const group=stack.map(el=>el?.closest?.('.df-layout-row-group')).find(Boolean);if(group){const rowEl=group.querySelector('.df-layout-row'),gr=group.getBoundingClientRect();if(rowEl)return{kind:'newrow',row:Number(rowEl.dataset.row||1),position:y<gr.top+gr.height/2?'before':'after'};}
+ if(layoutNewRow){const r=layoutNewRow.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top-20&&y<=r.bottom+30)return{kind:'append'};}
+ const groups=[...(layoutCanvas?.querySelectorAll('.df-layout-row-group')||[])].filter(g=>!g.classList.contains('df-smart-source-row-empty'));let nearest=null,dist=Infinity;for(const g of groups){const r=g.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<dist){dist=d;nearest=g;}}if(nearest&&dist<48){const rowEl=nearest.querySelector('.df-layout-row'),r=nearest.getBoundingClientRect();if(rowEl)return{kind:'newrow',row:Number(rowEl.dataset.row||1),position:y<r.top+r.height/2?'before':'after'};}
+ return null;
+}
+function smartShiftRowMeta(insertRow){builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};const meta=builderConfig.layout.row_meta&&typeof builderConfig.layout.row_meta==='object'?builderConfig.layout.row_meta:{},next={};Object.keys(meta).forEach(k=>{const n=Number(k);next[String(Number.isFinite(n)&&n>=insertRow?n+1:n)]=meta[k];});builderConfig.layout.row_meta=next;}
+function smartMoveBeside(index,targetIndex,position='after'){if(index<0||targetIndex<0||!selected[index]||!selected[targetIndex]||index===targetIndex)return false;const field=selected[index],target=selected[targetIndex],oldRow=Number(field.config?.layout?.row||1),targetRow=Number(target.config?.layout?.row||1),same=oldRow===targetRow,targetItems=fieldsInRow(targetRow).map(([f])=>f);if(!same&&targetItems.length>=4)return smartMoveNewRow(index,targetRow,'after');const oldNeighbors=fieldsInRow(oldRow).map(([f])=>f).filter(f=>f!==field),items=targetItems.filter(f=>f!==field),at=Math.max(0,items.indexOf(target)+(position==='after'?1:0));items.splice(at,0,field);items.forEach((f,i)=>{defaultFieldConfig(f);f.config.layout.row=targetRow;f.config.layout.col=i+1;});normalizeLayoutRows();sortSelectedByLayout();if(!same&&oldNeighbors.length)smartFitRow(Number(oldNeighbors[0].config.layout.row||1));smartFitRow(Number(field.config.layout.row||targetRow));activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartMoveNewRow(index,targetRow,position='after'){if(index<0||!selected[index])return false;const field=selected[index],oldRow=Number(field.config?.layout?.row||1),oldItems=fieldsInRow(oldRow).map(([f])=>f),oldNeighbors=oldItems.filter(f=>f!==field);if(oldRow===Number(targetRow)&&oldItems.length===1)return false;const insertRow=Math.max(1,Number(targetRow)+(position==='after'?1:0));smartShiftRowMeta(insertRow);selected.forEach(f=>{defaultFieldConfig(f);if(f!==field&&Number(f.config.layout.row||1)>=insertRow)f.config.layout.row=Number(f.config.layout.row)+1;});field.config.layout={...(field.config.layout||{}),row:insertRow,col:1,width:100};normalizeLayoutRows();sortSelectedByLayout();if(oldNeighbors.length)smartFitRow(Number(oldNeighbors[0].config.layout.row||1));smartFitRow(Number(field.config.layout.row||1));activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartCommitSpec(spec,key){const index=smartFieldIndex(key);if(index<0||!spec)return false;let changed=false;if(spec.kind==='beside'){const ti=smartFieldIndex(spec.targetKey);changed=smartMoveBeside(index,ti,spec.position);}else if(spec.kind==='newrow')changed=smartMoveNewRow(index,Number(spec.row),spec.position);else if(spec.kind==='append'){const max=Math.max(1,...selected.map(f=>Number(f.config?.layout?.row||1)));changed=smartMoveNewRow(index,max,'after');}if(changed){sortSelectedByLayout();sync();renderSelected();clearTimeout(historyTimer);pushHistory();}return changed;}
+function smartEndVisual(){clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;smartDrag.ghost?.remove();smartDrag.ghost=null;document.body.classList.remove('df-smart-drag-active');document.querySelector('.df-builder-workspace')?.classList.remove('is-smart-dragging');}
+function smartBeginDrag(){const p=smartDrag.pending;if(!p||smartDrag.active||!p.card?.isConnected)return;smartDrag.active=true;smartDrag.pointerId=p.pointerId;smartDrag.pointerType=p.pointerType;smartDrag.fieldKey=p.fieldKey;smartDrag.sourceCard=p.card;smartDrag.sourceRow=p.card.closest('.df-layout-row');smartDrag.lastX=p.x;smartDrag.lastY=p.y;smartDrag.pending=null;clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;const before=smartCaptureRects();smartCreateGhost(p.card,p.fieldKey,p.x,p.y);p.card.classList.add('df-smart-source-hidden');document.body.classList.add('df-smart-drag-active');document.querySelector('.df-builder-workspace')?.classList.add('is-smart-dragging');smartReflowSourceRow();smartAnimateFrom(before);if(p.pointerType!=='mouse'&&navigator.vibrate)try{navigator.vibrate(12);}catch{};}
+function smartCancelPending(){clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;smartDrag.pending=null;}
+function smartQueueDrag(e,card,key){if(editorLocked||!e.isPrimary||(e.pointerType==='mouse'&&e.button!==0)||e.target.closest(smartDragIgnoreSelector))return;smartCancelPending();smartDrag.pending={pointerId:e.pointerId,pointerType:e.pointerType||'mouse',fieldKey:key,card,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY};if(e.pointerType==='touch'||e.pointerType==='pen')smartDrag.pressTimer=setTimeout(()=>smartBeginDrag(),420);}
+function smartPointerMove(e){const p=smartDrag.pending;if(p&&e.pointerId===p.pointerId&&!smartDrag.active){p.x=e.clientX;p.y=e.clientY;const d=Math.hypot(e.clientX-p.startX,e.clientY-p.startY);if(p.pointerType==='mouse'){if(d>=5)smartBeginDrag();}else if(d>10){smartCancelPending();return;}}if(!smartDrag.active||e.pointerId!==smartDrag.pointerId)return;e.preventDefault();smartDrag.lastX=e.clientX;smartDrag.lastY=e.clientY;smartPositionGhost(e.clientX,e.clientY);smartRenderPreview(smartFindDropSpec(e.clientX,e.clientY));}
+function smartFinishDrag(commit,e){if(!smartDrag.active){smartCancelPending();return;}if(e&&e.pointerId!==smartDrag.pointerId)return;e?.preventDefault?.();const before=smartCaptureRects(),spec=smartDrag.spec,key=smartDrag.fieldKey;smartEndVisual();smartRestorePreviewDom();const changed=commit&&spec?smartCommitSpec(spec,key):false;smartSuppressClickUntil=Date.now()+320;smartDrag.active=false;smartDrag.pointerId=null;smartDrag.pointerType='';smartDrag.fieldKey='';smartDrag.sourceCard=null;smartDrag.sourceRow=null;smartDrag.spec=null;smartDrag.specKey='';if(!changed)renderLayoutCanvas();else renderLayoutCanvas();smartAnimateFrom(before);}
+function smartPointerUp(e){if(smartDrag.active)smartFin
 
 === section settings ===
 function renderSectionSettings(x,i){defaultFieldConfig(x);sel.innerHTML='';const d=document.createElement('div');d.className='df-selected-item is-open df-structure-settings';d.innerHTML=`<div class="df-selected-top"><div class="df-field-toggle-main"><strong>${esc(structureUi.sectionSettings)}</strong><span class="df-field-summary"><span class="df-summary-chip">${esc(structureUi.section)}</span></span></div><div class="df-mini-actions"><button type="button" data-structure-remove class="df-icon-only" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button></div></div><div class="df-selected-config-wrap"><div class="df-selected-config-inner"><div class="df-selected-config"><details class="full df-main-settings" open><summary>${esc(structureUi.sectionSettings)}</summary><div class="df-main-settings-body"><div class="df-main-settings-grid"><div class="full"><label>${esc(structureUi.title)}</label><input data-section-title value="${esc(x.label||'')}"></div><div class="full"><label>${esc(structureUi.description)}</label><textarea class="df-options" data-section-description>${esc(x.config?.content||'')}</textarea></div></div></div></details></div></div></div>`;d.querySelector('[data-section-title]').oninput=e=>{x.label=e.target.value;sync();renderLayoutCanvas();};d.querySelector('[data-section-description]').oninput=e=>{x.config.content=e.target.value;sync();renderLayoutCanvas();};d.querySelector('[data-structure-remove]').onclick=()=>confirmDelete(`la sezione “${x.label||structureUi.section}”`,()=>removeCanvasField(i));sel.appendChild(d);sync();}
@@ -153,133 +235,9 @@ function selectRowSettings(rowNo){activeStructureSelection={type:'row',row:Numbe
 
 
 === CSS .is-structure-before ===
-r(--bs-secondary-color,#667085)}
+grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;min-height:48px;padding:9px 11px;border:2px solid var(--df);border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 16px 42px rgba(0,0,0,.24);opacity:.96;transform:rotate(.5deg)}.df-smart-drag-ghost strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-smart-ghost-handle{font-size:18px;color:var(--df)}.df-smart-ghost-meta{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}
 .df-smart-placeholder{min-height:48px;border:2px dashed var(--df);border-radius:8px;background:color-mix(in srgb,var(--df) 7%,var(--bs-body-bg,#fff));display:flex;align-items:center;justify-content:center;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none;animation:dfSmartPulse .7s ease-in-out infinite alternate}.df-smart-target-left{box-shadow:inset 3px 0 0 var(--df)}.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df)}
 .df-smart-newrow-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin:7px 0;padding:9px 11px;border:2px dashed var(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-size:10px;font-weight:950;letter-spacing:.05em}.df-smart-newrow-field{min-width:0;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:var(--bs-body-color,#1f2937)}.df-smart-row-target-before>.df-layout-row-head{box-shadow:inset 0 3px 0 var(--df)}.df-smart-row-target-after>.df-layout-row-head{box-shadow:inset 0 -3px 0 var(--df)}
-body.df-smart-drag-active,body.df-smart-drag-active *{cursor:grabbing!important}body.df-smart-drag-active{user-select:none}
-@keyframes dfSmartPulse{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--df) 8%,transparent)}to{box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 10%,transparent)}}
-@media(max-width:820px){.df-layout-card{touch-action:pan-y}.df-layout-handle{min-width:32px;min-height:36px}.df-smart-drag-ghost{max-width:calc(100vw - 24px)}}
-
-/* Forms 1.3.39: draggable section/row structure. */
-.df-layout-structure-handle{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:28px;border:0;background:transparent;color:var(--bs-secondary-color,#667085);font-size:15px;line-height:1;cursor:grab;user-select:none;touch-action:none;border-radius:5px}.df-layout-structure-handle:hover,.df-layout-structure-handle:focus-visible{color:#7c3aed;background:color-mix(in srgb,#7c3aed 8%,transparent);outline:none}.df-layout-structure-handle:active{cursor:grabbing}
-body.df-structure-drag-active{user-select:none;cursor:grabbing!important}body.df-structure-drag-active *{cursor:grabbing!important}.df-layout-section-group.is-structure-source,.df-layout-row-group.is-structure-source{opacity:.38}
-.df-layout-section-head,.df-layout-row-head{position:relative}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before,.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:999px;background:#7c3aed;z-index:8}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before{top:-2px}.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{bottom:-2px}.df-layout-section-head.is-structure-inside{box-shadow:inset 0 0 0 2px #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important}
-.df-structure-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:flex;align-items:center;gap:9px;max-width:360px;min-width:190px;padding:9px 12px;border:1px solid color-mix(in srgb,#7c3aed 55%,var(--df-border));border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 14px 35px rgba(15,23,42,.22);font-size:12px}.df-structure-drag-ghost strong{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-structure-drag-ghost>span:last-child{font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em}
-
-/* Forms 1.3.39: modern, borderless Builder icon actions. */
-.df-icon-only{width:34px;height:34px;min-width:34px;display:inline-grid;place-items:center;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:8px;color:var(--bs-secondary-color,#59636f);cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease}
-.df-icon-only:hover,.df-icon-only:focus-visible{background:color-mix(in srgb,#7c3aed 9%,transparent)!important;color:#6d28d9;outline:none}
-.df-icon-only:active{transform:scale(.94)}
-.df-modern-ui-icon{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-.df-layout-structure-handle .df-modern-ui-icon,.df-layout-handle .df-modern-ui-icon{width:17px;height:17px;stroke-width:1.7}
-.df-canvas-remove:hover,.df-canvas-remove:focus-visible,[data-section-remove]:hover,[data-section-remove]:focus-visible,[data-structure-remove]:hover,[data-structure-remove]:focus-visible,.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible,.df-lib-delete:hover,.df-lib-delete:focus-visible,.df-saved-quick-delete:hover,.df-saved-quick-delete:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
-.df-layout-actions,.df-layout-section-actions,.df-mini-actions{align-items:center;gap:2px}
-
-/* Forms 1.3.39: AI preview filter states. */
-.df-ai-filter-btn{white-space:nowrap}.df-ai-filter-btn.is-active{border-color:#7c3aed!important;background:color-mix(in srgb,#7c3aed 10%,var(--bs-body-bg,#fff))!important;color:#6d28d9}.df-ai-filter-btn:disabled{opacity:.42;cursor:not-allowed}.df-ai-filter-empty{padding:18px;border:1px dashed var(--df-border);border-radius:9px;text-align:center}
-</style>
-
-<div class="df-builder">
-  <div class="df-bhead">
-    <div><h2><?php echo $id ? Text::_('COM_DECAROFORMS_BUILDER_EDIT_TITLE') : Text::_('COM_DECAROFORMS_BUILDER_CREATE_TITLE'); ?></h2><p><?php echo Text::_('COM_DECAROFORMS_BUILDER_DESC'); ?></p></div>
-    <div class="df-bactions"><a class="df-btn df-back-btn" href="<?php echo $this->formsUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_BACK_FORMS'); ?></a><?php if ($id): ?><a class="df-btn df-danger" href="<?php echo $this->deleteUrl; ?>" data-confirm-delete-link data-delete-label="modulo"><?php echo Text::_('COM_DECAROFORMS_DELETE'); ?></a><?php endif; ?></div>
-  </div>
-
-
-  <div class="df-editor-toolbar" role="toolbar" aria-label="Modifica modulo">
-    <div class="df-history-actions"><button type="button" id="df-undo" title="Annulla ultima modifica" disabled>↶ Annulla</button><button type="button" id="df-redo" title="Ripristina modifica" disabled>↷ Ripristina</button></div>
-    <div class="df-edit-mode" aria-label="Modalità modifica"><button type="button" class="df-lock-toggle" data-lock="1"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Bloccato</span></button><button type="button" class="df-lock-toggle" data-lock="0"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20l4.2-1 10.5-10.5a2.1 2.1 0 0 0-3-3L5.2 16 4 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 6.7l2.8 2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Modifica</span></button><button class="df-save-top" type="submit" form="df-builder-form"><?php echo Text::_('COM_DECAROFORMS_SAVE_FORM'); ?></button>
-
-=== CSS .df-layout-row-head ===
-{opacity:.78}
-.df-ai-mode[data-ai-mode-select]:hover,.df-ai-mode[data-ai-mode-select]:focus-visible{opacity:1;border-color:#7c3aed;outline:none}
-.df-ai-mode[data-ai-mode-select].is-active{opacity:1;border-color:#7c3aed;box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 12%,transparent)}
-.df-ai-mode-panels{margin-top:14px}.df-ai-mode-panel[hidden]{display:none!important}.df-ai-mode-panel{display:block}
-.df-ai-mode-panel>.df-ai-workflow{margin:0}.df-ai-page-panel,.df-ai-direct-panel{border:1px solid var(--df-border);border-radius:10px;padding:14px;background:var(--bs-body-bg,#fff)}
-.df-ai-page-panel h4,.df-ai-direct-panel h4{margin:0 0 7px;font-size:15px}.df-ai-page-panel .df-ai-file-row{margin:12px 0 0}
-@media(max-width:820px){.df-ai-modes.is-chatgpt,.df-ai-modes.is-page,.df-ai-modes.is-direct{grid-template-columns:1fr}}
-
-
-/* Forms 1.3.39: section + row accordions in Struttura del modulo. */
-.df-layout-accordion-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px;flex-wrap:wrap}
-.df-layout-accordion-toolbar .df-btn{min-height:34px;padding:6px 11px;font-size:12px}
-.df-layout-section-group{border:1px solid var(--df-border);border-radius:12px;background:var(--bs-body-bg,#fff);overflow:hidden;margin:0 0 10px}
-.df-layout-section-head{display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 10px;background:color-mix(in srgb,var(--bs-secondary-bg,#f4f6f8) 82%,transparent);border:0;width:100%;text-align:left;color:inherit}
-.df-layout-section-head:hover{background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 94%,transparent)}
-.df-layout-section-chevron{width:20px;flex:0 0 20px;font-weight:900;transition:transform .16s ease}.df-layout-section-group.is-open>.df-layout-section-head .df-layout-section-chevron{transform:rotate(90deg)}
-.df-layout-section-title{min-width:0;flex:1;display:flex;align-items:center;gap:9px;flex-wrap:wrap}.df-layout-section-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(480px,55vw)}
-.df-layout-section-summary{font-size:11px;color:var(--bs-secondary-color,#667085);font-weight:650}.df-layout-section-actions{display:flex;align-items:center;gap:4px;flex:0 0 auto}
-.df-layout-section-body{display:none;padding:9px}.df-layout-section-group.is-open>.df-layout-section-body{display:block}
-.df-layout-row-group{border:1px solid color-mix(in srgb,var(--df-border) 82%,transparent);border-radius:9px;overflow:hidden;margin:0 0 8px}.df-layout-row-group:last-child{margin-bottom:0}
-.df-layout-row-head{display:flex;align-items:center;gap:8px;width:100%;border:0;background:color-mix(in srgb,var(--bs-body-bg,#fff) 94%,var(--bs-secondary-bg,#f3f4f6));padding:7px 9px;min-height:38px;color:inherit;text-align:left}
-.df-layout-row-head:hover{background:var(--bs-secondary-bg,#f4f5f7)}.df-layout-row-chevron{width:18px;flex:0 0 18px;font-weight:900;transition:transform .16s ease}.df-layout-row-group.is-open>.df-layout-row-head .df-layout-row-chevron{transform:rotate(90deg)}
-.df-layout-row-label{font-size:12px;font-weight:800}.df-layout-row-summary{font-size:11px;color:var(--bs-secondary-color,#667085);margin-left:auto}.df-layout-row-body{display:none;padding:7px}.df-layout-row-group.is-open>.df-layout-row-body{display:block}
-.df-layout-row-body>.df-layout-row{margin:0}.df-layout-section-empty{padding:9px 10px;font-size:12px;color:var(--bs-secondary-color,#667085)}
-.df-layout-section-head.is-over,.df-layout-row-head.is-over{box-shadow:inset 0 0 0 2px #0d6efd}
-@media(max-width:720px){.df-layout-section-summary,.df-layout-row-summary{display:none}.df-layout-section-head{padding:8px}.df-layout-section-title strong{max-width:48vw}}
-
-/* Forms 1.3.39: polished AI uploads + structure settings. */
-.df-field-entry-actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px!important}.df-field-entry-actions>.df-add-field-main,.df-field-entry-actions>.df-ai-import-main{width:100%!important;min-height:46px!important;height:46px!important;margin:0!important;box-sizing:border-box}.df-ai-import-main>span,.df-add-field-main>span{font-size:18px;line-height:1}
-.df-ai-main-label{display:flex;flex-direction:column;gap:4px;min-width:0}.df-ai-main-label>span{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}.df-ai-main-label>input{width:100%}
-.df-ai-premium-file-row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}.df-ai-native-file{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}.df-ai-upload-shell{display:flex;align-items:center;gap:12px;width:100%;min-height:66px;padding:10px 12px;border:1px dashed color-mix(in srgb,#7c3aed 42%,var(--df-border));border-radius:10px;background:color-mix(in srgb,#7c3aed 3%,var(--bs-body-bg,#fff));cursor:pointer;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}.df-ai-upload-shell:hover,.df-ai-upload-shell:focus-visible,.df-ai-upload-shell.is-dragover{outline:none;border-color:#7c3aed;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff));box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 10%,transparent)}.df-ai-upload-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}.df-ai-upload-copy strong{font-size:13px}.df-ai-upload-copy [data-ai-upload-name]{font-size:12px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-ai-upload-shell.has-file{border-style:solid}.df-ai-ui-delete{margin-left:auto!important;flex:0 0 34px!important;width:34px!important;height:34px!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--bs-secondary-color,#667085)!important}.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible{background:transparent!important;color:#dc3545!important;outline:none}.df-ai-ui-delete svg{width:18px!important;height:18px!important}.df-ai-page-actions{margin-top:2px}.df-ai-page-actions .df-primary{min-height:40px}
-.df-layout-row-group.is-selected>.df-layout-row-head{box-shadow:inset 3px 0 0 #7c3aed;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff))}.df-layout-structure-description{font-size:11px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}.df-structure-settings textarea{min-height:90px}.df-structure-settings .df-selected-top{min-height:54px}
-@media(max-width:720px){.df-field-entry-actions{grid-template-columns:1fr!important}.df-layout-structure-description{display:none}}
-
-/* Forms 1.3.39: smart drag visual language. */
-.df-layout-drop-guide{display:none!important}
-.df-layout-card{position:relative;cursor:grab;user-select:none;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}.df-layout-card:active{cursor:grabbing}.df-layout-card .df-layout-meta,.df-layout-card button,.df-layout-card select{cursor:auto}.df-layout-handle{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:30px;font-size:18px;line-height:1;color:var(--bs-secondary-color,#667085);cursor:grab}.df-layout-card:hover .df-layout-handle{color:var(--df)}
-.df-smart-source-hidden{display:none!important}.df-smart-source-row-empty{display:none!important}
-.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden){transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}.df-builder-workspace.is-smart-dragging .df-layout-card:n
-
-=== CSS .df-layout-section-head ===
-ry-actions{flex-direction:column}}
-@media(max-width:560px){.df-ai-modal{padding:8px}.df-ai-dialog{width:calc(100vw - 16px);max-height:calc(100vh - 16px)}.df-ai-head,.df-ai-foot,.df-ai-body{padding:12px}.df-ai-row{grid-template-columns:30px 1fr}.df-ai-row>*{grid-column:2}.df-ai-row-check{grid-column:1;grid-row:1/5}.df-ai-row-extra,.df-ai-warning{grid-column:2}.df-ai-order{justify-content:flex-start}.df-ai-foot{flex-wrap:wrap}.df-ai-foot .df-btn{flex:1}}
-
-
-/* Forms 1.3.39: AI import UX cleanup. */
-.df-ai-clear-file[hidden]{display:none!important}.df-ai-clear-file{flex:0 0 auto;width:36px;height:36px;display:inline-grid;place-items:center}.df-ai-clear-file svg{width:17px;height:17px;display:block}
-
-
-/* Forms 1.3.39: three-mode AI selector, active 50% + 25% + 25%. */
-.df-ai-modes.is-chatgpt{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr)}
-.df-ai-modes.is-page{grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(0,1fr)}
-.df-ai-modes.is-direct{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr)}
-.df-ai-mode[data-ai-mode-select]{cursor:pointer;min-width:0;transition:grid-column .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,opacity .18s ease}
-.df-ai-mode[data-ai-mode-select]:not(.is-active){opacity:.78}
-.df-ai-mode[data-ai-mode-select]:hover,.df-ai-mode[data-ai-mode-select]:focus-visible{opacity:1;border-color:#7c3aed;outline:none}
-.df-ai-mode[data-ai-mode-select].is-active{opacity:1;border-color:#7c3aed;box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 12%,transparent)}
-.df-ai-mode-panels{margin-top:14px}.df-ai-mode-panel[hidden]{display:none!important}.df-ai-mode-panel{display:block}
-.df-ai-mode-panel>.df-ai-workflow{margin:0}.df-ai-page-panel,.df-ai-direct-panel{border:1px solid var(--df-border);border-radius:10px;padding:14px;background:var(--bs-body-bg,#fff)}
-.df-ai-page-panel h4,.df-ai-direct-panel h4{margin:0 0 7px;font-size:15px}.df-ai-page-panel .df-ai-file-row{margin:12px 0 0}
-@media(max-width:820px){.df-ai-modes.is-chatgpt,.df-ai-modes.is-page,.df-ai-modes.is-direct{grid-template-columns:1fr}}
-
-
-/* Forms 1.3.39: section + row accordions in Struttura del modulo. */
-.df-layout-accordion-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px;flex-wrap:wrap}
-.df-layout-accordion-toolbar .df-btn{min-height:34px;padding:6px 11px;font-size:12px}
-.df-layout-section-group{border:1px solid var(--df-border);border-radius:12px;background:var(--bs-body-bg,#fff);overflow:hidden;margin:0 0 10px}
-.df-layout-section-head{display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 10px;background:color-mix(in srgb,var(--bs-secondary-bg,#f4f6f8) 82%,transparent);border:0;width:100%;text-align:left;color:inherit}
-.df-layout-section-head:hover{background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 94%,transparent)}
-.df-layout-section-chevron{width:20px;flex:0 0 20px;font-weight:900;transition:transform .16s ease}.df-layout-section-group.is-open>.df-layout-section-head .df-layout-section-chevron{transform:rotate(90deg)}
-.df-layout-section-title{min-width:0;flex:1;display:flex;align-items:center;gap:9px;flex-wrap:wrap}.df-layout-section-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(480px,55vw)}
-.df-layout-section-summary{font-size:11px;color:var(--bs-secondary-color,#667085);font-weight:650}.df-layout-section-actions{display:flex;align-items:center;gap:4px;flex:0 0 auto}
-.df-layout-section-body{display:none;padding:9px}.df-layout-section-group.is-open>.df-layout-section-body{display:block}
-.df-layout-row-group{border:1px solid color-mix(in srgb,var(--df-border) 82%,transparent);border-radius:9px;overflow:hidden;margin:0 0 8px}.df-layout-row-group:last-child{margin-bottom:0}
-.df-layout-row-head{display:flex;align-items:center;gap:8px;width:100%;border:0;background:color-mix(in srgb,var(--bs-body-bg,#fff) 94%,var(--bs-secondary-bg,#f3f4f6));padding:7px 9px;min-height:38px;color:inherit;text-align:left}
-.df-layout-row-head:hover{background:var(--bs-secondary-bg,#f4f5f7)}.df-layout-row-chevron{width:18px;flex:0 0 18px;font-weight:900;transition:transform .16s ease}.df-layout-row-group.is-open>.df-layout-row-head .df-layout-row-chevron{transform:rotate(90deg)}
-.df-layout-row-label{font-size:12px;font-weight:800}.df-layout-row-summary{font-size:11px;color:var(--bs-secondary-color,#667085);margin-left:auto}.df-layout-row-body{display:none;padding:7px}.df-layout-row-group.is-open>.df-layout-row-body{display:block}
-.df-layout-row-body>.df-layout-row{margin:0}.df-layout-section-empty{padding:9px 10px;font-size:12px;color:var(--bs-secondary-color,#667085)}
-.df-layout-section-head.is-over,.df-layout-row-head.is-over{box-shadow:inset 0 0 0 2px #0d6efd}
-@media(max-width:720px){.df-layout-section-summary,.df-layout-row-summary{display:none}.df-layout-section-head{padding:8px}.df-layout-section-title strong{max-width:48vw}}
-
-/* Forms 1.3.39: polished AI uploads + structure settings. */
-.df-field-entry-actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px!important}.df-field-entry-actions>.df-add-field-main,.df-field-entry-actions>.df-ai-import-main{width:100%!important;min-height:46px!important;height:46px!important;margin:0!important;box-sizing:border-box}.df-ai-import-main>span,.df-add-field-main>span{font-size:18px;line-height:1}
-.df-ai-main-label{display:flex;flex-direction:column;gap:4px;min-width:0}.df-ai-main-label>span{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}.df-ai-main-label>input{width:100%}
-.df-ai-premium-file-row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}.df-ai-native-file{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}.df-ai-upload-shell{display:flex;align-items:center;gap:12px;width:100%;min-height:66px;padding:10px 12px;border:1px dashed color-mix(in srgb,#7c3aed 42%,var(--df-border));border-radius:10px;background:color-mix(in srgb,#7c3aed 3%,var(--bs-body-bg,#fff));cursor:pointer;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}.df-ai-upload-shell:hover,.df-ai-upload-shell:focus-visible,.df-ai-upload-shell.is-dragover{outline:none;border-color:#7c3aed;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff));box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 10%,transparent)}.df-ai-upload-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}.df-ai-upload-copy strong{font-size:13px}.df-ai-upload-copy [data-ai-upload-name]{font-size:12px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-ai-upload-shell.has-file{border-style:solid}.df-ai-ui-delete{margin-left:auto!important;flex:0 0 34px!important;width:34px!important;height:34px!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--bs-secondary-color,#667085)!important}.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible{background:transparent!important;color:#dc3545!important;outline:none}.df-ai-ui-delete svg{width:18px!important;height:18px!important}.df-ai-page-actions{margin-top:2px}.df-ai-page-actions .df-primary{min-height:40px}
-.df-layout-row-group.is-selected>.df-layout-row-head{box-shadow:inset 3px 0 0 #7c3aed;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff))}.df-layout-structure-description{font-size:11px;color:var(--bs-se
-
-=== CSS .df-structure-drag-ghost ===
-ar(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-size:10px;font-weight:950;letter-spacing:.05em}.df-smart-newrow-field{min-width:0;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:var(--bs-body-color,#1f2937)}.df-smart-row-target-before>.df-layout-row-head{box-shadow:inset 0 3px 0 var(--df)}.df-smart-row-target-after>.df-layout-row-head{box-shadow:inset 0 -3px 0 var(--df)}
 body.df-smart-drag-active,body.df-smart-drag-active *{cursor:grabbing!important}body.df-smart-drag-active{user-select:none}
 @keyframes dfSmartPulse{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--df) 8%,transparent)}to{box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 10%,transparent)}}
 @media(max-width:820px){.df-layout-card{touch-action:pan-y}.df-layout-handle{min-width:32px;min-height:36px}.df-smart-drag-ghost{max-width:calc(100vw - 24px)}}
@@ -323,3 +281,247 @@ body.df-structure-drag-active{user-select:none;cursor:grabbing!important}body.df
   <?php
   $dfSession = \Joomla\CMS\Factory::getApplication()->getSession();
   $dfBuilderCsrf = (string) $dfSession->get('com_decaroforms.builder.csrf', '');
+  if ($dfBuilderCsrf === '') {
+      $dfBuilderCsrf = bin2hex(random_bytes(32));
+      $dfSession->set('com_decaroforms.builder.csrf', $dfBuilderCsrf);
+  }
+  ?>
+  <script>
+  (()=>{
+    const tokenUrl='index.php?option=com_decaroforms&task=builder.token&format=json';
+    const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    function notice(message,type='info',reload=false){
+      if(typeof window.dfSetSaveNotice==='function'){window.dfSetSaveNotice(message,type,reload);return;}
+      let box=document.getElementById('df-save-notice');
+      if(!box){box=document.createElement('div');box.id='df-save-notice';document.querySelector('.df-builder')?.prepend(box);}
+      if(!box)return;
+      box.className='df-save-notice is-'+type;box.hidden=false;
+      box.innerHTML
+
+=== CSS .df-smart-newrow-preview ===
+dow:none!important;color:var(--bs-secondary-color,#667085)!important}.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible{background:transparent!important;color:#dc3545!important;outline:none}.df-ai-ui-delete svg{width:18px!important;height:18px!important}.df-ai-page-actions{margin-top:2px}.df-ai-page-actions .df-primary{min-height:40px}
+.df-layout-row-group.is-selected>.df-layout-row-head{box-shadow:inset 3px 0 0 #7c3aed;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff))}.df-layout-structure-description{font-size:11px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}.df-structure-settings textarea{min-height:90px}.df-structure-settings .df-selected-top{min-height:54px}
+@media(max-width:720px){.df-field-entry-actions{grid-template-columns:1fr!important}.df-layout-structure-description{display:none}}
+
+/* Forms 1.3.39: smart drag visual language. */
+.df-layout-drop-guide{display:none!important}
+.df-layout-card{position:relative;cursor:grab;user-select:none;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}.df-layout-card:active{cursor:grabbing}.df-layout-card .df-layout-meta,.df-layout-card button,.df-layout-card select{cursor:auto}.df-layout-handle{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:30px;font-size:18px;line-height:1;color:var(--bs-secondary-color,#667085);cursor:grab}.df-layout-card:hover .df-layout-handle{color:var(--df)}
+.df-smart-source-hidden{display:none!important}.df-smart-source-row-empty{display:none!important}
+.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden){transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden):hover{border-color:color-mix(in srgb,var(--df) 45%,var(--df-border))}
+.df-smart-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;min-height:48px;padding:9px 11px;border:2px solid var(--df);border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 16px 42px rgba(0,0,0,.24);opacity:.96;transform:rotate(.5deg)}.df-smart-drag-ghost strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-smart-ghost-handle{font-size:18px;color:var(--df)}.df-smart-ghost-meta{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}
+.df-smart-placeholder{min-height:48px;border:2px dashed var(--df);border-radius:8px;background:color-mix(in srgb,var(--df) 7%,var(--bs-body-bg,#fff));display:flex;align-items:center;justify-content:center;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none;animation:dfSmartPulse .7s ease-in-out infinite alternate}.df-smart-target-left{box-shadow:inset 3px 0 0 var(--df)}.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df)}
+.df-smart-newrow-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin:7px 0;padding:9px 11px;border:2px dashed var(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-size:10px;font-weight:950;letter-spacing:.05em}.df-smart-newrow-field{min-width:0;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:var(--bs-body-color,#1f2937)}.df-smart-row-target-before>.df-layout-row-head{box-shadow:inset 0 3px 0 var(--df)}.df-smart-row-target-after>.df-layout-row-head{box-shadow:inset 0 -3px 0 var(--df)}
+body.df-smart-drag-active,body.df-smart-drag-active *{cursor:grabbing!important}body.df-smart-drag-active{user-select:none}
+@keyframes dfSmartPulse{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--df) 8%,transparent)}to{box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 10%,transparent)}}
+@media(max-width:820px){.df-layout-card{touch-action:pan-y}.df-layout-handle{min-width:32px;min-height:36px}.df-smart-drag-ghost{max-width:calc(100vw - 24px)}}
+
+/* Forms 1.3.39: draggable section/row structure. */
+.df-layout-structure-handle{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:28px;border:0;background:transparent;color:var(--bs-secondary-color,#667085);font-size:15px;line-height:1;cursor:grab;user-select:none;touch-action:none;border-radius:5px}.df-layout-structure-handle:hover,.df-layout-structure-handle:focus-visible{color:#7c3aed;background:color-mix(in srgb,#7c3aed 8%,transparent);outline:none}.df-layout-structure-handle:active{cursor:grabbing}
+body.df-structure-drag-active{user-select:none;cursor:grabbing!important}body.df-structure-drag-active *{cursor:grabbing!important}.df-layout-section-group.is-structure-source,.df-layout-row-group.is-structure-source{opacity:.38}
+.df-layout-section-head,.df-layout-row-head{position:relative}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before,.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:999px;background:#7c3aed;z-index:8}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before{top:-2px}.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{bottom:-2px}.df-layout-section-head.is-structure-inside{box-shadow:inset 0 0 0 2px #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important}
+.df-structure-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:flex;align-items:center;gap:9px;max-width:360px;min-width:190px;padding:9px 12px;border:1px solid color-mix(in srgb,#7c3aed 55%,var(--df-border));border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 14px 35px rgba(15,23,42,.22);font-size:12px}.df-structure-drag-ghost strong{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-structure-drag-ghost>span:last-child{font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em}
+
+/* Forms 1.3.39: modern, borderless Builder icon actions. */
+.df-icon-only{width:34px;height:34px;min-width:34px;display:inline-grid;place-items:center;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:8px;color:var(--bs-secondary-color,#59636f);cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease}
+.df-icon-only:hover,.df-icon-only:focus-visible{background:color-mix(in srgb,#7c3aed 9%,transparent)!important;color:#6d28d9;outline:none}
+.df-icon-only:active{transform:scale(.94)}
+.df-modern-ui-icon{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.df-layout-structure-handle .df-modern-ui-icon,.df-layout-handle .df-modern-ui-icon{width:17px;height:17px;stroke-width:1.7}
+.df-canvas-remove:hover,.df-canvas-remove:focus-visible,[data-section-remove]:hover,[data-section-remove]:focus-visible,[data-structure-remove]:hover,[data-structure-remove]:focus-visible,.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible,.df-lib-delete:hover,.df-lib-delete:focus-visible,.df-saved-quick-delete:hover,.df-saved-quick-delete:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
+.df-layout-actions,.df-layout-section-actions,.df-mini-actions{align-items:center;gap:2px}
+
+/* Forms 1.3.39: AI preview filter states. */
+.df-ai-filter-btn{white-space:nowrap}.df-ai-filter-btn.is-active{border-color:#7c3aed!important;background:color-mix(in srgb,#7c3aed 10%,var(--bs-body-bg,#fff))!important;color:#6d28d9}.df-ai-filter-btn:disabled{opacity:.42;cursor:not-allowed}.df-ai-filter-empty{padding:18px;border:1px dashed var(--df-border);border-radius:9px;text-align:center}
+</style>
+
+<div class="df-builder">
+  <div class="df-bhead">
+    <div><h2><?php echo $id ? Text::_('COM_DECAROFORMS_BUILDER_EDIT_TITLE') : Text::_('COM_DECAROFORMS_BUILDER_CREATE_TITLE'); ?></h2><p><?php echo Text::_('COM_DECAROFORMS_BUILDER_DESC'); ?></p></div>
+    <div class="df-bactions"><a class="df-btn df-back-btn" href="<?php echo $this->formsUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_BACK_FORMS'); ?></a><?php if ($id): ?><a class="df-btn df-danger" href="<?php echo $this->deleteUrl; ?>" data-confirm-delete-link data-delete-label="modulo"><?php echo Text::_('COM_DECAROFORMS_DELETE'); ?></a><?php endif; ?></div>
+  </div>
+
+
+  <div class="df-editor-toolbar" role="toolbar" aria-label="Modifica modulo">
+    <div class="df-history-actions"><button type="button" id="df-undo" title="Annulla ultima modifica" disabled>↶ Annulla</button><button type="button" id="df-redo" title="Ripristina modifica" disabled>↷ Ripristina</button></div>
+    <div class="df-edit-mode" aria-label="Modalità modifica"><button type="button" class="df-lock-toggle" data-lock="1"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Bloccato</span></button><button type="button" cla
+
+=== CSS .df-layout-row-head ===
+% + 25%. */
+.df-ai-modes.is-chatgpt{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr)}
+.df-ai-modes.is-page{grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(0,1fr)}
+.df-ai-modes.is-direct{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr)}
+.df-ai-mode[data-ai-mode-select]{cursor:pointer;min-width:0;transition:grid-column .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,opacity .18s ease}
+.df-ai-mode[data-ai-mode-select]:not(.is-active){opacity:.78}
+.df-ai-mode[data-ai-mode-select]:hover,.df-ai-mode[data-ai-mode-select]:focus-visible{opacity:1;border-color:#7c3aed;outline:none}
+.df-ai-mode[data-ai-mode-select].is-active{opacity:1;border-color:#7c3aed;box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 12%,transparent)}
+.df-ai-mode-panels{margin-top:14px}.df-ai-mode-panel[hidden]{display:none!important}.df-ai-mode-panel{display:block}
+.df-ai-mode-panel>.df-ai-workflow{margin:0}.df-ai-page-panel,.df-ai-direct-panel{border:1px solid var(--df-border);border-radius:10px;padding:14px;background:var(--bs-body-bg,#fff)}
+.df-ai-page-panel h4,.df-ai-direct-panel h4{margin:0 0 7px;font-size:15px}.df-ai-page-panel .df-ai-file-row{margin:12px 0 0}
+@media(max-width:820px){.df-ai-modes.is-chatgpt,.df-ai-modes.is-page,.df-ai-modes.is-direct{grid-template-columns:1fr}}
+
+
+/* Forms 1.3.39: section + row accordions in Struttura del modulo. */
+.df-layout-accordion-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.df-layout-accordion-toolbar .df-btn{min-height:34px;padding:6px 11px;font-size:12px}
+.df-layout-section-group{border:1px solid var(--df-border);border-radius:12px;background:var(--bs-body-bg,#fff);overflow:hidden;margin:0 0 10px}
+.df-layout-section-head{display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 10px;background:color-mix(in srgb,var(--bs-secondary-bg,#f4f6f8) 82%,transparent);border:0;width:100%;text-align:left;color:inherit}
+.df-layout-section-head:hover{background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 94%,transparent)}
+.df-layout-section-chevron{width:20px;flex:0 0 20px;font-weight:900;transition:transform .16s ease}.df-layout-section-group.is-open>.df-layout-section-head .df-layout-section-chevron{transform:rotate(90deg)}
+.df-layout-section-title{min-width:0;flex:1;display:flex;align-items:center;gap:9px;flex-wrap:wrap}.df-layout-section-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(480px,55vw)}
+.df-layout-section-summary{font-size:11px;color:var(--bs-secondary-color,#667085);font-weight:650}.df-layout-section-actions{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.df-layout-section-body{display:none;padding:9px}.df-layout-section-group.is-open>.df-layout-section-body{display:block}
+.df-layout-row-group{border:1px solid color-mix(in srgb,var(--df-border) 82%,transparent);border-radius:9px;overflow:hidden;margin:0 0 8px}.df-layout-row-group:last-child{margin-bottom:0}
+.df-layout-row-head{display:flex;align-items:center;gap:8px;width:100%;border:0;background:color-mix(in srgb,var(--bs-body-bg,#fff) 94%,var(--bs-secondary-bg,#f3f4f6));padding:7px 9px;min-height:38px;color:inherit;text-align:left}
+.df-layout-row-head:hover{background:var(--bs-secondary-bg,#f4f5f7)}.df-layout-row-chevron{width:18px;flex:0 0 18px;font-weight:900;transition:transform .16s ease}.df-layout-row-group.is-open>.df-layout-row-head .df-layout-row-chevron{transform:rotate(90deg)}
+.df-layout-row-label{font-size:12px;font-weight:800}.df-layout-row-summary{font-size:11px;color:var(--bs-secondary-color,#667085);margin-left:auto}.df-layout-row-body{display:none;padding:7px}.df-layout-row-group.is-open>.df-layout-row-body{display:block}
+.df-layout-row-body>.df-layout-row{margin:0}.df-layout-section-empty{padding:9px 10px;font-size:12px;color:var(--bs-secondary-color,#667085)}
+.df-layout-section-head.is-over,.df-layout-row-head.is-over{box-shadow:inset 0 0 0 2px #0d6efd}
+@media(max-width:720px){.df-layout-section-summary,.df-layout-row-summary{display:none}.df-layout-section-head{padding:8px}.df-layout-section-title strong{max-width:48vw}}
+
+/* Forms 1.3.39: polished AI uploads + structure settings. */
+.df-field-entry-actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px!important}.df-field-entry-actions>.df-add-field-main,.df-field-entry-actions>.df-ai-import-main{width:100%!important;min-height:46px!important;height:46px!important;margin:0!important;box-sizing:border-box}.df-ai-import-main>span,.df-add-field-main>span{font-size:18px;line-height:1}
+.df-ai-main-label{display:flex;flex-direction:column;gap:4px;min-width:0}.df-ai-main-label>span{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}.df-ai-main-label>input{width:100%}
+.df-ai-premium-file-row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}.df-ai-native-file{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}.df-ai-upload-shell{display:flex;align-items:center;gap:12px;width:100%;min-height:66px;padding:10px 12px;border:1px dashed color-mix(in srgb,#7c3aed 42%,var(--df-border));border-radius:10px;background:color-mix(in srgb,#7c3aed 3%,var(--bs-body-bg,#fff));cursor:pointer;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}.df-ai-upload-shell:hover,.df-ai-upload-shell:focus-visible,.df-ai-upload-shell.is-dragover{outline:none;border-color:#7c3aed;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff));box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 10%,transparent)}.df-ai-upload-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}.df-ai-upload-copy strong{font-size:13px}.df-ai-upload-copy [data-ai-upload-name]{font-size:12px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-ai-upload-shell.has-file{border-style:solid}.df-ai-ui-delete{margin-left:auto!important;flex:0 0 34px!important;width:34px!important;height:34px!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--bs-secondary-color,#667085)!important}.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible{background:transparent!important;color:#dc3545!important;outline:none}.df-ai-ui-delete svg{width:18px!important;height:18px!important}.df-ai-page-actions{margin-top:2px}.df-ai-page-actions .df-primary{min-height:40px}
+.df-layout-row-group.is-selected>.df-layout-row-head{box-shadow:inset 3px 0 0 #7c3aed;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff))}.df-layout-structure-description{font-size:11px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}.df-structure-settings textarea{min-height:90px}.df-structure-settings .df-selected-top{min-height:54px}
+@media(max-width:720px){.df-field-entry-actions{grid-template-columns:1fr!important}.df-layout-structure-description{display:none}}
+
+/* Forms 1.3.39: smart drag visual language. */
+.df-layout-drop-guide{display:none!important}
+.df-layout-card{position:relative;cursor:grab;user-select:none;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}.df-layout-card:active{cursor:grabbing}.df-layout-card .df-layout-meta,.df-layout-card button,.df-layout-card select{cursor:auto}.df-layout-handle{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:30px;font-size:18px;line-height:1;color:var(--bs-secondary-color,#667085);cursor:grab}.df-layout-card:hover .df-layout-handle{color:var(--df)}
+.df-smart-source-hidden{display:none!important}.df-smart-source-row-empty{display:none!important}
+.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden){transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden):hover{border-color:color-mix(in srgb,var(--df) 45%,var(--df-border))}
+.df-smart-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;min-height:48px;padding:9px 11px;border:2px solid var(--df);border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 16px 42px rgba(0,0,0,.24);opacity:.96;transform:rotate(.5deg)}.df-smart-drag-ghost strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-smart-ghost-handle{font-size:18px;color:var(--df)}.df-smart-ghost-meta{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}
+.df-smart-placeholder{min-height:48px;border:2px dashed var(--df);border-radius:8px;background:color-mix(in srgb,var(--df) 7%,var(--bs-body-bg,#fff));display:flex;align-items:center;justify-content:center;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none;animation:dfSmartPulse .7s ease-in-out infinite alternate}.df-smart-target-left{box-shadow:inset 3px 0 0 var(--df)}.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df)}
+.df-smart-newrow-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin:7px 0;padding:9px 11px;border:2px dashed var(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-
+
+=== CSS .df-layout-section-head ===
+medium,html[data-bs-theme="dark"] .df-ai-confidence.medium{color:#ffd166}.df-builder.is-locked .df-ai-import-main{opacity:.55;cursor:not-allowed}
+@media(max-width:820px){.df-ai-workflow,.df-ai-modes{grid-template-columns:1fr}.df-ai-row{grid-template-columns:30px minmax(0,1fr) minmax(110px,.7fr) 86px}.df-ai-row>.df-ai-required,.df-ai-row>.df-ai-confidence,.df-ai-row>.df-ai-order{grid-row:auto}.df-ai-row-extra,.df-ai-warning{grid-column:2/-1}.df-ai-row-extra{grid-template-columns:1fr}.df-field-entry-actions{flex-direction:column}}
+@media(max-width:560px){.df-ai-modal{padding:8px}.df-ai-dialog{width:calc(100vw - 16px);max-height:calc(100vh - 16px)}.df-ai-head,.df-ai-foot,.df-ai-body{padding:12px}.df-ai-row{grid-template-columns:30px 1fr}.df-ai-row>*{grid-column:2}.df-ai-row-check{grid-column:1;grid-row:1/5}.df-ai-row-extra,.df-ai-warning{grid-column:2}.df-ai-order{justify-content:flex-start}.df-ai-foot{flex-wrap:wrap}.df-ai-foot .df-btn{flex:1}}
+
+
+/* Forms 1.3.39: AI import UX cleanup. */
+.df-ai-clear-file[hidden]{display:none!important}.df-ai-clear-file{flex:0 0 auto;width:36px;height:36px;display:inline-grid;place-items:center}.df-ai-clear-file svg{width:17px;height:17px;display:block}
+
+
+/* Forms 1.3.39: three-mode AI selector, active 50% + 25% + 25%. */
+.df-ai-modes.is-chatgpt{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr)}
+.df-ai-modes.is-page{grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(0,1fr)}
+.df-ai-modes.is-direct{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr)}
+.df-ai-mode[data-ai-mode-select]{cursor:pointer;min-width:0;transition:grid-column .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,opacity .18s ease}
+.df-ai-mode[data-ai-mode-select]:not(.is-active){opacity:.78}
+.df-ai-mode[data-ai-mode-select]:hover,.df-ai-mode[data-ai-mode-select]:focus-visible{opacity:1;border-color:#7c3aed;outline:none}
+.df-ai-mode[data-ai-mode-select].is-active{opacity:1;border-color:#7c3aed;box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 12%,transparent)}
+.df-ai-mode-panels{margin-top:14px}.df-ai-mode-panel[hidden]{display:none!important}.df-ai-mode-panel{display:block}
+.df-ai-mode-panel>.df-ai-workflow{margin:0}.df-ai-page-panel,.df-ai-direct-panel{border:1px solid var(--df-border);border-radius:10px;padding:14px;background:var(--bs-body-bg,#fff)}
+.df-ai-page-panel h4,.df-ai-direct-panel h4{margin:0 0 7px;font-size:15px}.df-ai-page-panel .df-ai-file-row{margin:12px 0 0}
+@media(max-width:820px){.df-ai-modes.is-chatgpt,.df-ai-modes.is-page,.df-ai-modes.is-direct{grid-template-columns:1fr}}
+
+
+/* Forms 1.3.39: section + row accordions in Struttura del modulo. */
+.df-layout-accordion-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.df-layout-accordion-toolbar .df-btn{min-height:34px;padding:6px 11px;font-size:12px}
+.df-layout-section-group{border:1px solid var(--df-border);border-radius:12px;background:var(--bs-body-bg,#fff);overflow:hidden;margin:0 0 10px}
+.df-layout-section-head{display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 10px;background:color-mix(in srgb,var(--bs-secondary-bg,#f4f6f8) 82%,transparent);border:0;width:100%;text-align:left;color:inherit}
+.df-layout-section-head:hover{background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 94%,transparent)}
+.df-layout-section-chevron{width:20px;flex:0 0 20px;font-weight:900;transition:transform .16s ease}.df-layout-section-group.is-open>.df-layout-section-head .df-layout-section-chevron{transform:rotate(90deg)}
+.df-layout-section-title{min-width:0;flex:1;display:flex;align-items:center;gap:9px;flex-wrap:wrap}.df-layout-section-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(480px,55vw)}
+.df-layout-section-summary{font-size:11px;color:var(--bs-secondary-color,#667085);font-weight:650}.df-layout-section-actions{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.df-layout-section-body{display:none;padding:9px}.df-layout-section-group.is-open>.df-layout-section-body{display:block}
+.df-layout-row-group{border:1px solid color-mix(in srgb,var(--df-border) 82%,transparent);border-radius:9px;overflow:hidden;margin:0 0 8px}.df-layout-row-group:last-child{margin-bottom:0}
+.df-layout-row-head{display:flex;align-items:center;gap:8px;width:100%;border:0;background:color-mix(in srgb,var(--bs-body-bg,#fff) 94%,var(--bs-secondary-bg,#f3f4f6));padding:7px 9px;min-height:38px;color:inherit;text-align:left}
+.df-layout-row-head:hover{background:var(--bs-secondary-bg,#f4f5f7)}.df-layout-row-chevron{width:18px;flex:0 0 18px;font-weight:900;transition:transform .16s ease}.df-layout-row-group.is-open>.df-layout-row-head .df-layout-row-chevron{transform:rotate(90deg)}
+.df-layout-row-label{font-size:12px;font-weight:800}.df-layout-row-summary{font-size:11px;color:var(--bs-secondary-color,#667085);margin-left:auto}.df-layout-row-body{display:none;padding:7px}.df-layout-row-group.is-open>.df-layout-row-body{display:block}
+.df-layout-row-body>.df-layout-row{margin:0}.df-layout-section-empty{padding:9px 10px;font-size:12px;color:var(--bs-secondary-color,#667085)}
+.df-layout-section-head.is-over,.df-layout-row-head.is-over{box-shadow:inset 0 0 0 2px #0d6efd}
+@media(max-width:720px){.df-layout-section-summary,.df-layout-row-summary{display:none}.df-layout-section-head{padding:8px}.df-layout-section-title strong{max-width:48vw}}
+
+/* Forms 1.3.39: polished AI uploads + structure settings. */
+.df-field-entry-actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px!important}.df-field-entry-actions>.df-add-field-main,.df-field-entry-actions>.df-ai-import-main{width:100%!important;min-height:46px!important;height:46px!important;margin:0!important;box-sizing:border-box}.df-ai-import-main>span,.df-add-field-main>span{font-size:18px;line-height:1}
+.df-ai-main-label{display:flex;flex-direction:column;gap:4px;min-width:0}.df-ai-main-label>span{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}.df-ai-main-label>input{width:100%}
+.df-ai-premium-file-row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}.df-ai-native-file{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}.df-ai-upload-shell{display:flex;align-items:center;gap:12px;width:100%;min-height:66px;padding:10px 12px;border:1px dashed color-mix(in srgb,#7c3aed 42%,var(--df-border));border-radius:10px;background:color-mix(in srgb,#7c3aed 3%,var(--bs-body-bg,#fff));cursor:pointer;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}.df-ai-upload-shell:hover,.df-ai-upload-shell:focus-visible,.df-ai-upload-shell.is-dragover{outline:none;border-color:#7c3aed;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff));box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 10%,transparent)}.df-ai-upload-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}.df-ai-upload-copy strong{font-size:13px}.df-ai-upload-copy [data-ai-upload-name]{font-size:12px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-ai-upload-shell.has-file{border-style:solid}.df-ai-ui-delete{margin-left:auto!important;flex:0 0 34px!important;width:34px!important;height:34px!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--bs-secondary-color,#667085)!important}.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible{background:transparent!important;color:#dc3545!important;outline:none}.df-ai-ui-delete svg{width:18px!important;height:18px!important}.df-ai-page-actions{margin-top:2px}.df-ai-page-actions .df-primary{min-height:40px}
+.df-layout-row-group.is-selected>.df-layout-row-head{box-shadow:inset 3px 0 0 #7c3aed;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff))}.df-layout-structure-description{font-size:11px;color:var(--bs-secondary-color,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}.df-structure-settings textarea{min-height:90px}.df-structure-settings .df-selected-top{min-height:54px}
+@media(max-width:720px){.df-field-entry-actions{grid-template-columns:1fr!important}.df-layout-structure-description{display:none}}
+
+/* Forms 1.3.39: smart drag visual language. */
+.df-layout-drop-guide{display:none!important}
+.df-layout-card{position:relative;cursor:grab;user-select:none;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}.df-layout-card:active{cursor:grabbing}.df-layout-card .df-layout-meta,.df-layout-card button,.df-layout-card select{cursor:auto}.df-layout-handle{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:30px;font-size:18px;line-height:1;color:var(--bs-secondary-color,#667085);cursor:grab}.df-layout-card:hover .df-layout-handle{color:var(--df)}
+.df-smart-source-hidden{display:none!important}.df-smart-source-row-empty{display:none!important}
+.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden){transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden):hover{border-color:color-mix(in srgb,var(--df) 45%,var(--df-border))}
+.df-smart-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-
+
+=== CSS .df-structure-drag-ghost ===
+(--bs-body-bg,#fff));display:flex;align-items:center;justify-content:center;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none;animation:dfSmartPulse .7s ease-in-out infinite alternate}.df-smart-target-left{box-shadow:inset 3px 0 0 var(--df)}.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df)}
+.df-smart-newrow-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin:7px 0;padding:9px 11px;border:2px dashed var(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-size:10px;font-weight:950;letter-spacing:.05em}.df-smart-newrow-field{min-width:0;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:var(--bs-body-color,#1f2937)}.df-smart-row-target-before>.df-layout-row-head{box-shadow:inset 0 3px 0 var(--df)}.df-smart-row-target-after>.df-layout-row-head{box-shadow:inset 0 -3px 0 var(--df)}
+body.df-smart-drag-active,body.df-smart-drag-active *{cursor:grabbing!important}body.df-smart-drag-active{user-select:none}
+@keyframes dfSmartPulse{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--df) 8%,transparent)}to{box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 10%,transparent)}}
+@media(max-width:820px){.df-layout-card{touch-action:pan-y}.df-layout-handle{min-width:32px;min-height:36px}.df-smart-drag-ghost{max-width:calc(100vw - 24px)}}
+
+/* Forms 1.3.39: draggable section/row structure. */
+.df-layout-structure-handle{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:28px;border:0;background:transparent;color:var(--bs-secondary-color,#667085);font-size:15px;line-height:1;cursor:grab;user-select:none;touch-action:none;border-radius:5px}.df-layout-structure-handle:hover,.df-layout-structure-handle:focus-visible{color:#7c3aed;background:color-mix(in srgb,#7c3aed 8%,transparent);outline:none}.df-layout-structure-handle:active{cursor:grabbing}
+body.df-structure-drag-active{user-select:none;cursor:grabbing!important}body.df-structure-drag-active *{cursor:grabbing!important}.df-layout-section-group.is-structure-source,.df-layout-row-group.is-structure-source{opacity:.38}
+.df-layout-section-head,.df-layout-row-head{position:relative}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before,.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:999px;background:#7c3aed;z-index:8}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before{top:-2px}.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{bottom:-2px}.df-layout-section-head.is-structure-inside{box-shadow:inset 0 0 0 2px #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important}
+.df-structure-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:flex;align-items:center;gap:9px;max-width:360px;min-width:190px;padding:9px 12px;border:1px solid color-mix(in srgb,#7c3aed 55%,var(--df-border));border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 14px 35px rgba(15,23,42,.22);font-size:12px}.df-structure-drag-ghost strong{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-structure-drag-ghost>span:last-child{font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em}
+
+/* Forms 1.3.39: modern, borderless Builder icon actions. */
+.df-icon-only{width:34px;height:34px;min-width:34px;display:inline-grid;place-items:center;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:8px;color:var(--bs-secondary-color,#59636f);cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease}
+.df-icon-only:hover,.df-icon-only:focus-visible{background:color-mix(in srgb,#7c3aed 9%,transparent)!important;color:#6d28d9;outline:none}
+.df-icon-only:active{transform:scale(.94)}
+.df-modern-ui-icon{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.df-layout-structure-handle .df-modern-ui-icon,.df-layout-handle .df-modern-ui-icon{width:17px;height:17px;stroke-width:1.7}
+.df-canvas-remove:hover,.df-canvas-remove:focus-visible,[data-section-remove]:hover,[data-section-remove]:focus-visible,[data-structure-remove]:hover,[data-structure-remove]:focus-visible,.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible,.df-lib-delete:hover,.df-lib-delete:focus-visible,.df-saved-quick-delete:hover,.df-saved-quick-delete:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
+.df-layout-actions,.df-layout-section-actions,.df-mini-actions{align-items:center;gap:2px}
+
+/* Forms 1.3.39: AI preview filter states. */
+.df-ai-filter-btn{white-space:nowrap}.df-ai-filter-btn.is-active{border-color:#7c3aed!important;background:color-mix(in srgb,#7c3aed 10%,var(--bs-body-bg,#fff))!important;color:#6d28d9}.df-ai-filter-btn:disabled{opacity:.42;cursor:not-allowed}.df-ai-filter-empty{padding:18px;border:1px dashed var(--df-border);border-radius:9px;text-align:center}
+</style>
+
+<div class="df-builder">
+  <div class="df-bhead">
+    <div><h2><?php echo $id ? Text::_('COM_DECAROFORMS_BUILDER_EDIT_TITLE') : Text::_('COM_DECAROFORMS_BUILDER_CREATE_TITLE'); ?></h2><p><?php echo Text::_('COM_DECAROFORMS_BUILDER_DESC'); ?></p></div>
+    <div class="df-bactions"><a class="df-btn df-back-btn" href="<?php echo $this->formsUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_BACK_FORMS'); ?></a><?php if ($id): ?><a class="df-btn df-danger" href="<?php echo $this->deleteUrl; ?>" data-confirm-delete-link data-delete-label="modulo"><?php echo Text::_('COM_DECAROFORMS_DELETE'); ?></a><?php endif; ?></div>
+  </div>
+
+
+  <div class="df-editor-toolbar" role="toolbar" aria-label="Modifica modulo">
+    <div class="df-history-actions"><button type="button" id="df-undo" title="Annulla ultima modifica" disabled>↶ Annulla</button><button type="button" id="df-redo" title="Ripristina modifica" disabled>↷ Ripristina</button></div>
+    <div class="df-edit-mode" aria-label="Modalità modifica"><button type="button" class="df-lock-toggle" data-lock="1"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Bloccato</span></button><button type="button" class="df-lock-toggle" data-lock="0"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20l4.2-1 10.5-10.5a2.1 2.1 0 0 0-3-3L5.2 16 4 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 6.7l2.8 2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Modifica</span></button><button class="df-save-top" type="submit" form="df-builder-form"><?php echo Text::_('COM_DECAROFORMS_SAVE_FORM'); ?></button></div>
+  </div>
+  <div class="df-save-notice" id="df-save-notice" hidden role="status" aria-live="polite"></div>
+  <div class="df-draft-banner" id="df-draft-banner" hidden>
+    <div><strong>Bozza non salvata disponibile</strong><span id="df-draft-time"></span></div>
+    <div class="df-draft-actions"><button type="button" class="df-btn df-small df-primary" id="df-draft-restore">Ripristina bozza</button><button type="button" class="df-btn df-small" id="df-draft-discard">Ignora</button></div>
+  </div>
+
+  <?php
+  $dfSession = \Joomla\CMS\Factory::getApplication()->getSession();
+  $dfBuilderCsrf = (string) $dfSession->get('com_decaroforms.builder.csrf', '');
+  if ($dfBuilderCsrf === '') {
+      $dfBuilderCsrf = bin2hex(random_bytes(32));
+      $dfSession->set('com_decaroforms.builder.csrf', $dfBuilderCsrf);
+  }
+  ?>
+  <script>
+  (()=>{
+    const tokenUrl='index.php?option=com_decaroforms&task=builder.token&format=json';
+    const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    function notice(message,type='info',reload=false){
+      if(typeof window.dfSetSaveNotice==='function'){window.dfSetSaveNotice(message,type,reload);return;}
+      let box=document.getElementById('df-save-notice');
+      if(!box){box=document.createElement('div');box.id='df-save-notice';document.querySelector('.df-builder')?.prepend(box);}
+      if(!box)return;
+      box.className='df-save-notice is-'+type;box.hidden=false;
+      box.innerHTML=`<span>${esc(message)}</span>${reload?'<button type="button" class="df-btn df-small" data-save-reload>Ricarica pagina</button>':''}`;
+      box.querySelector('[data-save-reload]')?.addEventListener('click',()=>location.reload());
+    }
+    function applyToken(form,token){
+      if(!token)return false;
+      const wrap=document.getElementById('df-csrf-token-wrap');
+      if(!wrap)return false;
+      wrap.replaceChildren();
+      const input=document.createElement('input');input.type='hidden';input.name=token;input.value='1';wrap.appendChild(input);
+      return true;
+    }
+    function applyBuilderToken(form,token){
+      if(!token)return false;
+      le

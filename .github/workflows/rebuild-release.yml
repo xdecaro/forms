@@ -63,6 +63,10 @@ jobs:
             bash tools/build-1.3.31-ai-ui-cleanup.sh
             exit 0
           fi
+          if [ "$MODE" = "build-1.3.32-ai-mode-tabs-zip" ]; then
+            bash tools/build-1.3.32-ai-mode-tabs-zip.sh
+            exit 0
+          fi
           VERSION="$(cat releases/_upload/VERSION.txt)"
           EXPECTED="$(cat releases/_upload/SHA256.txt)"
           TARGET="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"

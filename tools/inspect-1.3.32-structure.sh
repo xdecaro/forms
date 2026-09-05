@@ -11,19 +11,19 @@ B="$TMP/component/administrator/components/com_decaroforms/tmpl/builder/default.
 OUT="$ROOT/tools/inspect-1.3.32-structure.txt"
 : > "$OUT"
 {
- echo '=== library / structure definitions ==='
- grep -n -E "heading|fieldset|separator|category:'structure'|category:\"structure\"|const library|library=|types:" "$B" | head -n 160
+ echo '=== fieldLibrary locations ==='
+ grep -RIn "function fieldLibrary\|fieldLibrary()" "$TMP/component" | head -n 40 || true
  echo
- echo '=== renderLayoutCanvas ==='
- start=$(grep -n "function renderLayoutCanvas" "$B" | head -1 | cut -d: -f1); if [ -n "$start" ]; then sed -n "${start},$((start+120))p" "$B"; fi
+ echo '=== fieldLibrary body ==='
+ H=$(grep -Rl "function fieldLibrary" "$TMP/component" | head -1 || true); if [ -n "$H" ]; then L=$(grep -n "function fieldLibrary" "$H"|head -1|cut -d: -f1); echo "FILE=$H"; sed -n "${L},$((L+180))p" "$H"; fi
  echo
- echo '=== column exclusion / structural filters ==='
- grep -n -E "separator|pagebreak|heading|fieldset|columnItems|filter\(x=>!\[" "$B" | head -n 120
+ echo '=== builder type/config references ==='
+ grep -n -E "separator|pagebreak|heading|fieldset|function renderLayoutCanvas|function columnItems|function previewRows" "$B" | head -n 180
  echo
- echo '=== component frontend files ==='
- find "$TMP/component" -type f | grep -E '/site/|/components/com_decaroforms/' | head -n 100
+ echo '=== renderLayoutCanvas body ==='
+ L=$(grep -n "function renderLayoutCanvas" "$B"|head -1|cut -d: -f1); sed -n "${L},$((L+95))p" "$B"
  echo
- echo '=== frontend render references ==='
- grep -RIn -E "case ['\"](heading|fieldset|separator)|heading|fieldset|separator|switch.*type|field.type" "$TMP/component/components" "$TMP/component/src" 2>/dev/null | head -n 220 || true
+ echo '=== frontend structural renderer matches ==='
+ grep -RIn -E "separator|pagebreak|heading|fieldset" "$TMP/component" --exclude="$B" | head -n 260 || true
 } >> "$OUT"
 rm -rf "$ROOT/releases/_upload"

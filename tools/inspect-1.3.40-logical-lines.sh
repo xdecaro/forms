@@ -16,7 +16,7 @@ import sys,re
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 root=Path(sys.argv[3])
 out=[]
-def grab(name,start,end=None,limit=22000):
+def grab(name,start,end=None,limit=26000):
     i=s.find(start)
     if i<0:
         out.append(f"\n=== {name} MISSING ===\n"); return
@@ -25,12 +25,16 @@ def grab(name,start,end=None,limit=22000):
     out.append(f"\n=== {name} ===\n"+s[i:j])
 for name,start,end in [
  ('defaultFieldConfig','function defaultFieldConfig(', 'function repairInvalidRows('),
- ('normalizeLayoutRows','function normalizeLayoutRows(', 'function sortSelectedByLayout('),
+ ('normalizeLayoutRows','function normalizeLayoutRows(', 'function widthChoices('),
+ ('sortSelectedByLayout','function sortSelectedByLayout(', 'function widthChoices('),
  ('fieldsInRow','function fieldsInRow(', 'function rowMeta('),
  ('smartAutoWidths','function smartAutoWidths(', 'function smartFitRow('),
- ('smartFitRow','function smartFitRow(', 'function smartAddField('),
- ('smart drag','function smartClassifyCard(', 'function smartEndVisual('),
- ('move existing row','function smartMoveToExistingRow(', 'function smartMoveNewRow('),
+ ('smartFitRow','function smartFitRow(', 'function repairInvalidRows('),
+ ('smart drag preview','function smartPreviewBesideWidths(', 'function smartShiftRowMeta('),
+ ('smart moves','function smartMoveBeside(', 'function smartEndVisual('),
+ ('structure blocks','function structureRowBlocks(', 'function structureClearTargets('),
+ ('duplicate row','function duplicateLayoutRow(', 'function renderRowSettings('),
+ ('layoutGroups','function layoutGroups(', 'function layoutFieldCount('),
  ('render layout','function renderLayoutCanvas()', 'function renderColumns('),
  ('sync','function sync()', 'function pushHistory('),
 ]:
@@ -57,10 +61,6 @@ for p in sorted(root.rglob('*')):
             if key in seen: continue
             seen.add(key); out.append(chunk+'\n---')
 
-out.append('\n=== SITE FILE LIST ===\n')
-for p in sorted(root.rglob('*')):
-    if p.is_file() and ('site/' in str(p.relative_to(root)).replace('\\','/') or 'components/com_decaroforms/' in str(p.relative_to(root)).replace('\\','/')):
-        out.append(str(p.relative_to(root)))
 Path(sys.argv[2]).write_text('\n'.join(out),encoding='utf-8')
 PY
 rm -rf "$ROOT/releases/_upload"

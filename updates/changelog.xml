@@ -1,10 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<changelogs><changelog>
-<element>pkg_decaroforms</element><type>package</type><version>1.3.32</version>
-<improvement>Importa con AI: tre modalità sempre visibili con larghezza dinamica 50/25/25; la modalità selezionata occupa metà riga.</improvement>
-<improvement>Sotto le tre modalità viene mostrato soltanto il pannello relativo alla scelta corrente, eliminando i blocchi ripetuti e rendendo il flusso più ordinato.</improvement>
-<feature>“Da pagina salvata” accetta HTML, HTM e ZIP creati da “Pagina web, completa”. Lo ZIP viene letto localmente nel browser senza inviare file a servizi esterni.</feature>
-<improvement>Il parser riconosce anche utility UIkit come uk-child-width-1-2@m e usa semplici regole di larghezza presenti nei CSS inclusi nello ZIP.</improvement>
-<security>I file ZIP vengono trattati come dati: script e stili della pagina originale non vengono eseguiti. Sono letti solo file testuali HTML/CSS/JS entro limiti di dimensione.</security>
-<language>it-IT</language>
-</changelog></changelogs>
+<changelogs><changelog><element>pkg_decaroforms</element><type>package</type><version>1.3.33</version><feature>Struttura del modulo: sezioni e righe ora possono essere aperte e chiuse come accordion.</feature><feature>Aggiunti Espandi tutto e Comprimi tutto per moduli lunghi.</feature><feature>Aggiunti nella Libreria Struttura: Sezione vuota, Riga vuota / Spazio e Divisore linea.</feature><improvement>Le sezioni chiuse mostrano un riepilogo compatto con numero di campi e righe; le righe mostrano numero campi e larghezze.</improvement><improvement>Drag &amp; drop supportato anche sulle intestazioni di sezione e riga.</improvement><note>I nuovi elementi strutturali usano tipi già supportati e non diventano colonne/dati negli invii.</note><language>it-IT</language></changelog></changelogs>

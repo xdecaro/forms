@@ -108,7 +108,7 @@ PY
 while IFS= read -r f; do sed -i "s/$OLD/$NEW/g" "$f"; done < <(grep -RIl --exclude='*.png' --exclude='*.jpg' --exclude='*.jpeg' --exclude='*.webp' --exclude='*.gif' -- "$OLD" "$TMP/component" || true)
 php -l "$B" >/dev/null
 
-# JS syntax check for AI parser region.
+# JS syntax checks.
 python3 - "$B" <<'PY'
 from pathlib import Path
 import re,sys
@@ -116,10 +116,9 @@ s=Path(sys.argv[1]).read_text(encoding='utf-8')
 a=s.index('const aiAllowedTypes=');b=s.index('/* Forms 1.3.6: bind quick templates',a)
 js=s[a:b];js=re.sub(r"<\?php.*?\?>","X",js,flags=re.S)
 Path('/tmp/forms-1338-ai.js').write_text(js,encoding='utf-8')
-# Check modern icon declaration separately with a harmless uiIcon fallback.
-m=re.search(r"const modernUiIcon=name=>\{.*?\};",s,re.S)
-if not m: raise SystemExit('modern icon JS missing')
-Path('/tmp/forms-1338-icons.js').write_text("const uiIcon=()=>'';\n"+m.group(0)+"\n",encoding='utf-8')
+# Extract the entire modern icon declaration using stable surrounding anchors.
+i=s.index('const modernUiIcon=');j=s.index('const aiAllowedTypes=',i)
+Path('/tmp/forms-1338-icons.js').write_text("const uiIcon=()=>'';\n"+s[i:j]+"\n",encoding='utf-8')
 PY
 node --check /tmp/forms-1338-ai.js >/dev/null
 node --check /tmp/forms-1338-icons.js >/dev/null

@@ -30,6 +30,10 @@ jobs:
             bash tools/inspect-builder-1.3.26-ai.sh
             exit 0
           fi
+          if [ "$MODE" = "inspect-builder-1.3.27-ai" ]; then
+            bash tools/inspect-builder-1.3.27-ai.sh
+            exit 0
+          fi
           if [ "$MODE" = "debug-build-1.3.27-ai-import" ]; then
             set +e
             bash -x tools/run-build-1.3.27-ai-import.sh > tools/build-1.3.27-ai-debug.log 2>&1

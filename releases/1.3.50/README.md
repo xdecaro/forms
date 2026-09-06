@@ -9,4 +9,4 @@ Builder core refactor:
 - Builder form + field replacement save is atomic through a database transaction;
 - PHP and extracted JavaScript syntax checks passed during build.
 
-SHA256: 90657f83682677fe542cbe9a8332c22d7971c848c9c3440d3343b2956ce75c07
+SHA256: f1247fa70315545eb3324d8574de75578e7651d6236802419e5a3084f575c066

@@ -38,12 +38,12 @@ def extract(name):
         i+=1
     return s[start:start+12000]
 
-for name in ['structureClearTargets','structureSpecKey','structureRenderTarget','structureGhost','structurePositionGhost','structureFindTarget','structureBegin','structureQueue','structurePointerMove','structureFinish','structureMoveSection','structureMoveRow']:
+for name in ['structureClearTargets','structureSpecKey','structureRenderTarget','structureGhost','structurePositionGhost','structureRowDropSpec','structureFindTarget','structureBegin','structureQueue','structurePointerMove','structureFinish','structureMoveSection','structureMoveRow']:
     print('\n===== '+name+' =====')
     print(extract(name))
 
-for marker in ['.df-structure-drag-ghost','is-structure-before','df-layout-section-head','df-layout-row-head','Forms 1.3.60: field card vertical breathing room']:
+for marker in ['body.df-structure-drag-active .df-layout-section-group','is-section-drop-before','is-row-drop-before','.df-structure-drag-ghost','Forms 1.3.60: field card vertical breathing room']:
     i=s.find(marker)
     print('\n===== '+marker+' =====')
-    print(s[max(0,i-1200):min(len(s),i+6000)] if i>=0 else 'NOT FOUND')
+    print(s[max(0,i-1200):min(len(s),i+9000)] if i>=0 else 'NOT FOUND')
 PY

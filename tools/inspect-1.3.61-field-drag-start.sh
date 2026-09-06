@@ -50,17 +50,31 @@ for name in names:
     print(extract_func(s61,name))
 
 for label,s in [('1.3.60',s60),('1.3.61',s61)]:
-    print('\n===== '+label+' smartQueueDrag REFERENCES =====')
-    for m in re.finditer(r'smartQueueDrag',s):
-        print(s[max(0,m.start()-1400):min(len(s),m.start()+2200)])
-    print('\n===== '+label+' POINTERDOWN LISTENERS =====')
-    for m in re.finditer(r"addEventListener\(['\"]pointerdown['\"]",s):
-        print(s[max(0,m.start()-900):min(len(s),m.start()+2200)])
+    print('\n===== '+label+' smartDragIgnoreSelector DEFINITION =====')
+    m=re.search(r"(?:const|let|var)\s+smartDragIgnoreSelector\s*=\s*[^;]+;",s)
+    print(m.group(0) if m else 'NOT FOUND')
+    print('\n===== '+label+' editorLocked REFERENCES =====')
+    for m in list(re.finditer(r'editorLocked',s))[:12]:
+        print(s[max(0,m.start()-300):min(len(s),m.start()+500)])
+    print('\n===== '+label+' FIELD POINTERDOWN WIRING =====')
+    needle="card.addEventListener('pointerdown',e=>smartQueueDrag(e,card,f.key));"
+    i=s.find(needle)
+    print(s[max(0,i-1200):min(len(s),i+1200)] if i>=0 else 'NOT FOUND')
+    print('\n===== '+label+' DOCUMENT POINTER EVENTS =====')
+    for needle in ["document.addEventListener('pointermove'","document.addEventListener('pointerup'","document.addEventListener('pointercancel'"]:
+        i=s.find(needle)
+        print(s[max(0,i-800):min(len(s),i+1800)] if i>=0 else needle+' NOT FOUND')
 
-# Focused unified diff around all smart/structure event wiring lines.
+# List selector classes in ignore selector if available.
+for label,s in [('1.3.60',s60),('1.3.61',s61)]:
+    m=re.search(r"(?:const|let|var)\s+smartDragIgnoreSelector\s*=\s*(['\"])(.*?)\1\s*;",s,re.S)
+    print('\n===== '+label+' IGNORE SELECTOR TOKENS =====')
+    print(m.group(2) if m else 'NOT FOUND')
+
+# Focused unified diff all changed lines touching field/structure event wiring.
 l60=s60.splitlines(); l61=s61.splitlines()
 print('\n===== FILTERED DIFF 1.3.60 -> 1.3.61 =====')
-for line in difflib.unified_diff(l60,l61,fromfile='1.3.60',tofile='1.3.61',n=3):
-    if any(k in line for k in ['smartQueueDrag','smartPointerMove','smartBeginDrag','pointerdown','structureQueue','structurePointerMove','df-layout-handle','df-layout-card','smartDragIgnoreSelector','layoutCanvas.addEventListener']):
+for line in difflib.unified_diff(l60,l61,fromfile='1.3.60',tofile='1.3.61',n=2):
+    if any(k in line for k in ['smartQueueDrag','smartPointerMove','smartBeginDrag','pointerdown','pointermove','pointerup','structureQueue','structurePointerMove','df-layout-handle','df-layout-card','smartDragIgnoreSelector','editorLocked']):
         print(line)
 PY

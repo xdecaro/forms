@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.56</version>
+		<note>Release canonica della nuova UX drag Campi: 36% superiore = SOPRA, 36% inferiore = SOTTO su tutta la larghezza, fascia centrale SINISTRA/DESTRA, isteresi e tolleranze 22px/16px per campi e slot VUOTO. Corretto inoltre il packaging della 1.3.55, che aveva accorpato i child ZIP e omesso i due plugin richiesti dal manifest; 1.3.56 ripristina component, system plugin ed editors-xtd plugin separati e installabili. Tutte le funzioni precedenti del Builder restano preservate.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.55</version>
 		<note>Builder UX: aree di trascinamento Campi molto più ampie e stabili. Il 36% superiore del campo indica SOPRA e il 36% inferiore SOTTO su tutta la larghezza; la fascia centrale è dedicata a SINISTRA/DESTRA. Aggiunta isteresi per evitare lampeggi, tolleranza invisibile di 22px attorno ai campi e 16px attorno agli slot VUOTO 50%. Nessuna modifica al modello dati: restano invariati row_id e nomi Riga stabili, visual line, slot 50/50, larghezze automatiche, titoli/descrizioni, accordion, Undo/Redo e salvataggio atomico.</note>
 	</changelog>

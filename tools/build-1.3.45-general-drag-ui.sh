@@ -103,7 +103,9 @@ from pathlib import Path
 import re,sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 matches=list(re.finditer(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S|re.I))
-Path('/tmp/forms-1345-builder.js').write_text('\n'.join(m.group(1) for m in matches),encoding='utf-8')
+js='\n'.join(m.group(1) for m in matches)
+js=re.sub(r'<\?(?:php|=).*?\?>','null',js,flags=re.S|re.I)
+Path('/tmp/forms-1345-builder.js').write_text(js,encoding='utf-8')
 PY
 node --check /tmp/forms-1345-builder.js
 

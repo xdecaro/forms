@@ -1,4 +1,5 @@
 FILE_BYTES 400977
+STYLE_BLOCKS 1
 STYLE_BYTES 130523
 COUNT .df-lock-toggle 38
 COUNT .df-editor-toolbar 54
@@ -7,6 +8,22 @@ COUNT .df-layout-row-head 40
 COUNT .df-layout-card.is-active 5
 COUNT .df-layout-section-group.is-section-selected 0
 COUNT .df-layout-row-group.is-selected 5
+
+===== MARKER DEPTH / CONTEXT =====
+Forms 1.3.65 STYLE_BLOCK 0 BRACE_DEPTH 0
+:inherit;padding:9px 10px}.df-builder .df-action-danger,.df-action-modal .df-action-danger{background:#dc3545!important;border-color:#dc3545!important;color:#fff!important}.df-action-modal .df-action-danger:hover{background:#b4232f!important;border-color:#b4232f!important;color:#fff!important}
+html[data-bs-theme="dark"] .df-summary-chip,body[data-bs-theme="dark"] .df-summary-chip,html[data-color-scheme="dark"] .df-summary-chip{background:#253140!important;border-color:#536174!important;color:#e5eaf0!important}html[data-bs-theme="dark"] .df-summary-chip.df-required-badge,body[data-bs-theme="dark"] .df-summary-chip.df-required-badge,html[data-color-scheme="dark"] .df-summary-chip.df-required-badge{background:#4a1e2b!important;border-color:#a94e68!important;color:#ffc0d0!important}html[data-bs-theme="dark"] .df-layout-drop-guide span,body[data-bs-theme="dark"] .df-layout-drop-guide span{background:rgba(25,43,66,.96);color:#c8ddff;border-color:#6ba3e8}html[data-bs-theme="dark"] .df-layout-drop-guide [data-drop-newrow],body[data-bs-theme="dark"] .df-layout-drop-guide [data-drop-newrow]{background:rgba(43,39,82,.97);color:#d9d5ff;border-color:#8b86e8}
+@media(max-width:800px){.df-builder-workspace .df-layout-row{grid-template-columns:1fr!important}.df-layout-drop-guide{grid-template-columns:1fr 1fr 1fr}.df-layout-drop-guide span{font-size:9px}}
+
+
+/* Forms 1.3.25: stable full-width custom-code editor and runtime diagnostics. */
+.df-custom-code-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important;width:100%!important;max-width:none!important}
+.df-custom-code-grid>.df-field{width:100%!important;max-width:none!important;min-width:0!important}
+.df-custom-code-grid .df-codearea{display:block;width:100%!important;max-width:none!important}
+
+
+/* Forms 1.3.65: importazione campi con AI, senza API obbligatoria. */
+.df-field-entry-actions{display:flex;gap:9px;align-items:stretch;margin-top:10px}.df-field-entry-actions>.df-add-field-main,.df-field-entry-actions>.df-ai-import-main{flex:1;min-width:0}.df-ai-import-main{display:flex;align-items:center;justify-content:center;gap:7px;min-height:43px;border:1px solid color-mix(in srgb,#7c3aed 72%,var(--df-border));border-radius:7px;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff));color:color-mix(in srgb,#7c3aed 84%,var(--bs-body-color,#1f2937));font-weight:850;cursor:pointer;transition:background .16s ease,border-color .16s ease,transform .16s ease}.df-ai-import-main:hover,.df-ai-import-main:focus-visible{background:color-mix(in srgb,#7c3aed 13%,var(--bs-body-bg,#fff));border-color:#7c3aed;outline:none}.df-ai-modal[hidden]{display:none!important}.df-ai-modal{position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;padding:18px}.df-ai-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.70);backdrop-filter:blur(2px)}.df-ai-dialog{position:relative;z-index:1;width:min(1060px,calc(100vw - 30px));max-height:calc(100vh - 30px);display:flex;flex-direction:column;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);border:1px solid var(--bs-border-color,#d9dee5);border-radius:14px;box-shadow:0 26px 80px rgba(0,0,0,.30);overflow:hidden}.df-ai-head,.df-ai-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 17px;background:var(--bs-tertiary-bg,#f6f7f9);border-bottom:1px solid var(--bs-border-color,#d9dee5)}.df-ai-foot{justify-content:flex-end;border-top:1px solid var(--bs-border-color,#d9dee5);border-bottom:0}.df-ai-head-title{display:flex;flex-direction:column;gap:2px}.df-ai-head-title strong{font-size:18px}.df-ai-close{width:38px;height:38px;border:1px solid var(--bs-border-color,#d9dee5);border-radius:8px;background:var(--bs-body-bg,#fff);color:inherit;font-size:22px;line-height:1;cursor:pointer}.df-ai-body{padding:17px;overflow:auto}.df-ai-intro{margin:0 0 14px;color:var(--bs-secondary-color,#667085)}.df-ai-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}.df-ai-mode{border:1px solid var(--df-border);border-radius:10px;padding:13px;background:var(--bs-body-bg,#fff)}.df-ai-mode.is-active{border-color:#7c3aed;box-shadow:0 0 0 2px color-mix(in srgb,#7c3aed 12%,transparent)}.df-ai-mode.is-disabled{opacity:.72;background:var(--bs-tertiary-bg,#f7f8fa)}.df-ai-mode-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}.df-ai-badge{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:999px;background:var(--bs-tertiary-bg,#f1f3f5);font-size:11px;font-weight:850}.df-ai-badge-free{background:color-mix(in srgb,#198754 12%,transparent);color:#198754}.df-ai-badge-soon{background:color-mix(in srgb,#6c757d 12%,transparent);color:var(--bs-secondary-color,#667085)}.df-ai-workflow{display:grid;grid-template-columns:1fr;gap:14px}.df-ai-box{border:1px solid var(--df-border);border-radius:10px;padding:14px;background:var(--bs-body-bg,#fff)}.df-ai-box h4{margin:0 0 8px;font-size:15px}.df-ai-steps{margin:0 0 12px;padding-left:20px;color:var(--bs-secondary-color,#667085)}.df-ai-steps li+li{margin-top:4px}.df-ai-actions{display:flex;gap:8px;flex-wrap:wrap}.df-ai-actions
 
 ===== RULES TOUCHING LOCK/TOOLBAR =====
 .df-btn .df-ui-icon,.df-lock-toggle .df-ui-icon {margin-right:6px}
@@ -57,279 +74,14 @@ html[data-bs-theme="dark"] .df-builder .df-editor-toolbar .df-lock-toggle:not(.i
 .df-builder.is-locked .df-editor-toolbar .df-lock-toggle[data-lock="0"] {background:var(--bs-body-bg,#fff)!important; color:var(--bs-body-color,#1f2937)!important; border-color:var(--df-border,#d9dee5)!important; box-shadow:none!important;}
 /* Keep the two buttons readable in dark mode while preserving the same state colors. */ html[data-bs-theme="dark"] .df-builder:not(.is-locked) .df-editor-toolbar .df-lock-toggle[data-lock="1"], body[data-bs-theme="dark"] .df-builder:not(.is-locked) .df-editor-toolbar .df-lock-toggle[data-lock="1"], html[data-color-scheme="dark"] .df-builder:not(.is-locked) .df-editor-toolbar .df-lock-toggle[data-lock="1"], html[data-bs-theme="dark"] .df-builder.is-locked .df-editor-toolbar .df-lock-toggle[data-lock="0"], body[data-bs-theme="dark"] .df-builder.is-locked .df-editor-toolbar .df-lock-toggle[data-lock="0"], html[data-color-scheme="dark"] .df-builder.is-locked .df-editor-toolbar .df-lock-toggle[data-lock="0"] {background:#111827!important; color:#f8fafc!important; border-color:#475569!important;}
 
-===== RULES TOUCHING BUILDER HEIGHTS / ACTIVE SELECTION =====
-.df-builder-workspace .df-layout-card:hover,.df-builder-workspace .df-layout-card.is-active {border-color:var(--df);box-shadow:0 0 0 2px color-mix(in srgb,var(--df) 12%,transparent)}
-.df-layout-section-head {display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 10px;background:color-mix(in srgb,var(--bs-secondary-bg,#f4f6f8) 82%,transparent);border:0;width:100%;text-align:left;color:inherit}
-.df-layout-section-head:hover {background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 94%,transparent)}
-.df-layout-section-group.is-open>.df-layout-section-head .df-layout-section-chevron {transform:rotate(90deg)}
-.df-layout-row-head {display:flex;align-items:center;gap:8px;width:100%;border:0;background:color-mix(in srgb,var(--bs-body-bg,#fff) 94%,var(--bs-secondary-bg,#f3f4f6));padding:7px 9px;min-height:38px;color:inherit;text-align:left}
-.df-layout-row-head:hover {background:var(--bs-secondary-bg,#f4f5f7)}
-.df-layout-row-group.is-open>.df-layout-row-head .df-layout-row-chevron {transform:rotate(90deg)}
-.df-layout-section-head.is-over,.df-layout-row-head.is-over {box-shadow:inset 0 0 0 2px #0d6efd}
-.df-layout-section-head {padding:8px}
-.df-layout-row-group.is-selected>.df-layout-row-head {box-shadow:inset 3px 0 0 #7c3aed;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff))}
-.df-smart-row-target-before>.df-layout-row-head {box-shadow:inset 0 3px 0 var(--df)}
-.df-smart-row-target-after>.df-layout-row-head {box-shadow:inset 0 -3px 0 var(--df)}
-.df-layout-section-head,.df-layout-row-head {position:relative}
-.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before,.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after {content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:999px;background:#7c3aed;z-index:8}
-.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before {top:-2px}
-.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after {bottom:-2px}
-.df-layout-section-head.is-structure-inside {box-shadow:inset 0 0 0 2px #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important}
-.df-smart-row-join-target>.df-layout-row-head {box-shadow:inset 0 0 0 2px color-mix(in srgb,#7c3aed 80%,transparent)!important;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff))!important}
-.df-smart-row-join-target>.df-layout-row-head {box-shadow:inset 3px 0 0 #7c3aed!important}
-.df-layout-section-group.is-general>.df-layout-section-head {cursor:pointer}
-/* Forms 1.3.65: permanent General rows + aligned drag affordances. */ .df-layout-section-head,.df-layout-row-head {gap:6px}
-.df-layout-section-group.is-section>.df-layout-section-head,.df-layout-row-head {cursor:grab}
-.df-layout-section-group.is-section>.df-layout-section-head:active,.df-layout-row-head:active {cursor:grabbing}
-.df-layout-section-group.is-general>.df-layout-section-head {cursor:default}
-.df-layout-section-group.is-general .df-layout-row-head {border-radius:8px}
-.df-layout-section-head button,.df-layout-row-head button {cursor:pointer}
-.df-layout-section-group.is-general>.df-layout-section-head {background:transparent}
-.df-layout-section-group.is-general>.df-layout-section-head:hover {background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 60%,transparent)}
-body.df-structure-drag-active .df-layout-section-group.is-structure-source>.df-layout-section-head, body.df-structure-drag-active .df-layout-row-group.is-structure-source>.df-layout-row-head {position:relative; background:rgba(var(--df-drag-accent-rgb),.09)!important; box-shadow:inset 0 0 0 1.5px rgba(var(--df-drag-accent-rgb),.48)!important; outline:1px dashed rgba(var(--df-drag-accent-rgb),.72)!important; outline-offset:-3px;}
-body.df-structure-drag-active .df-layout-section-group.is-structure-source>.df-layout-section-head::after, body.df-structure-drag-active .df-layout-row-group.is-structure-source>.df-layout-row-head::after {content:'IN SPOSTAMENTO'; position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40; padding:4px 10px;border-radius:999px;background:var(--df-drag-accent);color:var(--df-drag-on-accent); font-size:10px;font-weight:950;line-height:1;letter-spacing:.035em;white-space:nowrap; box-shadow:0 2px 8px rgba(var(--df-drag-accent-rgb),.24);pointer-events:none;}
-body.df-structure-drag-active .df-layout-section-group.is-structure-source>.df-layout-section-head::after, body.df-structure-drag-active .df-layout-row-group.is-structure-source>.df-layout-row-head::after {font-size:9px;padding:4px 8px}
-/* Forms 1.3.65: uniform active selection, explicit lock mode, roomier structure rows. */ .df-layout-section-group.is-selected > .df-layout-section-head, .df-layout-row-group.is-selected > .df-layout-row-head, .df-layout-card.is-active {background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important; box-shadow:inset 4px 0 0 #7c3aed!important; border-color:color-mix(in srgb,#7c3aed 24%,var(--df-border,#d8dee8))!important;}
-.df-layout-section-group.is-selected > .df-layout-section-head strong, .df-layout-row-group.is-selected > .df-layout-row-head .df-layout-row-label, .df-layout-card.is-active > strong {color:var(--bs-body-color,#202733)!important}
-/* Final approved vertical rhythm: more room for labels, badges, actions and magnetic halves. */ .df-layout-section-head {min-height:72px!important;box-sizing:border-box;align-items:center!important}
-.df-layout-row-head {min-height:68px!important;box-sizing:border-box;align-items:center!important}
-[data-bs-theme="dark"] .df-layout-section-group.is-selected > .df-layout-section-head, [data-bs-theme="dark"] .df-layout-row-group.is-selected > .df-layout-row-head, [data-bs-theme="dark"] .df-layout-card.is-active, .dark .df-layout-section-group.is-selected > .df-layout-section-head, .dark .df-layout-row-group.is-selected > .df-layout-row-head, .dark .df-layout-card.is-active {background:color-mix(in srgb,#8b5cf6 15%,var(--bs-body-bg,#111827))!important; border-color:color-mix(in srgb,#8b5cf6 38%,var(--df-border,#374151))!important; box-shadow:inset 4px 0 0 #8b5cf6!important;}
-.df-layout-section-head,.df-layout-row-head,.df-layout-card {min-height:68px!important}
-.df-layout-section-head,.df-layout-row-head,.df-layout-card {min-height:64px!important}
-/* Forms 1.3.65: compact Builder spacing + unmistakable active edit mode. */ .df-builder .df-layout-section-head {min-height:64px!important;padding-top:10px!important;padding-bottom:10px!important}
-.df-builder .df-layout-row-head {min-height:62px!important;padding-top:9px!important;padding-bottom:9px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head,.df-builder .df-layout-card {min-height:60px!important}
-.df-builder .df-layout-section-head {padding-top:9px!important;padding-bottom:9px!important}
-.df-builder .df-layout-row-head,.df-builder .df-layout-card {padding-top:8px!important;padding-bottom:8px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head,.df-builder .df-layout-card {min-height:58px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head,.df-builder .df-layout-card {padding-top:7px!important;padding-bottom:7px!important}
-/* Forms 1.3.65: one 59px rhythm + root-state active edit mode. */ .df-builder .df-layout-section-head, .df-builder .df-layout-row-head, .df-builder .df-layout-card {min-height:59px!important;}
-.df-builder .df-layout-section-head {padding-top:8px!important;padding-bottom:8px!important}
-.df-builder .df-layout-row-head {padding-top:8px!important;padding-bottom:8px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head,.df-builder .df-layout-card {min-height:59px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head {padding-top:8px!important;padding-bottom:8px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head,.df-builder .df-layout-card {min-height:59px!important}
-.df-builder .df-layout-section-head,.df-builder .df-layout-row-head {padding-top:7px!important;padding-bottom:7px!important}
-
 ===== LOCK JS =====
 function applyLockState(){if(!builderRoot)return;builderRoot.classList.toggle('is-locked',editorLocked);document.querySelectorAll('.df-lock-toggle').forEach(b=>b.classList.toggle('is-active',(b.dataset.lock==='1')===editorLocked));document.querySelectorAll('.df-save-top').forEach(b=>b.disabled=editorLocked);builderForm.querySelectorAll('input:not([type="hidden"]),select,textarea,button:not(.df-section-toggle):not(.df-info)').forEach(el=>{if(!el.dataset.lockOriginal)el.dataset.lockOriginal=el.disabled?'1':'0';el.disabled=editorLocked||el.dataset.lockOriginal==='1';});updateHistoryButtons();}
 function setEditorLocked(locked,ask=true){if(locked===editorLocked)return;if(locked&&ask&&hasUnsavedChanges()&&!confirm('Ci sono modifiche non salvate. Vuoi bloccare comunque la modifica?'))return;editorLocked=locked;applyLockState();}
 
-===== LAST 18000 STYLE CHARS =====
-r(--df) 5%,var(--bs-body-bg,#fff));opacity:.88}
-.df-smart-drop-overlay.is-slot-field,.df-smart-drop-overlay.is-beside{background:color-mix(in srgb,var(--df) 11%,var(--bs-body-bg,#fff))}
-@keyframes dfSmartOverlayIn{from{opacity:.35}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.df-smart-drop-overlay{animation:none}}
+===== FINAL STYLE TAIL =====
 
-
-/* Forms 1.3.65: drag color feedback + visible source placeholder. */
-:root,
-[data-bs-theme="light"]{
- --df-drag-accent:#6f42c1;
- --df-drag-accent-rgb:111,66,193;
- --df-drag-on-accent:#fff;
-}
-[data-bs-theme="dark"]{
- --df-drag-accent:#a78bfa;
- --df-drag-accent-rgb:167,139,250;
- --df-drag-on-accent:#17111f;
-}
-body.df-smart-drag-active .df-layout-card.df-smart-source-hidden{
- display:flex!important;
- visibility:visible!important;
- opacity:.48!important;
- pointer-events:none!important;
- background:rgba(var(--df-drag-accent-rgb),.09)!important;
- border-color:rgba(var(--df-drag-accent-rgb),.50)!important;
- border-style:dashed!important;
- box-shadow:inset 0 0 0 1px rgba(var(--df-drag-accent-rgb),.12)!important;
- filter:saturate(.75)!important;
-}
-body.df-smart-drag-active .df-layout-card.df-smart-source-hidden>*{
- opacity:.58!important;
-}
-body.df-smart-drag-active .df-layout-card.df-smart-source-hidden::after{
- content:'IN SPOSTAMENTO';
- position:absolute;
- left:50%;top:50%;
- transform:translate(-50%,-50%);
- z-index:3;
- padding:4px 9px;
- border-radius:999px;
- background:var(--df-drag-accent);
- color:var(--df-drag-on-accent);
- font-size:10px;
- font-weight:900;
- letter-spacing:.035em;
- white-space:nowrap;
- box-shadow:0 2px 8px rgba(var(--df-drag-accent-rgb),.24);
-}
-.df-smart-drop-overlay{
- border-color:var(--df-drag-accent)!important;
- color:var(--df-drag-accent)!important;
- background:rgba(var(--df-drag-accent-rgb),.16)!important;
- box-shadow:0 4px 16px rgba(var(--df-drag-accent-rgb),.22)!important;
-}
-.df-smart-drop-overlay>span{
- display:inline-flex;
- align-items:center;
- justify-content:center;
- min-height:24px;
- padding:4px 10px;
- border-radius:999px;
- background:var(--df-drag-accent)!important;
- color:var(--df-drag-on-accent)!important;
- font-weight:950;
- line-height:1;
- box-shadow:0 2px 8px rgba(var(--df-drag-accent-rgb),.22);
-}
-.df-smart-drop-overlay.is-beside,
-.df-smart-drop-overlay.is-slot-field,
-.df-smart-drop-overlay.is-empty-slot{
- background:rgba(var(--df-drag-accent-rgb),.22)!important;
- border:2px solid var(--df-drag-accent)!important;
-}
-.df-smart-drop-overlay.is-line,
-.df-smart-drop-overlay.is-newrow,
-.df-smart-drop-overlay.is-append{
- background:rgba(var(--df-drag-accent-rgb),.17)!important;
- border:2px dashed var(--df-drag-accent)!important;
-}
-.df-smart-drop-overlay.is-joinrow{
- background:rgba(var(--df-drag-accent-rgb),.14)!important;
- border:2px solid var(--df-drag-accent)!important;
-}
-.df-smart-drop-overlay.is-slot-empty{
- background:rgba(var(--df-drag-accent-rgb),.08)!important;
- border:2px dashed rgba(var(--df-drag-accent-rgb),.72)!important;
- color:var(--df-drag-accent)!important;
- opacity:1!important;
-}
-/* The fixed overlay is the only drop indicator in 1.3.65: remove old black/red shadows. */
-body.df-smart-drag-active .df-layout-row.df-smart-line-target-before,
-body.df-smart-drag-active .df-layout-row.df-smart-line-target-after,
-body.df-smart-drag-active .df-layout-card.df-smart-target-left,
-body.df-smart-drag-active .df-layout-card.df-smart-target-right,
-body.df-smart-drag-active .df-layout-row-group.df-smart-row-target-before,
-body.df-smart-drag-active .df-layout-row-group.df-smart-row-target-after,
-body.df-smart-drag-active .df-layout-row-group.df-smart-row-join-target{
- box-shadow:none!important;
- outline:none!important;
-}
-@media (prefers-reduced-motion:reduce){
- body.df-smart-drag-active .df-layout-card.df-smart-source-hidden::after{transition:none!important}
-}
-
-
-/* Forms 1.3.65: slightly taller field rows for clearer drag zones and badges. */
-.df-layout-card{
- min-height:68px;
- padding-top:10px;
- padding-bottom:10px;
- align-items:center;
-}
-/* Keep the magnetic drag target comfortable without making the Builder bulky. */
-.df-smart-drop-overlay>span{
- min-height:22px;
- padding:3px 10px;
-}
-@media (max-width:900px){
- .df-layout-card{
-  min-height:64px;
-  padding-top:9px;
-  padding-bottom:9px;
- }
-}
-@media (max-width:640px){
- .df-layout-card{
-  min-height:62px;
- }
-}
-
-
-/* Forms 1.3.65: Row + Section drag unified with the approved Field drag. Vertical only. */
-body.df-structure-drag-active{user-select:none;cursor:grabbing!important}
-body.df-structure-drag-active *{cursor:grabbing!important}
-body.df-structure-drag-active .df-layout-section-group,
-body.df-structure-drag-active .df-layout-row-group{transition:none!important}
-body.df-structure-drag-active .df-layout-section-group.is-structure-source,
-body.df-structure-drag-active .df-layout-row-group.is-structure-source{opacity:.62!important}
-body.df-structure-drag-active .df-layout-section-group.is-structure-source>.df-layout-section-head,
-body.df-structure-drag-active .df-layout-row-group.is-structure-source>.df-layout-row-head{
- position:relative;
- background:rgba(var(--df-drag-accent-rgb),.09)!important;
- box-shadow:inset 0 0 0 1.5px rgba(var(--df-drag-accent-rgb),.48)!important;
- outline:1px dashed rgba(var(--df-drag-accent-rgb),.72)!important;
- outline-offset:-3px;
-}
-body.df-structure-drag-active .df-layout-section-group.is-structure-source>.df-layout-section-head::after,
-body.df-structure-drag-active .df-layout-row-group.is-structure-source>.df-layout-row-head::after{
- content:'IN SPOSTAMENTO';
- position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;
- padding:4px 10px;border-radius:999px;background:var(--df-drag-accent);color:var(--df-drag-on-accent);
- font-size:10px;font-weight:950;line-height:1;letter-spacing:.035em;white-space:nowrap;
- box-shadow:0 2px 8px rgba(var(--df-drag-accent-rgb),.24);pointer-events:none;
-}
-.df-structure-drag-ghost{
- will-change:transform;transition:none!important;left:0!important;top:0!important;
- border-color:rgba(var(--df-drag-accent-rgb),.50)!important;
- box-shadow:0 14px 35px rgba(15,23,42,.22),0 0 0 1px rgba(var(--df-drag-accent-rgb),.08)!important;
-}
-.df-structure-drag-ghost>span:last-child{color:var(--df-drag-accent)!important}
-.df-structure-drop-overlay{
- position:fixed;z-index:10780;box-sizing:border-box;pointer-events:none;
- display:flex;align-items:center;justify-content:center;
- border:2px dashed var(--df-drag-accent);border-radius:10px;
- background:rgba(var(--df-drag-accent-rgb),.17);
- box-shadow:0 4px 16px rgba(var(--df-drag-accent-rgb),.20);
- color:var(--df-drag-accent);backdrop-filter:blur(1px);
- animation:dfSmartOverlayIn .07s ease-out both;
-}
-.df-structure-drop-overlay>span{
- display:inline-flex;align-items:center;justify-content:center;min-height:24px;
- padding:4px 11px;border-radius:999px;background:var(--df-drag-accent);color:var(--df-drag-on-accent);
- font-size:10px;font-weight:950;line-height:1;letter-spacing:.03em;text-transform:uppercase;
- box-shadow:0 2px 8px rgba(var(--df-drag-accent-rgb),.22);
-}
-.df-structure-drop-overlay.is-row{background:rgba(var(--df-drag-accent-rgb),.18)}
-.df-structure-drop-overlay.is-section{background:rgba(var(--df-drag-accent-rgb),.15)}
-.df-structure-drop-overlay.is-inside{border-style:solid;background:rgba(var(--df-drag-accent-rgb),.13)}
-/* Disable legacy pseudo indicators: 1.3.65 uses the same fixed overlay language as Field drag. */
-body.df-structure-drag-active .is-section-drop-before::before,
-body.df-structure-drag-active .is-section-drop-after::after,
-body.df-structure-drag-active .is-row-drop-before::before,
-body.df-structure-drag-active .is-row-drop-after::after{content:none!important;display:none!important}
-@media(max-width:800px){
- .df-structure-drop-overlay>span{min-height:22px;padding:4px 9px;font-size:9px}
- body.df-structure-drag-active .df-layout-section-group.is-structure-source>.df-layout-section-head::after,
- body.df-structure-drag-active .df-layout-row-group.is-structure-source>.df-layout-row-head::after{font-size:9px;padding:4px 8px}
-}
-@media(prefers-reduced-motion:reduce){.df-structure-drop-overlay{animation:none}}
-
-
-/* Forms 1.3.65: Bloccato/Modifica now governs Campo, Riga and Sezione uniformly. */
-.df-builder.is-locked .df-layout-handle,
-.df-builder.is-locked .df-layout-structure-handle{
- cursor:not-allowed!important;
- opacity:.42;
-}
-.df-builder.is-locked .df-layout-handle:hover,
-.df-builder.is-locked .df-layout-structure-handle:hover{
- color:inherit!important;
- background:transparent!important;
-}
-
-
-/* Forms 1.3.65: uniform active selection, explicit lock mode, roomier structure rows. */
-.df-layout-section-group.is-selected > .df-layout-section-head,
-.df-layout-row-group.is-selected > .df-layout-row-head,
-.df-layout-card.is-active{
- background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important;
- box-shadow:inset 4px 0 0 #7c3aed!important;
- border-color:color-mix(in srgb,#7c3aed 24%,var(--df-border,#d8dee8))!important;
-}
-.df-layout-section-group.is-selected > .df-layout-section-head strong,
-.df-layout-row-group.is-selected > .df-layout-row-head .df-layout-row-label,
+--- STYLE BLOCK 0 TAIL ---
+roup.is-selected > .df-layout-row-head .df-layout-row-label,
 .df-layout-card.is-active > strong{color:var(--bs-body-color,#202733)!important}
 
 /* The active edit mode must be immediately visible. Red remains reserved for destructive actions. */

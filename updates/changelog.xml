@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.57</version>
+		<note>Builder drag Campi migliorato in base al test video: la destinazione non dipende più dal punto del campo da cui è stato afferrato il mouse. Il Builder compensa l'offset di presa e interpreta il movimento reale del campo: movimento verticale = SOPRA/SOTTO, movimento orizzontale = SINISTRA/DESTRA, con isteresi per evitare cambi involontari. L'anteprima mostra subito SOPRA/SOTTO come informazione principale. Restano invariati row_id, Righe/Sezioni, slot VUOTO 50%, visual line, larghezze, Undo/Redo e salvataggio atomico.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.56</version>
 		<note>Release canonica della nuova UX drag Campi: 36% superiore = SOPRA, 36% inferiore = SOTTO su tutta la larghezza, fascia centrale SINISTRA/DESTRA, isteresi e tolleranze 22px/16px per campi e slot VUOTO. Corretto inoltre il packaging della 1.3.55, che aveva accorpato i child ZIP e omesso i due plugin richiesti dal manifest; 1.3.56 ripristina component, system plugin ed editors-xtd plugin separati e installabili. Tutte le funzioni precedenti del Builder restano preservate.</note>
 	</changelog>

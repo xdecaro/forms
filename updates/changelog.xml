@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.59</version>
+		<note>Corretto il feedback colore del drag Campi senza modificare la logica stabile della 1.3.58: il campo sorgente resta visibile come placeholder colorato invece di lasciare una riga vuota; SOPRA/SOTTO, SINISTRA/DESTRA e VUOTO 50% hanno ora background viola evidente, bordo coerente e label ad alto contrasto in light/dark mode. Rimossi durante il drag i vecchi shadow/indicatori neri o rossi che si sovrapponevano al nuovo overlay.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.58</version>
 		<note>Builder drag Campi reso piu fluido, stabile e rapido dopo revisione video: canvas statico durante il trascinamento senza reflow dei campi, target magnetici basati sul centro reale del campo trascinato, lock intenzione verticale/orizzontale con cambio solo deliberato, tolleranze ampliate, slot VUOTO 50% magnetici, preview overlay non invasiva, ghost GPU con translate3d e pointer processing via requestAnimationFrame. Preservati Row ID, Sezioni, Righe, visual line, larghezze, Undo/Redo e salvataggio atomico.</note>
 	</changelog>

@@ -2,6 +2,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.48</version>
+		<note>Builder: trascinamento Riga stabilizzato. Titolo, descrizione, metadati e stato accordion seguono sempre la riga spostata; campi e layout restano invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.47</version>
 		<note>Builder: smart drag con slot vuoti reali; campo singolo a sinistra/destra crea 50% + spazio libero, riempimento automatico con il secondo campo, supporto frontend degli offset e colori azioni uniformi.</note>
 	</changelog>

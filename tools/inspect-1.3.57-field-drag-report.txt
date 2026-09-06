@@ -1,0 +1,474 @@
+
+
+===== const smartDrag= =====
+(field);setLogicalRowOrder(row,targetItems);selected.push(field);normalizeLayoutRows();sortSelectedByLayout();if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);normalizeVisualLines(Number(field.config.layout.row||row));activeFieldKey=field.key;sync();renderSelected();renderLayoutCanvas();}
+function moveFieldBeside(index,targetIndex,position='after'){if(smartMoveBeside(index,targetIndex,position)){sortSelectedByLayout();sync();renderSelected();renderLayoutCanvas();}}
+function moveFieldToNewRowAfter(index,afterRow){if(index==null||!selected[index])return;if(smartMoveNewRow(index,Number(afterRow),'after')){sortSelectedByLayout();sync();renderSelected();renderLayoutCanvas();}}
+
+/* Forms 1.3.57: intelligent field drag & drop. No external dependency. */
+const smartDrag={pending:null,active:false,pointerId:null,pointerType:'',fieldKey:'',sourceCard:null,sourceRow:null,ghost:null,spec:null,specKey:'',pressTimer:null,lastX:0,lastY:0,originX:0,originY:0,grabXRatio:.5,grabYRatio:.5,sourceWidth:0,sourceHeight:0,intentAxis:''};
+let smartSuppressClickUntil=0;
+const smartDragIgnoreSelector='button,select,input,textarea,a,label,[contenteditable="true"],summary,details';
+function smartFieldIndex(key){return selected.findIndex(f=>f.key===key);}
+function smartFieldByKey(key){const i=smartFieldIndex(key);return i>=0?selected[i]:null;}
+function smartSpecId(spec){return spec?`${spec.kind}:${spec.targetKey||''}:${spec.row||''}:${spec.position||''}`:'';}
+function smartCaptureRects(){const map=new Map();layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const r=el.getBoundingClientRect();if(r.width&&r.height)map.set(el.dataset.fieldKey,{left:r.left,top:r.top});});return map;}
+function smartAnimateFrom(before){if(!before?.size)return;requestAnimationFrame(()=>{layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const b=before.get(el.dataset.fieldKey);if(!b||!el.animate)return;const r=el.getBoundingClientRect(),dx=b.left-r.left,dy=b.top-r.top;if(Math.abs(dx)<1&&Math.abs(dy)<1)return;el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:175,easing:'cubic-bezier(.2,.75,.25,1)'});});});}
+function smartRememberGrid(row){if(row&&!row.hasAttribute('data-smart-original-grid'))row.setAttribute('data-smart-original-grid',row.style.gridTemplateColumns||'');}
+function smartSetGrid(row,widths){if(!row)return;smartRememberGrid(row);const vals=(Array.isArray(widths)&&widths.length?widths:[100]);row.style.gridTemplateColumns=vals.map(v=>`${Math.max(1,Number(v)||1)}fr`).join(' ');}
+function smartRestorePreviewDom(){
+ layoutCanvas?.querySelectorAll('.df-smart-placeholder,.df-smart-newrow-preview,.df-smart-row-join-preview,.df-smart-line-preview,.df-smart-slot-preview').forEach(el=>el.remove());
+ layoutCanvas?.querySelectorAll('.df-smart-target-left,.df-smart-target-right,.df-smart-row-target-before,.df-smart-row-target-after,.df-smart-row-join-target,.df-smart-line-target-before,.df-smart-line-target-after').forEach(el=>el.classList.remove('df-smart-target-left','df-smart-target-right','df-smart-row-target-before','df-smart-row-target-after','df-smart-row-join-target','df-smart-line-target-before','df-smart-line-target-after'));
+ layoutCanvas?.querySelectorAll('.df-layout-row[data-smart-original-grid]').forEach(row=>{row.style.gridTemplateColumns=row.getAttribute('data-smart-original-grid')||'';row.removeAttribute('data-smart-original-grid');});
+ layoutCanvas?.querySelectorAll('.df-smart-source-row-empty').forEach(el=>el.classList.remove('df-smart-source-row-empty'));
+ layoutCanvas?.querySelectorAll('.df-smart-source-line-empty').forEach(el=>el.classList.remove('df-smart-source-line-empty'));
+ if(smartDrag.active)smartReflowSourceRow();
+}
+function smartReflowSourceRow(){const row=smartDrag.sourceRow;if(!row?.isConnected)return;const visible=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')],group=row.closest('.df-layout-row-group');group?.classList.remove('df-smart-source-row-empty');if(!visible.length){smartRememberGrid(row);row.classList.add('df-smart-source-line-empty');row.style.gridTemplateColumns='1fr';return;}row.classList.remove('df-smart-source-line-empty');smartSetGrid(row,smartAutoWidths(visible.length));}
+function smartCreateGhost(card,key,x,y){const f=smartFieldByKey(key),rect=card.getBoundingClientRect(),g=document.createElement('div');g.className='df-smart-drag-ghost';g.style.width=`${Math.min(Math.max(rect.width,210),380)}px`;g.innerHTML=`<span class="df-smart-ghost-handle">${modernUiIcon('grip')}</span><strong>${esc(f?.label||'Campo')}</strong><span class="df-smart-ghost-meta">${esc(tr.types[f?.type]||f?.type||'')}</span>`;document.body.appendChild(g);smartDrag.ghost=g;smartPositionGhost(x,y);}
+function smartPositionGhost(x,y){const g=smartDrag.ghost;if(!g)return;const pad=14,maxX=Math.max(8,window.innerWidth-g.offsetWidth-8),maxY=Math.max(8,window.innerHeight-g.offsetHeight-8);g.style.left=`${Math.min(maxX,Math.max(8,x+pad))}px`;g.style.top=`${Math.min(maxY,Math.max(8,y+pad))}px`;}
+function smartPreviewBesideWidths(spec){const target=smartFieldByKey(spec.targetKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return[100];const line=visualLineForField(target).map(([f])=>f).filter(f=>f!==source),pos=Math.max(0,line.indexOf(target)+(spec.position==='after'?1:0));line.splice(pos,0,source);return smartAutoWidths(line.length);}
+function smartRenderPreview(spec){const id=smartSpecId(spec);if(id===smartDrag.specKey)return;const before=smartCaptureRects();smartRestorePreviewDom();smartDrag.spec=spec;smartDrag.specKey=id;if(!spec){smartAnimateFrom(before);return;}
+ if(spec.kind==='slot'){   const row=smartDrag.sourceRow;if(row){smartRememberGrid(row);row.style.gridTemplateColumns='1fr 1fr';const empty=document.createElement('div'),field=document.createElement('div');empty.className='df-smart-slot-preview is-empty';field.className='df-smart-slot-preview is-field';empty.innerHTML='<span>VUOTO 50%</span>';field.innerHTML=`<span>${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 50%</span>`;if(spec.position==='right'){row.append(empty,field);}else{row.append(field,empty);}}  }else if(spec.kind==='beside'){
+  const target=layoutCanvas?.querySelector(`.df-layout-card[data-field-key="${CSS.escape(spec.targetKey)}"]`);if(target){const row=target.closest('.df-layout-row'),ph=document.createElement('div');ph.className='df-smart-placeholder '+(spec.position==='before'?'is-left':'is-right');ph.innerHTML=`<span>${spec.position==='before'?'SINISTRA':'DESTRA'}</span>`;if(spec.position==='before')target.before(ph);else target.after(ph);target.classList.add(spec.position==='before'?'df-smart-target-left':'df-smart-target-right');smartSetGrid(row,smartPreviewBesideWidths(spec));}
+ }else if(spec.kind==='line'){
+  const target=layoutCanvas?.querySelector(`.df-layout-card[data-field-key="${CSS.escape(spec.targetKey)}"]`),line=target?.closest('.df-layout-row');if(line){const ph=document.createElement('div'),title=rowMeta(Number(spec.row)).title||`Riga ${Number(spec.row)}`;ph.className='df-smart-line-preview';ph.innerHTML=`<span class="df-smart-line-label">${spec.position==='before'?'SOPRA':'SOTTO'} · ${esc(title).toUpperCase()}</span><span class="df-smart-line-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;if(spec.position==='before')line.before(ph);else line.after(ph);line.classList.add(spec.position==='before'?'df-smart-line-target-before':'df-smart-line-target-after');}
+ }else if(spec.kind==='joinrow'){
+  const group=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-no="${Number(spec.row)}"]`);if(group){const ph=document.createElement('div'),title=rowMe
+
+
+===== function smartBeginDrag(){ =====
+if(spec.kind==='line')changed=smartMoveLineRelative(index,spec.targetKey,spec.position);else if(spec.kind==='joinrow')changed=smartMoveToExistingRow(index,Number(spec.row),spec.targetKey||null);else if(spec.kind==='newrow')changed=smartMoveNewRow(index,Number(spec.row),spec.position);else if(spec.kind==='append'){const max=Math.max(1,...logicalRowNumbers());changed=smartMoveNewRow(index,max,'after');}if(changed){sortSelectedByLayout();sync();renderSelected();clearTimeout(historyTimer);pushHistory();}return changed;}
+function smartEndVisual(){clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;smartDrag.ghost?.remove();smartDrag.ghost=null;document.body.classList.remove('df-smart-drag-active');document.querySelector('.df-builder-workspace')?.classList.remove('is-smart-dragging');}
+function smartBeginDrag(){const p=smartDrag.pending;if(!p||smartDrag.active||!p.card?.isConnected)return;const sourceRect=p.card.getBoundingClientRect();smartDrag.active=true;smartDrag.pointerId=p.pointerId;smartDrag.pointerType=p.pointerType;smartDrag.fieldKey=p.fieldKey;smartDrag.sourceCard=p.card;smartDrag.sourceRow=p.card.closest('.df-layout-row');smartDrag.lastX=p.x;smartDrag.lastY=p.y;smartDrag.originX=p.startX;smartDrag.originY=p.startY;smartDrag.sourceWidth=Math.max(1,sourceRect.width);smartDrag.sourceHeight=Math.max(1,sourceRect.height);smartDrag.grabXRatio=Math.max(0,Math.min(1,(p.startX-sourceRect.left)/smartDrag.sourceWidth));smartDrag.grabYRatio=Math.max(0,Math.min(1,(p.startY-sourceRect.top)/smartDrag.sourceHeight));smartDrag.intentAxis='';smartDrag.pending=null;clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;const before=smartCaptureRects();smartCreateGhost(p.card,p.fieldKey,p.x,p.y);p.card.classList.add('df-smart-source-hidden');document.body.classList.add('df-smart-drag-active');document.querySelector('.df-builder-workspace')?.classList.add('is-smart-dragging');smartReflowSourceRow();smartAnimateFrom(before);if(p.pointerType!=='mouse'&&navigator.vibrate)try{navigator.vibrate(12);}catch{};}
+function smartCancelPending(){clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;smartDrag.pending=null;}
+function smartQueueDrag(e,card,key){if(editorLocked||!e.isPrimary||(e.pointerType==='mouse'&&e.button!==0)||e.target.closest(smartDragIgnoreSelector))return;smartCancelPending();smartDrag.pending={pointerId:e.pointerId,pointerType:e.pointerType||'mouse',fieldKey:key,card,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY};if(e.pointerType==='touch'||e.pointerType==='pen')smartDrag.pressTimer=setTimeout(()=>smartBeginDrag(),420);}
+function smartPointerMove(e){const p=smartDrag.pending;if(p&&e.pointerId===p.pointerId&&!smartDrag.active){p.x=e.clientX;p.y=e.clientY;const d=Math.hypot(e.clientX-p.startX,e.clientY-p.startY);if(p.pointerType==='mouse'){if(d>=5)smartBeginDrag();}else if(d>10){smartCancelPending();return;}}if(!smartDrag.active||e.pointerId!==smartDrag.pointerId)return;e.preventDefault();smartDrag.lastX=e.clientX;smartDrag.lastY=e.clientY;smartPositionGhost(e.clientX,e.clientY);smartRenderPreview(smartFindDropSpec(e.clientX,e.clientY));}
+function smartFinishDrag(commit,e){if(!smartDrag.active){smartCancelPending();return;}if(e&&e.pointerId!==smartDrag.pointerId)return;e?.preventDefault?.();const before=smartCaptureRects(),spec=smartDrag.spec,key=smartDrag.fieldKey;smartEndVisual();smartRestorePreviewDom();const changed=commit&&spec?smartCommitSpec(spec,key):false;smartSuppressClickUntil=Date.now()+320;smartDrag.active=false;smartDrag.pointerId=null;smartDrag.pointerType='';smartDrag.fieldKey='';smartDrag.sourceCard=null;smartDrag.sourceRow=null;smartDrag.spec=null;smartDrag.specKey='';if(!changed)renderLayoutCanvas();else renderLayoutCanvas();smartAnimateFrom(before);}
+function smartPointerUp(e){if(smartDrag.active)smartFinishDrag(true,e);else if(smartDrag.pending&&e.pointerId===smartDrag.pending.pointerId)smartCancelPending();}
+function smartPointerCancel(e){if(smartDrag.active)smartFinishDrag(false,e);else if(smartDrag.pending&&e.pointerId===smartDrag.pending.pointerId)smartCancelPending();}
+window.addEventListener('pointermove',smartPointerMove,{passive:false});window.addEventListener('pointerup',smartPointerUp,{passive:false});window.addEventListener('pointercancel',smartPointerCancel,{passive:false});document.addEventListener('touchmove',e=>{if(smartDrag.active)e.preventDefault();},{passive:false});window.addEventListener('keydown',e=>{if(e.key==='Escape'&&smartDrag.active)smartFinishDrag(false);});
+/* End Forms 1.3.57 intelligent field drag & drop. */
+
+const layoutSectionState=new Map(),layoutRowState=new Map();
+function isLayoutSectionField(f){return !!f&&(f.type==='heading'||(f.type==='fieldset'&&f.config?.builder_role==='section'));}
+function layoutSectionTitle(f){if(!f)return structureUi.general;return String(f.label||f.config?.content||structureUi.section).trim()||structureUi.section;}
+function layoutFieldCount(rows){return rows.reduce((n,r)=>n+r.items.filter(([f])=>!isLayoutSectionField(f)).length,0);}
+function renderLayoutFieldCard(f,i,rowNo,row){
+ const card=document.createElement('div');card.className='df-layout-card'+(f.key===activeFieldKey?' is-active':'');card.dataset.fieldKey=f.key;card.draggable=false;card.style.width='100%';const required=f.required?'<span class="df-required-badge">Obbligatorio</span>':'';
+ card.innerHTML=`<span class="df-layout-handle" title="Trascina campo" aria-hidden="true">${modernUiIcon('grip')}</span><strong>${esc(f.label)}</strong><span class="df-layout-meta"><span class="df-layout-type">${esc(tr.types[f.type]||f.type)}</span>${required}<select aria-label="Larghezza campo">${widthChoices(f.config.layout.width||100)}</select><span class="df-layout-actions"><button type="button" data-canvas-edit class="df-icon-only" title="Modifica campo" aria-label="Modifica campo">${modernUiIcon('edit')}</button><button type="button" data-canvas-duplicate class="df-icon-only" title="Duplica campo" aria-label="Duplica campo">${modernUiIcon('copy')}</button><button type="button" data-canvas-remove class="df-canvas-remove df-icon-only" title="Elimina campo" aria-label="Elimina campo">${modernUiIcon('trash')}</button></span></span>`;
+ card.addEventListener('pointerdown',e=>smartQueueDrag(e,card,f.key));
+ card.addEventListener('click',e=>{if(Date.now()<smartSuppressClickUntil||e.target.closest('button,select,input,textarea,a,label'))return;selectField(i);});
+ card.querySelector('select').onchange=e=>setFieldWidth(i,Number(e.target.value));card.querySelector('[data-canvas-edit]').onclick=()=>selectField(i);card.querySelector('[data-canvas-duplicate]').onclick=()=>duplicateField(i);card.querySelector('[data-canvas-remove]').onclick=()=>confirmDelete(`il campo “${f.label||'Campo'}”`,()=>removeCanvasField(i));row.appendChild(card);
+}
+
+/* Forms 1.3.57: drag whole sections and rows as structural blocks. */
+const structureDrag={pending:null,active:false,pointerId:null,type:'',id:null,handle:null,ghost:null,spec:null,pressTimer:null,lastX:0,lastY:0};
+let structureSuppressClickUntil=0;
+function structureRowBlocks(){
+ normalizeLayoutRows();
+ return logicalRowNumbers().map(rowNo=>{
+  const fields=fieldsInRow(rowNo).map(([f])=>f),storedMeta=clone(rowMeta(rowNo)),rowId=String(storedMeta.id||rowIdForRow(rowNo)),sectionKey=fields.find(isLayoutSectionField)?.key||null;
+  const node=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-id="${CSS.escape(rowId)}"]`),openState=sectionKey?null:(layoutRowState.has(rowId)?!!layoutRowState.get(rowId):!!node?.classList.contains('is-open'));
+  return{rowNo,rowId,fields,meta:storedMeta,sectionKey,openState};
+ });
+}
+function structureApplyBlocks(blocks){
+ builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&
+
+
+===== function smartClassifyCard(card,x,y){ =====
+.position==='before'?'df-smart-row-target-before':'df-smart-row-target-after');}
+ }else if(spec.kind==='append'){
+  const ph=document.createElement('div');ph.className='df-smart-newrow-preview is-append';ph.innerHTML=`<span class="df-smart-newrow-label">NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;layoutCanvas?.appendChild(ph);
+ }
+ smartAnimateFrom(before);
+}
+function smartProjectedPoint(card,x,y){
+ const r=card.getBoundingClientRect(),sw=Math.max(1,Number(smartDrag.sourceWidth)||r.width),sh=Math.max(1,Number(smartDrag.sourceHeight)||r.height),gx=Math.max(0,Math.min(1,Number(smartDrag.grabXRatio)||.5)),gy=Math.max(0,Math.min(1,Number(smartDrag.grabYRatio)||.5));
+ return{r,px:x+(.5-gx)*sw,py:y+(.5-gy)*sh};
+}
+function smartClassifyCard(card,x,y){
+ if(!card||card.dataset.fieldKey===smartDrag.fieldKey)return null;
+ const target=smartFieldByKey(card.dataset.fieldKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return null;
+ const projected=smartProjectedPoint(card,x,y),r=projected.r,rx=(projected.px-r.left)/Math.max(1,r.width),ry=(projected.py-r.top)/Math.max(1,r.height),dxn=rx-.5,dyn=ry-.5,adx=Math.abs(dxn),ady=Math.abs(dyn),moveX=x-(Number(smartDrag.originX)||x),moveY=y-(Number(smartDrag.originY)||y),amx=Math.abs(moveX),amy=Math.abs(moveY),targetLine=visualLineForField(target).map(([f])=>f),sourceInLine=targetLine.includes(source),count=targetLine.filter(f=>f!==source).length+(sourceInLine?0:1),canSide=count<=4,row=Number(target.config?.layout?.row||1),current=smartDrag.spec&&smartDrag.spec.targetKey===target.key?smartDrag.spec:null;
+ let axis='vertical';
+ if(canSide){
+  if(current?.kind==='line'&&adx<=ady*1.45+.06)axis='vertical';
+  else if(current?.kind==='beside'&&ady<=adx*1.45+.06)axis='horizontal';
+  else if(Math.max(adx,ady)<.13){axis=(amx>=24&&amx>amy*1.25)?'horizontal':'vertical';}
+  else axis=(ady*1.12>=adx)?'vertical':'horizontal';
+ }
+ smartDrag.intentAxis=axis;
+ if(axis==='horizontal'&&canSide){
+  if(current?.kind==='beside'&&current.position==='before'&&rx<=.58)return{kind:'beside',targetKey:target.key,row,position:'before'};
+  if(current?.kind==='beside'&&current.position==='after'&&rx>=.42)return{kind:'beside',targetKey:target.key,row,position:'after'};
+  const position=Math.abs(dxn)<.055&&amx>=12?(moveX<0?'before':'after'):(rx<.5?'before':'after');
+  return{kind:'beside',targetKey:target.key,row,position};
+ }
+ if(current?.kind==='line'&&current.position==='before'&&ry<=.58)return{kind:'line',row,targetKey:target.key,position:'before'};
+ if(current?.kind==='line'&&current.position==='after'&&ry>=.42)return{kind:'line',row,targetKey:target.key,position:'after'};
+ const position=Math.abs(dyn)<.055&&amy>=12?(moveY<0?'before':'after'):(ry<.5?'before':'after');
+ return{kind:'line',row,targetKey:target.key,position};
+}
+function smartNearestCardInRow(row,x,y){const cards=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];if(!cards.length)return null;let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect(),cx=Math.max(r.left,Math.min(x,r.right)),cy=Math.max(r.top,Math.min(y,r.bottom)),d=(x-cx)**2+(y-cy)**2;if(d<score){score=d;best=card;}}return best;}
+function smartNearestEmptySlot(x,y,margin=16){const slots=[...(layoutCanvas?.querySelectorAll('.df-layout-empty-slot[data-slot-target-key]')||[])];let best=null,score=Infinity;for(const slot of slots){const r=slot.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=slot;}}return best;}
+function smartNearestCardNearPoint(x,y,margin=22){const cards=[...(layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')||[])];let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=card;}}return best;}
+function smartFindDropSpec(x,y){const stack=document.elementsFromPoint?document.elementsFromPoint(x,y):[];let emptySlot=stack.map(el=>el?.closest?.('.df-layout-empty-slot[data-slot-target-key]')).find(Boolean);if(!emptySlot)emptySlot=smartNearestEmptySlot(x,y,16);if(emptySlot){const targetKey=emptySlot.dataset.slotTargetKey||'',side=emptySlot.dataset.slotSide||'before',target=smartFieldByKey(targetKey);if(target&&targetKey!==smartDrag.fieldKey)return{kind:'beside',targetKey,row:Number(target.config?.layout?.row||1),position:side==='after'?'after':'before'};}let card=stack.find(el=>el?.classList?.contains('df-layout-card')&&!el.classList.contains('df-smart-source-hidden'));if(!card)card=smartNearestCardNearPoint(x,y,22);if(card)return smartClassifyCard(card,x,y);
+ const row=stack.map(el=>el?.closest?.('.df-layout-row')).find(Boolean);if(row){card=smartNearestCardInRow(row,x,y);if(card)return smartClassifyCard(card,x,y);if(row===smartDrag.sourceRow||row.classList.contains('df-smart-source-line-empty')){const rr=row.getBoundingClientRect(),rx=(x-rr.left)/Math.max(1,rr.width);return{kind:'slot',row:Number(row.dataset.row||1),position:rx<.5?'left':'right'};}return{kind:'joinrow',row:Number(row.dataset.row||1)};}
+ const group=stack.map(el=>el?.closest?.('.df-layout-row-group')).find(Boolean);if(group){const rowNo=Number(group.dataset.rowNo||1),gr=group.getBoundingClientRect(),band=Math.min(18,Math.max(10,gr.height*.10));if(y<=gr.top+band)return{kind:'newrow',row:rowNo,position:'before'};if(y>=gr.bottom-band)return{kind:'newrow',row:rowNo,position:'after'};return{kind:'joinrow',row:rowNo};}
+ if(layoutNewRow){const r=layoutNewRow.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top-20&&y<=r.bottom+30)return{kind:'append'};}
+ const groups=[...(layoutCanvas?.querySelectorAll('.df-layout-row-group')||[])].filter(g=>!g.classList.contains('df-smart-source-row-empty'));let nearest=null,dist=Infinity;for(const g of groups){const r=g.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<dist){dist=d;nearest=g;}}if(nearest&&dist<32){const r=nearest.getBoundingClientRect();return{kind:'newrow',row:Number(nearest.dataset.rowNo||1),position:y<r.top+r.height/2?'before':'after'};}
+ return null;
+}
+function smartShiftRowMeta(insertRow){builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};const meta=rowMetaStore(),next={};Object.keys(meta).forEach(k=>{const n=Number(k);next[String(Number.isFinite(n)&&n>=insertRow?n+1:n)]=meta[k];});builderConfig.layout.row_meta=next;refreshActiveRowSelection();}
+function smartMoveBeside(index,targetIndex,position='after'){if(index<0||targetIndex<0||!selected[index]||!selected[targetIndex]||index===targetIndex)return false;const field=selected[index],target=selected[targetIndex],oldRow=Number(field.config?.layout?.row||1),targetRow=Number(target.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),targetLine=visualLineForField(target).map(([f])=>f),sameLine=targetLine.includes(field),targetMembers=targetLine.filter(f=>f!==field);if(!sameLine&&targetMembers.length>=4)return smartMoveToExistingRow(index,targetRow,target.key);if(!sameLine){const sourceRest=sourceLine.filter(f=>f!==field);if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);sourceRest.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});}}const rowItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field),at=Math.max(0,rowItems.indexOf(target)+(position==='after'?1:0));rowItems.splice(at,0,fiel
+
+
+===== function smartNearestCardInRow( =====
+t.position==='before'&&rx<=.58)return{kind:'beside',targetKey:target.key,row,position:'before'};
+  if(current?.kind==='beside'&&current.position==='after'&&rx>=.42)return{kind:'beside',targetKey:target.key,row,position:'after'};
+  const position=Math.abs(dxn)<.055&&amx>=12?(moveX<0?'before':'after'):(rx<.5?'before':'after');
+  return{kind:'beside',targetKey:target.key,row,position};
+ }
+ if(current?.kind==='line'&&current.position==='before'&&ry<=.58)return{kind:'line',row,targetKey:target.key,position:'before'};
+ if(current?.kind==='line'&&current.position==='after'&&ry>=.42)return{kind:'line',row,targetKey:target.key,position:'after'};
+ const position=Math.abs(dyn)<.055&&amy>=12?(moveY<0?'before':'after'):(ry<.5?'before':'after');
+ return{kind:'line',row,targetKey:target.key,position};
+}
+function smartNearestCardInRow(row,x,y){const cards=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];if(!cards.length)return null;let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect(),cx=Math.max(r.left,Math.min(x,r.right)),cy=Math.max(r.top,Math.min(y,r.bottom)),d=(x-cx)**2+(y-cy)**2;if(d<score){score=d;best=card;}}return best;}
+function smartNearestEmptySlot(x,y,margin=16){const slots=[...(layoutCanvas?.querySelectorAll('.df-layout-empty-slot[data-slot-target-key]')||[])];let best=null,score=Infinity;for(const slot of slots){const r=slot.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=slot;}}return best;}
+function smartNearestCardNearPoint(x,y,margin=22){const cards=[...(layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')||[])];let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=card;}}return best;}
+function smartFindDropSpec(x,y){const stack=document.elementsFromPoint?document.elementsFromPoint(x,y):[];let emptySlot=stack.map(el=>el?.closest?.('.df-layout-empty-slot[data-slot-target-key]')).find(Boolean);if(!emptySlot)emptySlot=smartNearestEmptySlot(x,y,16);if(emptySlot){const targetKey=emptySlot.dataset.slotTargetKey||'',side=emptySlot.dataset.slotSide||'before',target=smartFieldByKey(targetKey);if(target&&targetKey!==smartDrag.fieldKey)return{kind:'beside',targetKey,row:Number(target.config?.layout?.row||1),position:side==='after'?'after':'before'};}let card=stack.find(el=>el?.classList?.contains('df-layout-card')&&!el.classList.contains('df-smart-source-hidden'));if(!card)card=smartNearestCardNearPoint(x,y,22);if(card)return smartClassifyCard(card,x,y);
+ const row=stack.map(el=>el?.closest?.('.df-layout-row')).find(Boolean);if(row){card=smartNearestCardInRow(row,x,y);if(card)return smartClassifyCard(card,x,y);if(row===smartDrag.sourceRow||row.classList.contains('df-smart-source-line-empty')){const rr=row.getBoundingClientRect(),rx=(x-rr.left)/Math.max(1,rr.width);return{kind:'slot',row:Number(row.dataset.row||1),position:rx<.5?'left':'right'};}return{kind:'joinrow',row:Number(row.dataset.row||1)};}
+ const group=stack.map(el=>el?.closest?.('.df-layout-row-group')).find(Boolean);if(group){const rowNo=Number(group.dataset.rowNo||1),gr=group.getBoundingClientRect(),band=Math.min(18,Math.max(10,gr.height*.10));if(y<=gr.top+band)return{kind:'newrow',row:rowNo,position:'before'};if(y>=gr.bottom-band)return{kind:'newrow',row:rowNo,position:'after'};return{kind:'joinrow',row:rowNo};}
+ if(layoutNewRow){const r=layoutNewRow.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top-20&&y<=r.bottom+30)return{kind:'append'};}
+ const groups=[...(layoutCanvas?.querySelectorAll('.df-layout-row-group')||[])].filter(g=>!g.classList.contains('df-smart-source-row-empty'));let nearest=null,dist=Infinity;for(const g of groups){const r=g.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<dist){dist=d;nearest=g;}}if(nearest&&dist<32){const r=nearest.getBoundingClientRect();return{kind:'newrow',row:Number(nearest.dataset.rowNo||1),position:y<r.top+r.height/2?'before':'after'};}
+ return null;
+}
+function smartShiftRowMeta(insertRow){builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};const meta=rowMetaStore(),next={};Object.keys(meta).forEach(k=>{const n=Number(k);next[String(Number.isFinite(n)&&n>=insertRow?n+1:n)]=meta[k];});builderConfig.layout.row_meta=next;refreshActiveRowSelection();}
+function smartMoveBeside(index,targetIndex,position='after'){if(index<0||targetIndex<0||!selected[index]||!selected[targetIndex]||index===targetIndex)return false;const field=selected[index],target=selected[targetIndex],oldRow=Number(field.config?.layout?.row||1),targetRow=Number(target.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),targetLine=visualLineForField(target).map(([f])=>f),sameLine=targetLine.includes(field),targetMembers=targetLine.filter(f=>f!==field);if(!sameLine&&targetMembers.length>=4)return smartMoveToExistingRow(index,targetRow,target.key);if(!sameLine){const sourceRest=sourceLine.filter(f=>f!==field);if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);sourceRest.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});}}const rowItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field),at=Math.max(0,rowItems.indexOf(target)+(position==='after'?1:0));rowItems.splice(at,0,field);field.config.layout.row=targetRow;setLogicalRowOrder(targetRow,rowItems);const newTargetLine=rowItems.filter(f=>targetMembers.includes(f)||f===field),auto=smartAutoWidths(newTargetLine.length);newTargetLine.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});normalizeLayoutRows();sortSelectedByLayout();if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);normalizeVisualLines(Number(field.config.layout.row||targetRow));activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartMoveLineRelative(index,targetKey,position='after'){if(index<0||!selected[index]||!targetKey)return false;const field=selected[index],target=smartFieldByKey(targetKey);if(!target||target===field)return false;const oldRow=Number(field.config?.layout?.row||1),targetRow=Number(target.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);sourceRest.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});}const targetLine=visualLineForField(target).map(([f])=>f).filter(f=>f!==field),targetItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field);if(!targetLine.length)return smartMoveToExistingRow(index,targetRow,targetKey);let first=targetItems.indexOf(targetLine[0]),last=targetItems.indexOf(targetLine[targetLine.length-1]);if(first<0||last<0)return smartMoveToExistingRow(index,targetRow,targetKey);const at=position==='before'?first:last+1;smartClearOffsets(field);field.config.layout={...(field.config.layout||{}),row:targetRow,col:at+1,width:100};targetItems.splice(at,0,field);setLogicalRowOrder(targetRow,targetItems);normalizeLayoutRows();sortSelectedByLayout();if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);normalizeVisualLines(targetRow);activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartMoveToExistingRow(index,targetRow,targetKey=null){if(index<0||!select
+
+
+===== function smartFindDropSpec(x,y){ =====
+ectorAll('.df-layout-empty-slot[data-slot-target-key]')||[])];let best=null,score=Infinity;for(const slot of slots){const r=slot.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=slot;}}return best;}
+function smartNearestCardNearPoint(x,y,margin=22){const cards=[...(layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')||[])];let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=card;}}return best;}
+function smartFindDropSpec(x,y){const stack=document.elementsFromPoint?document.elementsFromPoint(x,y):[];let emptySlot=stack.map(el=>el?.closest?.('.df-layout-empty-slot[data-slot-target-key]')).find(Boolean);if(!emptySlot)emptySlot=smartNearestEmptySlot(x,y,16);if(emptySlot){const targetKey=emptySlot.dataset.slotTargetKey||'',side=emptySlot.dataset.slotSide||'before',target=smartFieldByKey(targetKey);if(target&&targetKey!==smartDrag.fieldKey)return{kind:'beside',targetKey,row:Number(target.config?.layout?.row||1),position:side==='after'?'after':'before'};}let card=stack.find(el=>el?.classList?.contains('df-layout-card')&&!el.classList.contains('df-smart-source-hidden'));if(!card)card=smartNearestCardNearPoint(x,y,22);if(card)return smartClassifyCard(card,x,y);
+ const row=stack.map(el=>el?.closest?.('.df-layout-row')).find(Boolean);if(row){card=smartNearestCardInRow(row,x,y);if(card)return smartClassifyCard(card,x,y);if(row===smartDrag.sourceRow||row.classList.contains('df-smart-source-line-empty')){const rr=row.getBoundingClientRect(),rx=(x-rr.left)/Math.max(1,rr.width);return{kind:'slot',row:Number(row.dataset.row||1),position:rx<.5?'left':'right'};}return{kind:'joinrow',row:Number(row.dataset.row||1)};}
+ const group=stack.map(el=>el?.closest?.('.df-layout-row-group')).find(Boolean);if(group){const rowNo=Number(group.dataset.rowNo||1),gr=group.getBoundingClientRect(),band=Math.min(18,Math.max(10,gr.height*.10));if(y<=gr.top+band)return{kind:'newrow',row:rowNo,position:'before'};if(y>=gr.bottom-band)return{kind:'newrow',row:rowNo,position:'after'};return{kind:'joinrow',row:rowNo};}
+ if(layoutNewRow){const r=layoutNewRow.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top-20&&y<=r.bottom+30)return{kind:'append'};}
+ const groups=[...(layoutCanvas?.querySelectorAll('.df-layout-row-group')||[])].filter(g=>!g.classList.contains('df-smart-source-row-empty'));let nearest=null,dist=Infinity;for(const g of groups){const r=g.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<dist){dist=d;nearest=g;}}if(nearest&&dist<32){const r=nearest.getBoundingClientRect();return{kind:'newrow',row:Number(nearest.dataset.rowNo||1),position:y<r.top+r.height/2?'before':'after'};}
+ return null;
+}
+function smartShiftRowMeta(insertRow){builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};const meta=rowMetaStore(),next={};Object.keys(meta).forEach(k=>{const n=Number(k);next[String(Number.isFinite(n)&&n>=insertRow?n+1:n)]=meta[k];});builderConfig.layout.row_meta=next;refreshActiveRowSelection();}
+function smartMoveBeside(index,targetIndex,position='after'){if(index<0||targetIndex<0||!selected[index]||!selected[targetIndex]||index===targetIndex)return false;const field=selected[index],target=selected[targetIndex],oldRow=Number(field.config?.layout?.row||1),targetRow=Number(target.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),targetLine=visualLineForField(target).map(([f])=>f),sameLine=targetLine.includes(field),targetMembers=targetLine.filter(f=>f!==field);if(!sameLine&&targetMembers.length>=4)return smartMoveToExistingRow(index,targetRow,target.key);if(!sameLine){const sourceRest=sourceLine.filter(f=>f!==field);if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);sourceRest.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});}}const rowItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field),at=Math.max(0,rowItems.indexOf(target)+(position==='after'?1:0));rowItems.splice(at,0,field);field.config.layout.row=targetRow;setLogicalRowOrder(targetRow,rowItems);const newTargetLine=rowItems.filter(f=>targetMembers.includes(f)||f===field),auto=smartAutoWidths(newTargetLine.length);newTargetLine.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});normalizeLayoutRows();sortSelectedByLayout();if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);normalizeVisualLines(Number(field.config.layout.row||targetRow));activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartMoveLineRelative(index,targetKey,position='after'){if(index<0||!selected[index]||!targetKey)return false;const field=selected[index],target=smartFieldByKey(targetKey);if(!target||target===field)return false;const oldRow=Number(field.config?.layout?.row||1),targetRow=Number(target.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);sourceRest.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});}const targetLine=visualLineForField(target).map(([f])=>f).filter(f=>f!==field),targetItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field);if(!targetLine.length)return smartMoveToExistingRow(index,targetRow,targetKey);let first=targetItems.indexOf(targetLine[0]),last=targetItems.indexOf(targetLine[targetLine.length-1]);if(first<0||last<0)return smartMoveToExistingRow(index,targetRow,targetKey);const at=position==='before'?first:last+1;smartClearOffsets(field);field.config.layout={...(field.config.layout||{}),row:targetRow,col:at+1,width:100};targetItems.splice(at,0,field);setLogicalRowOrder(targetRow,targetItems);normalizeLayoutRows();sortSelectedByLayout();if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);normalizeVisualLines(targetRow);activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartMoveToExistingRow(index,targetRow,targetKey=null){if(index<0||!selected[index])return false;targetRow=Math.max(1,Number(targetRow)||1);const field=selected[index],oldRow=Number(field.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);sourceRest.forEach((f,i)=>{smartClearOffsets(f);f.config.layout.width=auto[i]??100;});}const target=targetKey?selected.find(f=>f.key===targetKey):null,targetLine=target?visualLineForField(target).map(([f])=>f).filter(f=>f!==field):[];selected.splice(index,1);const targetItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field);let at=targetItems.length;if(targetLine.length){const last=targetLine[targetLine.length-1],li=targetItems.indexOf(last);if(li>=0)at=li+1;}smartClearOffsets(field);field.config.layout={...(field.config.layout||{}),row:targetRow,col:at+1,width:100};targetItems.splice(at,0,field);setLogicalRowOrder(targetRow,targetItems);selected.push(field);normalizeLayoutRows();sortSelectedByLayout();if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);normalizeVisualLines(Number(field.config.layout.row||targetRow));activeStructureSelection=null;activeFieldKey=field.key;return true;}
+function smartMoveToSlot(index,p
+
+
+===== function smartRenderPreview( =====
+df-smart-ghost-meta">${esc(tr.types[f?.type]||f?.type||'')}</span>`;document.body.appendChild(g);smartDrag.ghost=g;smartPositionGhost(x,y);}
+function smartPositionGhost(x,y){const g=smartDrag.ghost;if(!g)return;const pad=14,maxX=Math.max(8,window.innerWidth-g.offsetWidth-8),maxY=Math.max(8,window.innerHeight-g.offsetHeight-8);g.style.left=`${Math.min(maxX,Math.max(8,x+pad))}px`;g.style.top=`${Math.min(maxY,Math.max(8,y+pad))}px`;}
+function smartPreviewBesideWidths(spec){const target=smartFieldByKey(spec.targetKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return[100];const line=visualLineForField(target).map(([f])=>f).filter(f=>f!==source),pos=Math.max(0,line.indexOf(target)+(spec.position==='after'?1:0));line.splice(pos,0,source);return smartAutoWidths(line.length);}
+function smartRenderPreview(spec){const id=smartSpecId(spec);if(id===smartDrag.specKey)return;const before=smartCaptureRects();smartRestorePreviewDom();smartDrag.spec=spec;smartDrag.specKey=id;if(!spec){smartAnimateFrom(before);return;}
+ if(spec.kind==='slot'){   const row=smartDrag.sourceRow;if(row){smartRememberGrid(row);row.style.gridTemplateColumns='1fr 1fr';const empty=document.createElement('div'),field=document.createElement('div');empty.className='df-smart-slot-preview is-empty';field.className='df-smart-slot-preview is-field';empty.innerHTML='<span>VUOTO 50%</span>';field.innerHTML=`<span>${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 50%</span>`;if(spec.position==='right'){row.append(empty,field);}else{row.append(field,empty);}}  }else if(spec.kind==='beside'){
+  const target=layoutCanvas?.querySelector(`.df-layout-card[data-field-key="${CSS.escape(spec.targetKey)}"]`);if(target){const row=target.closest('.df-layout-row'),ph=document.createElement('div');ph.className='df-smart-placeholder '+(spec.position==='before'?'is-left':'is-right');ph.innerHTML=`<span>${spec.position==='before'?'SINISTRA':'DESTRA'}</span>`;if(spec.position==='before')target.before(ph);else target.after(ph);target.classList.add(spec.position==='before'?'df-smart-target-left':'df-smart-target-right');smartSetGrid(row,smartPreviewBesideWidths(spec));}
+ }else if(spec.kind==='line'){
+  const target=layoutCanvas?.querySelector(`.df-layout-card[data-field-key="${CSS.escape(spec.targetKey)}"]`),line=target?.closest('.df-layout-row');if(line){const ph=document.createElement('div'),title=rowMeta(Number(spec.row)).title||`Riga ${Number(spec.row)}`;ph.className='df-smart-line-preview';ph.innerHTML=`<span class="df-smart-line-label">${spec.position==='before'?'SOPRA':'SOTTO'} · ${esc(title).toUpperCase()}</span><span class="df-smart-line-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;if(spec.position==='before')line.before(ph);else line.after(ph);line.classList.add(spec.position==='before'?'df-smart-line-target-before':'df-smart-line-target-after');}
+ }else if(spec.kind==='joinrow'){
+  const group=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-no="${Number(spec.row)}"]`);if(group){const ph=document.createElement('div'),title=rowMeta(Number(spec.row)).title||`Riga ${Number(spec.row)}`;ph.className='df-smart-row-join-preview';ph.innerHTML=`<span class="df-smart-row-join-label">AGGIUNGI A ${esc(title).toUpperCase()}</span><span class="df-smart-row-join-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;group.classList.add('df-smart-row-join-target');(group.querySelector('.df-layout-row-body')||group).appendChild(ph);}
+ }else if(spec.kind==='newrow'){
+  const group=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-no="${Number(spec.row)}"]`);if(group){const ph=document.createElement('div');ph.className='df-smart-newrow-preview';ph.innerHTML=`<span class="df-smart-newrow-label">${spec.position==='before'?'SOPRA':'SOTTO'} · NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;if(spec.position==='before')group.before(ph);else group.after(ph);group.classList.add(spec.position==='before'?'df-smart-row-target-before':'df-smart-row-target-after');}
+ }else if(spec.kind==='append'){
+  const ph=document.createElement('div');ph.className='df-smart-newrow-preview is-append';ph.innerHTML=`<span class="df-smart-newrow-label">NUOVA RIGA</span><span class="df-smart-newrow-field">${esc(smartFieldByKey(smartDrag.fieldKey)?.label||'Campo')} · 100%</span>`;layoutCanvas?.appendChild(ph);
+ }
+ smartAnimateFrom(before);
+}
+function smartProjectedPoint(card,x,y){
+ const r=card.getBoundingClientRect(),sw=Math.max(1,Number(smartDrag.sourceWidth)||r.width),sh=Math.max(1,Number(smartDrag.sourceHeight)||r.height),gx=Math.max(0,Math.min(1,Number(smartDrag.grabXRatio)||.5)),gy=Math.max(0,Math.min(1,Number(smartDrag.grabYRatio)||.5));
+ return{r,px:x+(.5-gx)*sw,py:y+(.5-gy)*sh};
+}
+function smartClassifyCard(card,x,y){
+ if(!card||card.dataset.fieldKey===smartDrag.fieldKey)return null;
+ const target=smartFieldByKey(card.dataset.fieldKey),source=smartFieldByKey(smartDrag.fieldKey);if(!target||!source)return null;
+ const projected=smartProjectedPoint(card,x,y),r=projected.r,rx=(projected.px-r.left)/Math.max(1,r.width),ry=(projected.py-r.top)/Math.max(1,r.height),dxn=rx-.5,dyn=ry-.5,adx=Math.abs(dxn),ady=Math.abs(dyn),moveX=x-(Number(smartDrag.originX)||x),moveY=y-(Number(smartDrag.originY)||y),amx=Math.abs(moveX),amy=Math.abs(moveY),targetLine=visualLineForField(target).map(([f])=>f),sourceInLine=targetLine.includes(source),count=targetLine.filter(f=>f!==source).length+(sourceInLine?0:1),canSide=count<=4,row=Number(target.config?.layout?.row||1),current=smartDrag.spec&&smartDrag.spec.targetKey===target.key?smartDrag.spec:null;
+ let axis='vertical';
+ if(canSide){
+  if(current?.kind==='line'&&adx<=ady*1.45+.06)axis='vertical';
+  else if(current?.kind==='beside'&&ady<=adx*1.45+.06)axis='horizontal';
+  else if(Math.max(adx,ady)<.13){axis=(amx>=24&&amx>amy*1.25)?'horizontal':'vertical';}
+  else axis=(ady*1.12>=adx)?'vertical':'horizontal';
+ }
+ smartDrag.intentAxis=axis;
+ if(axis==='horizontal'&&canSide){
+  if(current?.kind==='beside'&&current.position==='before'&&rx<=.58)return{kind:'beside',targetKey:target.key,row,position:'before'};
+  if(current?.kind==='beside'&&current.position==='after'&&rx>=.42)return{kind:'beside',targetKey:target.key,row,position:'after'};
+  const position=Math.abs(dxn)<.055&&amx>=12?(moveX<0?'before':'after'):(rx<.5?'before':'after');
+  return{kind:'beside',targetKey:target.key,row,position};
+ }
+ if(current?.kind==='line'&&current.position==='before'&&ry<=.58)return{kind:'line',row,targetKey:target.key,position:'before'};
+ if(current?.kind==='line'&&current.position==='after'&&ry>=.42)return{kind:'line',row,targetKey:target.key,position:'after'};
+ const position=Math.abs(dyn)<.055&&amy>=12?(moveY<0?'before':'after'):(ry<.5?'before':'after');
+ return{kind:'line',row,targetKey:target.key,position};
+}
+function smartNearestCardInRow(row,x,y){const cards=[...row.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)')];if(!cards.length)return null;let best=null,score=Infinity;for(const card of cards){const r=card.getBoundingClientRect(),cx=Math.max(r.left,Math.min(x,r.right)),cy=Math.max(r.top,Math.min(y,r.bottom)),d=(x-cx)**2+(y-cy)**2;if(d<score){score=d;best=card;}}return best;}
+function smartNearestEmptySlot(x,y,margin=16){const slots=[...(layoutCanvas?.querySelectorAll('.df-layout-empty-slot[data-slot-target-key]')||[])];let best=null,score=Infinity;for(const slot of slots){const r=slot.getBoundingClientRect();if(!r.width||!r.height)continue;const dx=x<r.left?r.left-x:x>r.right?x-r.right:0,dy=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0,d=dx*dx+dy*dy;if(d<=margin*margin&&d<score){score=d;best=slot;}}return best;}
+function smartNearestCardNear
+
+
+===== function smartPointerMove( =====
+add('df-smart-drag-active');document.querySelector('.df-builder-workspace')?.classList.add('is-smart-dragging');smartReflowSourceRow();smartAnimateFrom(before);if(p.pointerType!=='mouse'&&navigator.vibrate)try{navigator.vibrate(12);}catch{};}
+function smartCancelPending(){clearTimeout(smartDrag.pressTimer);smartDrag.pressTimer=null;smartDrag.pending=null;}
+function smartQueueDrag(e,card,key){if(editorLocked||!e.isPrimary||(e.pointerType==='mouse'&&e.button!==0)||e.target.closest(smartDragIgnoreSelector))return;smartCancelPending();smartDrag.pending={pointerId:e.pointerId,pointerType:e.pointerType||'mouse',fieldKey:key,card,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY};if(e.pointerType==='touch'||e.pointerType==='pen')smartDrag.pressTimer=setTimeout(()=>smartBeginDrag(),420);}
+function smartPointerMove(e){const p=smartDrag.pending;if(p&&e.pointerId===p.pointerId&&!smartDrag.active){p.x=e.clientX;p.y=e.clientY;const d=Math.hypot(e.clientX-p.startX,e.clientY-p.startY);if(p.pointerType==='mouse'){if(d>=5)smartBeginDrag();}else if(d>10){smartCancelPending();return;}}if(!smartDrag.active||e.pointerId!==smartDrag.pointerId)return;e.preventDefault();smartDrag.lastX=e.clientX;smartDrag.lastY=e.clientY;smartPositionGhost(e.clientX,e.clientY);smartRenderPreview(smartFindDropSpec(e.clientX,e.clientY));}
+function smartFinishDrag(commit,e){if(!smartDrag.active){smartCancelPending();return;}if(e&&e.pointerId!==smartDrag.pointerId)return;e?.preventDefault?.();const before=smartCaptureRects(),spec=smartDrag.spec,key=smartDrag.fieldKey;smartEndVisual();smartRestorePreviewDom();const changed=commit&&spec?smartCommitSpec(spec,key):false;smartSuppressClickUntil=Date.now()+320;smartDrag.active=false;smartDrag.pointerId=null;smartDrag.pointerType='';smartDrag.fieldKey='';smartDrag.sourceCard=null;smartDrag.sourceRow=null;smartDrag.spec=null;smartDrag.specKey='';if(!changed)renderLayoutCanvas();else renderLayoutCanvas();smartAnimateFrom(before);}
+function smartPointerUp(e){if(smartDrag.active)smartFinishDrag(true,e);else if(smartDrag.pending&&e.pointerId===smartDrag.pending.pointerId)smartCancelPending();}
+function smartPointerCancel(e){if(smartDrag.active)smartFinishDrag(false,e);else if(smartDrag.pending&&e.pointerId===smartDrag.pending.pointerId)smartCancelPending();}
+window.addEventListener('pointermove',smartPointerMove,{passive:false});window.addEventListener('pointerup',smartPointerUp,{passive:false});window.addEventListener('pointercancel',smartPointerCancel,{passive:false});document.addEventListener('touchmove',e=>{if(smartDrag.active)e.preventDefault();},{passive:false});window.addEventListener('keydown',e=>{if(e.key==='Escape'&&smartDrag.active)smartFinishDrag(false);});
+/* End Forms 1.3.57 intelligent field drag & drop. */
+
+const layoutSectionState=new Map(),layoutRowState=new Map();
+function isLayoutSectionField(f){return !!f&&(f.type==='heading'||(f.type==='fieldset'&&f.config?.builder_role==='section'));}
+function layoutSectionTitle(f){if(!f)return structureUi.general;return String(f.label||f.config?.content||structureUi.section).trim()||structureUi.section;}
+function layoutFieldCount(rows){return rows.reduce((n,r)=>n+r.items.filter(([f])=>!isLayoutSectionField(f)).length,0);}
+function renderLayoutFieldCard(f,i,rowNo,row){
+ const card=document.createElement('div');card.className='df-layout-card'+(f.key===activeFieldKey?' is-active':'');card.dataset.fieldKey=f.key;card.draggable=false;card.style.width='100%';const required=f.required?'<span class="df-required-badge">Obbligatorio</span>':'';
+ card.innerHTML=`<span class="df-layout-handle" title="Trascina campo" aria-hidden="true">${modernUiIcon('grip')}</span><strong>${esc(f.label)}</strong><span class="df-layout-meta"><span class="df-layout-type">${esc(tr.types[f.type]||f.type)}</span>${required}<select aria-label="Larghezza campo">${widthChoices(f.config.layout.width||100)}</select><span class="df-layout-actions"><button type="button" data-canvas-edit class="df-icon-only" title="Modifica campo" aria-label="Modifica campo">${modernUiIcon('edit')}</button><button type="button" data-canvas-duplicate class="df-icon-only" title="Duplica campo" aria-label="Duplica campo">${modernUiIcon('copy')}</button><button type="button" data-canvas-remove class="df-canvas-remove df-icon-only" title="Elimina campo" aria-label="Elimina campo">${modernUiIcon('trash')}</button></span></span>`;
+ card.addEventListener('pointerdown',e=>smartQueueDrag(e,card,f.key));
+ card.addEventListener('click',e=>{if(Date.now()<smartSuppressClickUntil||e.target.closest('button,select,input,textarea,a,label'))return;selectField(i);});
+ card.querySelector('select').onchange=e=>setFieldWidth(i,Number(e.target.value));card.querySelector('[data-canvas-edit]').onclick=()=>selectField(i);card.querySelector('[data-canvas-duplicate]').onclick=()=>duplicateField(i);card.querySelector('[data-canvas-remove]').onclick=()=>confirmDelete(`il campo “${f.label||'Campo'}”`,()=>removeCanvasField(i));row.appendChild(card);
+}
+
+/* Forms 1.3.57: drag whole sections and rows as structural blocks. */
+const structureDrag={pending:null,active:false,pointerId:null,type:'',id:null,handle:null,ghost:null,spec:null,pressTimer:null,lastX:0,lastY:0};
+let structureSuppressClickUntil=0;
+function structureRowBlocks(){
+ normalizeLayoutRows();
+ return logicalRowNumbers().map(rowNo=>{
+  const fields=fieldsInRow(rowNo).map(([f])=>f),storedMeta=clone(rowMeta(rowNo)),rowId=String(storedMeta.id||rowIdForRow(rowNo)),sectionKey=fields.find(isLayoutSectionField)?.key||null;
+  const node=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-id="${CSS.escape(rowId)}"]`),openState=sectionKey?null:(layoutRowState.has(rowId)?!!layoutRowState.get(rowId):!!node?.classList.contains('is-open'));
+  return{rowNo,rowId,fields,meta:storedMeta,sectionKey,openState};
+ });
+}
+function structureApplyBlocks(blocks){
+ builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};
+ const nextMeta={},ordered=[],nextRowState=new Map();
+ blocks.forEach((block,bi)=>{
+  const row=bi+1,meta=block.meta&&typeof block.meta==='object'?clone(block.meta):{title:'',description:''};if(!meta.id)meta.id=block.rowId||newRowId();if(typeof meta.title!=='string')meta.title='';if(typeof meta.description!=='string')meta.description='';block.rowId=meta.id;nextMeta[String(row)]=meta;
+  if(!block.sectionKey&&block.openState!==null&&block.openState!==undefined)nextRowState.set(meta.id,!!block.openState);
+  block.fields.forEach((f,ci)=>{defaultFieldConfig(f);f.config.layout={...(f.config.layout||{}),row,col:ci+1};ordered.push(f);});
+ });
+ builderConfig.layout.row_meta=nextMeta;layoutRowState.clear();nextRowState.forEach((value,id)=>layoutRowState.set(String(id),value));selected.splice(0,selected.length,...ordered);sortSelectedByLayout();refreshActiveRowSelection();
+}
+function structureSectionRange(blocks,sectionId){
+ if(sectionId==='general'){const end=blocks.findIndex(b=>b.sectionKey);return{start:0,end:end<0?blocks.length:end};}
+ const key=String(sectionId||'').replace(/^section:/,'');const start=blocks.findIndex(b=>b.sectionKey===key);if(start<0)return null;let end=blocks.length;for(let i=start+1;i<blocks.length;i++){if(blocks[i].sectionKey){end=i;break;}}return{start,end};
+}
+function remapSectionCloneRefs(value,keyMap){
+ if(Array.isArray(value))return value.map(v=>remapSectionCloneRefs(v,keyMap));
+ if(value&&typeof value==='object'){Object.keys(value).forEach(k=>{value[k]=remapSectionCloneRefs(value[k],keyMap);});return value;}
+ if(typeof value==='string'&&keyMap.has(value))return keyMap.get(value);
+ return value;
+}
+function duplicateLayoutSection(sectionId){
+ if(!sectionId||sectionId==='general')retu
+
+
+===== function smartPointerUp( =====
+();smartDrag.lastX=e.clientX;smartDrag.lastY=e.clientY;smartPositionGhost(e.clientX,e.clientY);smartRenderPreview(smartFindDropSpec(e.clientX,e.clientY));}
+function smartFinishDrag(commit,e){if(!smartDrag.active){smartCancelPending();return;}if(e&&e.pointerId!==smartDrag.pointerId)return;e?.preventDefault?.();const before=smartCaptureRects(),spec=smartDrag.spec,key=smartDrag.fieldKey;smartEndVisual();smartRestorePreviewDom();const changed=commit&&spec?smartCommitSpec(spec,key):false;smartSuppressClickUntil=Date.now()+320;smartDrag.active=false;smartDrag.pointerId=null;smartDrag.pointerType='';smartDrag.fieldKey='';smartDrag.sourceCard=null;smartDrag.sourceRow=null;smartDrag.spec=null;smartDrag.specKey='';if(!changed)renderLayoutCanvas();else renderLayoutCanvas();smartAnimateFrom(before);}
+function smartPointerUp(e){if(smartDrag.active)smartFinishDrag(true,e);else if(smartDrag.pending&&e.pointerId===smartDrag.pending.pointerId)smartCancelPending();}
+function smartPointerCancel(e){if(smartDrag.active)smartFinishDrag(false,e);else if(smartDrag.pending&&e.pointerId===smartDrag.pending.pointerId)smartCancelPending();}
+window.addEventListener('pointermove',smartPointerMove,{passive:false});window.addEventListener('pointerup',smartPointerUp,{passive:false});window.addEventListener('pointercancel',smartPointerCancel,{passive:false});document.addEventListener('touchmove',e=>{if(smartDrag.active)e.preventDefault();},{passive:false});window.addEventListener('keydown',e=>{if(e.key==='Escape'&&smartDrag.active)smartFinishDrag(false);});
+/* End Forms 1.3.57 intelligent field drag & drop. */
+
+const layoutSectionState=new Map(),layoutRowState=new Map();
+function isLayoutSectionField(f){return !!f&&(f.type==='heading'||(f.type==='fieldset'&&f.config?.builder_role==='section'));}
+function layoutSectionTitle(f){if(!f)return structureUi.general;return String(f.label||f.config?.content||structureUi.section).trim()||structureUi.section;}
+function layoutFieldCount(rows){return rows.reduce((n,r)=>n+r.items.filter(([f])=>!isLayoutSectionField(f)).length,0);}
+function renderLayoutFieldCard(f,i,rowNo,row){
+ const card=document.createElement('div');card.className='df-layout-card'+(f.key===activeFieldKey?' is-active':'');card.dataset.fieldKey=f.key;card.draggable=false;card.style.width='100%';const required=f.required?'<span class="df-required-badge">Obbligatorio</span>':'';
+ card.innerHTML=`<span class="df-layout-handle" title="Trascina campo" aria-hidden="true">${modernUiIcon('grip')}</span><strong>${esc(f.label)}</strong><span class="df-layout-meta"><span class="df-layout-type">${esc(tr.types[f.type]||f.type)}</span>${required}<select aria-label="Larghezza campo">${widthChoices(f.config.layout.width||100)}</select><span class="df-layout-actions"><button type="button" data-canvas-edit class="df-icon-only" title="Modifica campo" aria-label="Modifica campo">${modernUiIcon('edit')}</button><button type="button" data-canvas-duplicate class="df-icon-only" title="Duplica campo" aria-label="Duplica campo">${modernUiIcon('copy')}</button><button type="button" data-canvas-remove class="df-canvas-remove df-icon-only" title="Elimina campo" aria-label="Elimina campo">${modernUiIcon('trash')}</button></span></span>`;
+ card.addEventListener('pointerdown',e=>smartQueueDrag(e,card,f.key));
+ card.addEventListener('click',e=>{if(Date.now()<smartSuppressClickUntil||e.target.closest('button,select,input,textarea,a,label'))return;selectField(i);});
+ card.querySelector('select').onchange=e=>setFieldWidth(i,Number(e.target.value));card.querySelector('[data-canvas-edit]').onclick=()=>selectField(i);card.querySelector('[data-canvas-duplicate]').onclick=()=>duplicateField(i);card.querySelector('[data-canvas-remove]').onclick=()=>confirmDelete(`il campo “${f.label||'Campo'}”`,()=>removeCanvasField(i));row.appendChild(card);
+}
+
+/* Forms 1.3.57: drag whole sections and rows as structural blocks. */
+const structureDrag={pending:null,active:false,pointerId:null,type:'',id:null,handle:null,ghost:null,spec:null,pressTimer:null,lastX:0,lastY:0};
+let structureSuppressClickUntil=0;
+function structureRowBlocks(){
+ normalizeLayoutRows();
+ return logicalRowNumbers().map(rowNo=>{
+  const fields=fieldsInRow(rowNo).map(([f])=>f),storedMeta=clone(rowMeta(rowNo)),rowId=String(storedMeta.id||rowIdForRow(rowNo)),sectionKey=fields.find(isLayoutSectionField)?.key||null;
+  const node=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-id="${CSS.escape(rowId)}"]`),openState=sectionKey?null:(layoutRowState.has(rowId)?!!layoutRowState.get(rowId):!!node?.classList.contains('is-open'));
+  return{rowNo,rowId,fields,meta:storedMeta,sectionKey,openState};
+ });
+}
+function structureApplyBlocks(blocks){
+ builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};
+ const nextMeta={},ordered=[],nextRowState=new Map();
+ blocks.forEach((block,bi)=>{
+  const row=bi+1,meta=block.meta&&typeof block.meta==='object'?clone(block.meta):{title:'',description:''};if(!meta.id)meta.id=block.rowId||newRowId();if(typeof meta.title!=='string')meta.title='';if(typeof meta.description!=='string')meta.description='';block.rowId=meta.id;nextMeta[String(row)]=meta;
+  if(!block.sectionKey&&block.openState!==null&&block.openState!==undefined)nextRowState.set(meta.id,!!block.openState);
+  block.fields.forEach((f,ci)=>{defaultFieldConfig(f);f.config.layout={...(f.config.layout||{}),row,col:ci+1};ordered.push(f);});
+ });
+ builderConfig.layout.row_meta=nextMeta;layoutRowState.clear();nextRowState.forEach((value,id)=>layoutRowState.set(String(id),value));selected.splice(0,selected.length,...ordered);sortSelectedByLayout();refreshActiveRowSelection();
+}
+function structureSectionRange(blocks,sectionId){
+ if(sectionId==='general'){const end=blocks.findIndex(b=>b.sectionKey);return{start:0,end:end<0?blocks.length:end};}
+ const key=String(sectionId||'').replace(/^section:/,'');const start=blocks.findIndex(b=>b.sectionKey===key);if(start<0)return null;let end=blocks.length;for(let i=start+1;i<blocks.length;i++){if(blocks[i].sectionKey){end=i;break;}}return{start,end};
+}
+function remapSectionCloneRefs(value,keyMap){
+ if(Array.isArray(value))return value.map(v=>remapSectionCloneRefs(v,keyMap));
+ if(value&&typeof value==='object'){Object.keys(value).forEach(k=>{value[k]=remapSectionCloneRefs(value[k],keyMap);});return value;}
+ if(typeof value==='string'&&keyMap.has(value))return keyMap.get(value);
+ return value;
+}
+function duplicateLayoutSection(sectionId){
+ if(!sectionId||sectionId==='general')return false;
+ const blocks=structureRowBlocks(),range=structureSectionRange(blocks,sectionId);if(!range||range.start>=range.end)return false;
+ const source=blocks.slice(range.start,range.end),used=new Set(selected.map(f=>String(f.key||''))),keyMap=new Map(),pairs=[];
+ const reserveKey=base=>{const stem=String(base||'field').replace(/[^a-zA-Z0-9_]+/g,'_')||'field';let n=2,k=`${stem}_${n}`;while(used.has(k)){n++;k=`${stem}_${n}`;}used.add(k);return k;};
+ source.forEach(block=>block.fields.forEach(f=>{const cf=clone(f),oldKey=String(f.key||'');cf.key=reserveKey(oldKey);if(oldKey)keyMap.set(oldKey,cf.key);pairs.push({original:f,copy:cf});}));
+ pairs.forEach(({copy})=>{const keepKey=copy.key;remapSectionCloneRefs(copy,keyMap);copy.key=keepKey;defaultFieldConfig(copy);});
+ let pi=0,newSectionKey='';
+ const clones=source.map(block=>{const fields=block.fields.map(()=>pairs[pi++].copy),marker=fields.find(isLayoutSectionField),meta=block.meta?clone(block.meta):{title:'',description:''};meta.id=newRowId();if(marker&&!newSectionKey){marker.label=`${String(marker.label||structureUi.section).trim()||structureUi.section} copia`;newSectionKey=marker.key;}return{rowNo:0,r
+
+
+===== function smartCleanup( =====
+NOT FOUND
+
+
+===== .df-smart-drag-ghost =====
+-template-columns:1fr!important;min-height:52px!important;border:2px dashed color-mix(in srgb,var(--df) 48%,var(--df-border));border-radius:8px;background:color-mix(in srgb,var(--df) 5%,var(--bs-body-bg,#fff));align-items:center;position:relative}.df-smart-source-line-empty::after{content:'POSIZIONE ORIGINALE';display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none}
+.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden){transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}.df-builder-workspace.is-smart-dragging .df-layout-card:not(.df-smart-source-hidden):hover{border-color:color-mix(in srgb,var(--df) 45%,var(--df-border))}
+.df-smart-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;min-height:48px;padding:9px 11px;border:2px solid var(--df);border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 16px 42px rgba(0,0,0,.24);opacity:.96;transform:rotate(.5deg)}.df-smart-drag-ghost strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-smart-ghost-handle{font-size:18px;color:var(--df)}.df-smart-ghost-meta{font-size:11px;font-weight:800;color:var(--bs-secondary-color,#667085)}
+.df-smart-placeholder{min-height:48px;border:2px dashed var(--df);border-radius:8px;background:color-mix(in srgb,var(--df) 7%,var(--bs-body-bg,#fff));display:flex;align-items:center;justify-content:center;color:var(--df);font-size:10px;font-weight:900;letter-spacing:.04em;pointer-events:none;animation:dfSmartPulse .7s ease-in-out infinite alternate}.df-smart-target-left{box-shadow:inset 3px 0 0 var(--df)}.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df)}
+.df-smart-newrow-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin:7px 0;padding:9px 11px;border:2px dashed var(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-size:10px;font-weight:950;letter-spacing:.05em}.df-smart-newrow-field{min-width:0;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:var(--bs-body-color,#1f2937)}.df-smart-row-target-before>.df-layout-row-head{box-shadow:inset 0 3px 0 var(--df)}.df-smart-row-target-after>.df-layout-row-head{box-shadow:inset 0 -3px 0 var(--df)}
+body.df-smart-drag-active,body.df-smart-drag-active *{cursor:grabbing!important}body.df-smart-drag-active{user-select:none}
+@keyframes dfSmartPulse{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--df) 8%,transparent)}to{box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 10%,transparent)}}
+@media(max-width:820px){.df-layout-card{touch-action:pan-y}.df-layout-handle{min-width:32px;min-height:36px}.df-smart-drag-ghost{max-width:calc(100vw - 24px)}}
+
+/* Forms 1.3.57: draggable section/row structure. */
+.df-layout-structure-handle{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:28px;border:0;background:transparent;color:var(--bs-secondary-color,#667085);font-size:15px;line-height:1;cursor:grab;user-select:none;touch-action:none;border-radius:5px}.df-layout-structure-handle:hover,.df-layout-structure-handle:focus-visible{color:#7c3aed;background:color-mix(in srgb,#7c3aed 8%,transparent);outline:none}.df-layout-structure-handle:active{cursor:grabbing}
+body.df-structure-drag-active{user-select:none;cursor:grabbing!important}body.df-structure-drag-active *{cursor:grabbing!important}.df-layout-section-group.is-structure-source,.df-layout-row-group.is-structure-source{opacity:.38}
+.df-layout-section-head,.df-layout-row-head{position:relative}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before,.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:999px;background:#7c3aed;z-index:8}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before{top:-2px}.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{bottom:-2px}.df-layout-section-head.is-structure-inside{box-shadow:inset 0 0 0 2px #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important}
+.df-structure-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:flex;align-items:center;gap:9px;max-width:360px;min-width:190px;padding:9px 12px;border:1px solid color-mix(in srgb,#7c3aed 55%,var(--df-border));border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 14px 35px rgba(15,23,42,.22);font-size:12px}.df-structure-drag-ghost strong{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-structure-drag-ghost>span:last-child{font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em}
+
+/* Forms 1.3.57: modern, borderless Builder icon actions. */
+.df-icon-only{width:34px;height:34px;min-width:34px;display:inline-grid;place-items:center;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:8px;color:var(--bs-secondary-color,#59636f);cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease}
+.df-icon-only:hover,.df-icon-only:focus-visible{background:color-mix(in srgb,#7c3aed 9%,transparent)!important;color:#6d28d9;outline:none}
+.df-icon-only:active{transform:scale(.94)}
+.df-modern-ui-icon{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.df-layout-structure-handle .df-modern-ui-icon,.df-layout-handle .df-modern-ui-icon{width:17px;height:17px;stroke-width:1.7}
+.df-canvas-remove:hover,.df-canvas-remove:focus-visible,[data-section-remove]:hover,[data-section-remove]:focus-visible,[data-structure-remove]:hover,[data-structure-remove]:focus-visible,.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible,.df-lib-delete:hover,.df-lib-delete:focus-visible,.df-saved-quick-delete:hover,.df-saved-quick-delete:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
+.df-layout-actions,.df-layout-section-actions,.df-mini-actions{align-items:center;gap:2px}
+
+/* Forms 1.3.57: AI preview filter states. */
+.df-ai-filter-btn{white-space:nowrap}.df-ai-filter-btn.is-active{border-color:#7c3aed!important;background:color-mix(in srgb,#7c3aed 10%,var(--bs-body-bg,#fff))!important;color:#6d28d9}.df-ai-filter-btn:disabled{opacity:.42;cursor:not-allowed}.df-ai-filter-empty{padding:18px;border:1px dashed var(--df-border);border-radius:9px;text-align:center}
+
+/* Forms 1.3.57: clearer row/section actions and drag targets. */
+.df-layout-row-actions{display:inline-flex;align-items:center;gap:2px;margin-left:2px}.df-layout-row-actions .df-icon-only{width:30px;height:30px;min-width:30px}.df-row-remove:hover,.df-row-remove:focus-visible,[data-row-remove]:hover,[data-row-remove]:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
+.df-smart-row-join-target>.df-layout-row-head{box-shadow:inset 0 0 0 2px color-mix(in srgb,#7c3aed 80%,transparent)!important;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff))!important}.df-smart-row-join-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:38px;margin:6px 8px;padding:7px 10px;border:1.5px dashed #7c3aed;border-radius:8px;background:color-mix(in
+
+
+===== .df-smart-line-preview =====
+section-chevron,.df-layout-row-chevron{width:34px;height:34px;min-width:34px;flex-basis:34px}.df-layout-leading-spacer{width:74px;min-width:74px;flex-basis:74px}}
+
+/* Forms 1.3.57: General base container + internal visual-line drop zones. */
+.df-layout-section-group.is-general{border-style:dashed;background:color-mix(in srgb,var(--bs-secondary-bg,#f4f6f8) 35%,var(--bs-body-bg,#fff))}
+.df-layout-section-group.is-general>.df-layout-section-head{background:transparent}.df-layout-section-group.is-general>.df-layout-section-head:hover{background:color-mix(in srgb,var(--bs-secondary-bg,#eef1f4) 60%,transparent)}
+.df-layout-section-group.is-general .df-layout-section-title strong{font-weight:800}.df-layout-section-group.is-general .df-layout-section-empty{color:var(--bs-secondary-color,#667085)}
+.df-smart-line-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:42px;margin:5px 4px;padding:8px 10px;border:2px dashed var(--df);border-radius:8px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}
+.df-smart-line-label{font-size:10px;font-weight:950;letter-spacing:.045em}.df-smart-line-field{min-width:0;max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:800;color:var(--bs-body-color,#1f2937)}
+.df-smart-line-target-before{box-shadow:inset 0 3px 0 var(--df)}.df-smart-line-target-after{box-shadow:inset 0 -3px 0 var(--df)}
+@media(max-width:800px){.df-smart-line-preview{margin:5px 2px}.df-smart-line-field{max-width:48%}}
+
+/* Forms 1.3.57: intent-aware field drag with grab-offset compensation. */
+body.df-smart-drag-active .df-layout-card:not(.df-smart-source-hidden){position:relative;isolation:isolate}
+body.df-smart-drag-active .df-layout-card.df-smart-line-target-before{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--df) 72%,transparent),inset 0 14px 0 color-mix(in srgb,var(--df) 10%,transparent)}
+body.df-smart-drag-active .df-layout-card.df-smart-line-target-after{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--df) 72%,transparent),inset 0 -14px 0 color-mix(in srgb,var(--df) 10%,transparent)}
+body.df-smart-drag-active .df-layout-card.df-smart-target-left{box-shadow:inset 3px 0 0 var(--df),inset 14px 0 0 color-mix(in srgb,var(--df) 8%,transparent)}
+body.df-smart-drag-active .df-layout-card.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df),inset -14px 0 0 color-mix(in srgb,var(--df) 8%,transparent)}
+body.df-smart-drag-active .df-layout-empty-slot{transition:border-color .12s ease,background .12s ease,box-shadow .12s ease;box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 3%,transparent)}
+body.df-smart-drag-active .df-layout-empty-slot:hover{border-color:var(--df);background:color-mix(in srgb,var(--df) 8%,var(--bs-body-bg,#fff));box-shadow:0 0 0 6px color-mix(in srgb,var(--df) 7%,transparent)}
+
+
+/* Forms 1.3.57: forgiving 50/50 Row drag target. */
+body.df-structure-drag-active .df-layout-row-group.is-row-drop-before,body.df-structure-drag-active .df-layout-row-group.is-row-drop-after{isolation:isolate}
+body.df-structure-drag-active .df-layout-row-group.is-row-drop-before::before,body.df-structure-drag-active .df-layout-row-group.is-row-drop-after::after{left:0!important;right:0!important;height:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;border:2px dashed #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,transparent)!important;border-radius:8px!important;color:#6d28d9!important;font-size:10px!important;font-weight:950!important;letter-spacing:.055em!important;line-height:1!important;pointer-events:none!important;text-shadow:0 0 5px var(--bs-body-bg,#fff),0 0 5px var(--bs-body-bg,#fff)!important;z-index:40!important}
+body.df-structure-drag-active .df-layout-row-group.is-row-drop-before::before{top:0!important;bottom:auto!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important}
+body.df-structure-drag-active .df-layout-row-group.is-row-drop-after::after{bottom:0!important;top:auto!important;border-top-left-radius:0!important;border-top-right-radius:0!important}
+[data-bs-theme="dark"] .df-layout-row-group.is-row-drop-before::before,[data-bs-theme="dark"] .df-layout-row-group.is-row-drop-after::after{color:#c4b5fd!important;background:color-mix(in srgb,#8b5cf6 13%,transparent)!important;text-shadow:0 0 5px var(--bs-body-bg,#111827),0 0 5px var(--bs-body-bg,#111827)!important}
+</style>
+
+<div class="df-builder">
+  <div class="df-bhead">
+    <div><h2><?php echo $id ? Text::_('COM_DECAROFORMS_BUILDER_EDIT_TITLE') : Text::_('COM_DECAROFORMS_BUILDER_CREATE_TITLE'); ?></h2><p><?php echo Text::_('COM_DECAROFORMS_BUILDER_DESC'); ?></p></div>
+    <div class="df-bactions"><a class="df-btn df-back-btn" href="<?php echo $this->formsUrl; ?>"><?php echo Text::_('COM_DECAROFORMS_BACK_FORMS'); ?></a><?php if ($id): ?><a class="df-btn df-danger" href="<?php echo $this->deleteUrl; ?>" data-confirm-delete-link data-delete-label="modulo"><?php echo Text::_('COM_DECAROFORMS_DELETE'); ?></a><?php endif; ?></div>
+  </div>
+
+
+  <div class="df-editor-toolbar" role="toolbar" aria-label="Modifica modulo">
+    <div class="df-history-actions"><button type="button" id="df-undo" title="Annulla ultima modifica" disabled>↶ Annulla</button><button type="button" id="df-redo" title="Ripristina modifica" disabled>↷ Ripristina</button></div>
+    <div class="df-edit-mode" aria-label="Modalità modifica"><button type="button" class="df-lock-toggle" data-lock="1"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Bloccato</span></button><button type="button" class="df-lock-toggle" data-lock="0"><svg class="df-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20l4.2-1 10.5-10.5a2.1 2.1 0 0 0-3-3L5.2 16 4 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 6.7l2.8 2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Modifica</span></button><button class="df-save-top" type="submit" form="df-builder-form"><?php echo Text::_('COM_DECAROFORMS_SAVE_FORM'); ?></button></div>
+  </div>
+  <div class="df-save-notice" id="df-save-notice" hidden role="status" aria-live="polite"></div>
+  <div class="df-draft-banner" id="df-draft-banner" hidden>
+    <div><strong>Bozza non salvata disponibile</strong><span id="df-draft-time"></span></div>
+    <div class="df-draft-actions"><button type="button" class="df-btn df-small df-primary" id="df-draft-restore">Ripristina bozza</button><button type="button" class="df-btn df-small" id="df-draft-discard">Ignora</button></div>
+  </div>
+
+  <?php
+  $dfSession = \Joomla\CMS\Factory::getApplication()->getSession();
+  $dfBuilderCsrf = (string) $dfSession->get('com_decaroforms.builder.csrf', '');
+  if ($dfBuilderCsrf === '') {
+      $dfBuilderCsrf = bin2hex(random_bytes(32));
+      $dfSession->set('com_decaroforms.builder.csrf', $dfBuilderCsrf);
+  }
+  ?>
+  <script>
+  (()=>{
+    const tokenUrl='index.php?option=com_decaroforms&task=builder.token&format=json';
+    const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    function notice(message,type='info',reload=false){
+      if(typeof window.dfSetSaveNotice==='function'){window.dfSetSaveNotice(message,type,reload);return;}
+      let box=document.getElementById('df-save-notice');
+      if(!box){box=document.createElement('div');box.id='df-save-notice';document.querySelector('.df-builder')?.prepend(box);}
+      if(!b
+
+
+===== body.df-smart-drag-active =====
+box-shadow:inset 3px 0 0 var(--df)}.df-smart-target-right{box-shadow:inset -3px 0 0 var(--df)}
+.df-smart-newrow-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin:7px 0;padding:9px 11px;border:2px dashed var(--df);border-radius:9px;background:color-mix(in srgb,var(--df) 6%,var(--bs-body-bg,#fff));color:var(--df);pointer-events:none}.df-smart-newrow-label{font-size:10px;font-weight:950;letter-spacing:.05em}.df-smart-newrow-field{min-width:0;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:800;color:var(--bs-body-color,#1f2937)}.df-smart-row-target-before>.df-layout-row-head{box-shadow:inset 0 3px 0 var(--df)}.df-smart-row-target-after>.df-layout-row-head{box-shadow:inset 0 -3px 0 var(--df)}
+body.df-smart-drag-active,body.df-smart-drag-active *{cursor:grabbing!important}body.df-smart-drag-active{user-select:none}
+@keyframes dfSmartPulse{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--df) 8%,transparent)}to{box-shadow:0 0 0 4px color-mix(in srgb,var(--df) 10%,transparent)}}
+@media(max-width:820px){.df-layout-card{touch-action:pan-y}.df-layout-handle{min-width:32px;min-height:36px}.df-smart-drag-ghost{max-width:calc(100vw - 24px)}}
+
+/* Forms 1.3.57: draggable section/row structure. */
+.df-layout-structure-handle{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:28px;border:0;background:transparent;color:var(--bs-secondary-color,#667085);font-size:15px;line-height:1;cursor:grab;user-select:none;touch-action:none;border-radius:5px}.df-layout-structure-handle:hover,.df-layout-structure-handle:focus-visible{color:#7c3aed;background:color-mix(in srgb,#7c3aed 8%,transparent);outline:none}.df-layout-structure-handle:active{cursor:grabbing}
+body.df-structure-drag-active{user-select:none;cursor:grabbing!important}body.df-structure-drag-active *{cursor:grabbing!important}.df-layout-section-group.is-structure-source,.df-layout-row-group.is-structure-source{opacity:.38}
+.df-layout-section-head,.df-layout-row-head{position:relative}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before,.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:999px;background:#7c3aed;z-index:8}.df-layout-section-head.is-structure-before::before,.df-layout-row-head.is-structure-before::before{top:-2px}.df-layout-section-head.is-structure-after::after,.df-layout-row-head.is-structure-after::after{bottom:-2px}.df-layout-section-head.is-structure-inside{box-shadow:inset 0 0 0 2px #7c3aed!important;background:color-mix(in srgb,#7c3aed 8%,var(--bs-body-bg,#fff))!important}
+.df-structure-drag-ghost{position:fixed;z-index:2147483646;pointer-events:none;display:flex;align-items:center;gap:9px;max-width:360px;min-width:190px;padding:9px 12px;border:1px solid color-mix(in srgb,#7c3aed 55%,var(--df-border));border-radius:9px;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#1f2937);box-shadow:0 14px 35px rgba(15,23,42,.22);font-size:12px}.df-structure-drag-ghost strong{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.df-structure-drag-ghost>span:last-child{font-size:10px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em}
+
+/* Forms 1.3.57: modern, borderless Builder icon actions. */
+.df-icon-only{width:34px;height:34px;min-width:34px;display:inline-grid;place-items:center;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:8px;color:var(--bs-secondary-color,#59636f);cursor:pointer;transition:background .15s ease,color .15s ease,transform .15s ease}
+.df-icon-only:hover,.df-icon-only:focus-visible{background:color-mix(in srgb,#7c3aed 9%,transparent)!important;color:#6d28d9;outline:none}
+.df-icon-only:active{transform:scale(.94)}
+.df-modern-ui-icon{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.df-layout-structure-handle .df-modern-ui-icon,.df-layout-handle .df-modern-ui-icon{width:17px;height:17px;stroke-width:1.7}
+.df-canvas-remove:hover,.df-canvas-remove:focus-visible,[data-section-remove]:hover,[data-section-remove]:focus-visible,[data-structure-remove]:hover,[data-structure-remove]:focus-visible,.df-ai-ui-delete:hover,.df-ai-ui-delete:focus-visible,.df-lib-delete:hover,.df-lib-delete:focus-visible,.df-saved-quick-delete:hover,.df-saved-quick-delete:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
+.df-layout-actions,.df-layout-section-actions,.df-mini-actions{align-items:center;gap:2px}
+
+/* Forms 1.3.57: AI preview filter states. */
+.df-ai-filter-btn{white-space:nowrap}.df-ai-filter-btn.is-active{border-color:#7c3aed!important;background:color-mix(in srgb,#7c3aed 10%,var(--bs-body-bg,#fff))!important;color:#6d28d9}.df-ai-filter-btn:disabled{opacity:.42;cursor:not-allowed}.df-ai-filter-empty{padding:18px;border:1px dashed var(--df-border);border-radius:9px;text-align:center}
+
+/* Forms 1.3.57: clearer row/section actions and drag targets. */
+.df-layout-row-actions{display:inline-flex;align-items:center;gap:2px;margin-left:2px}.df-layout-row-actions .df-icon-only{width:30px;height:30px;min-width:30px}.df-row-remove:hover,.df-row-remove:focus-visible,[data-row-remove]:hover,[data-row-remove]:focus-visible{color:#dc3545!important;background:color-mix(in srgb,#dc3545 9%,transparent)!important}
+.df-smart-row-join-target>.df-layout-row-head{box-shadow:inset 0 0 0 2px color-mix(in srgb,#7c3aed 80%,transparent)!important;background:color-mix(in srgb,#7c3aed 7%,var(--bs-body-bg,#fff))!important}.df-smart-row-join-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:38px;margin:6px 8px;padding:7px 10px;border:1.5px dashed #7c3aed;border-radius:8px;background:color-mix(in srgb,#7c3aed 6%,var(--bs-body-bg,#fff));color:#6d28d9;pointer-events:none}.df-smart-row-join-label{font-size:10px;font-weight:950;letter-spacing:.045em}.df-smart-row-join-field{min-width:0;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:800;color:var(--bs-body-color,#1f2937)}
+body.df-structure-drag-active .df-layout-section-group{margin-top:10px;margin-bottom:10px}body.df-structure-drag-active .df-layout-row-group{margin-top:6px;margin-bottom:6px}.df-layout-section-group,.df-layout-row-group{position:relative}.df-layout-section-group.is-section-drop-before::before,.df-layout-section-group.is-section-drop-after::after,.df-layout-row-group.is-row-drop-before::before,.df-layout-row-group.is-row-drop-after::after{content:attr(data-structure-drop-label);position:absolute;left:9px;right:9px;z-index:30;height:20px;display:flex;align-items:center;justify-content:center;border-top:2px solid #7c3aed;color:#6d28d9;font-size:9px;font-weight:950;letter-spacing:.055em;line-height:1;pointer-events:none;text-shadow:0 0 5px var(--bs-body-bg,#fff),0 0 5px var(--bs-body-bg,#fff)}.df-layout-section-group.is-section-drop-before::before{top:-17px}.df-layout-section-group.is-section-drop-after::after{bottom:-19px}.df-layout-row-group.is-row-drop-before::before{top:-11px;height:15px}.df-layout-row-group.is-row-drop-after::after{bottom:-13px;height:15px}
+[data-bs-theme="dark"] .df-layout-section-group.is-section-drop-before::before,[data-bs-theme="dark"] .df-layout-section-group.is-section-drop-after::after,[data-bs-theme="dark"] .df-layout-row-group.is-row-drop-before::before,[data-bs-theme="dark"] .df-layout-row-group.is-row-drop-after::after{color:#c4b5fd;text-shadow:0 0 5px var(--bs-body-bg,#111827),0 0 5px var(--bs-body-bg,#111

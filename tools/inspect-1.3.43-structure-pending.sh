@@ -15,7 +15,7 @@ import sys,re
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 out=[]
 
-def grab(start, ends, label, maxlen=20000):
+def grab(start, ends, label, maxlen=30000):
     a=s.find(start)
     out.append(f"\n===== {label} =====\n")
     if a<0:
@@ -26,20 +26,36 @@ def grab(start, ends, label, maxlen=20000):
     out.append(s[a:b][:maxlen]+'\n')
 
 grab('function layoutGroups(){',['function renderLayoutCanvas(){','function renderLayoutFieldCard('],'layoutGroups')
-grab('function renderLayoutCanvas(){',['function renderAdditional','const aiAllowedTypes=','function aiOpen('],'renderLayoutCanvas',50000)
+grab('function renderLayoutCanvas(){',['function ensureInitialFieldWorkspace(){'],'renderLayoutCanvas',50000)
+grab('function duplicateField(',['function removeCanvasField(','function moveFieldToRow('],'duplicateField')
+grab('function removeCanvasField(',['function moveFieldToRow('],'removeCanvasField')
+grab('function isLayoutSectionField(',['function layoutSectionTitle(','function layoutGroups('],'isLayoutSectionField')
+grab('function layoutSectionTitle(',['function layoutGroups('],'layoutSectionTitle')
+grab('function structureRowBlocks(',['function structureApplyBlocks('],'structureRowBlocks')
+grab('function structureApplyBlocks(',['function structureSectionRange('],'structureApplyBlocks')
 grab('function structureSectionRange(',['function structureMoveSection('],'structureSectionRange')
 grab('function structureMoveSection(',['function structureMoveRow('],'structureMoveSection')
 grab('function structureMoveRow(',['function structureClearTargets('],'structureMoveRow')
 grab('function structureRenderTarget(',['function structureGhost('],'structureRenderTarget')
 grab('function structureFindTarget(',['function structureBegin'],'structureFindTarget')
+grab('function smartRestorePreviewDom(',['function smartReflowSourceRow('],'smartRestorePreviewDom')
+grab('function smartReflowSourceRow(',['function smartCreateGhost('],'smartReflowSourceRow')
 grab('function smartRenderPreview(',['function smartClassifyCard('],'smartRenderPreview',30000)
 grab('function smartClassifyCard(',['function smartNearestCardInRow('],'smartClassifyCard')
 grab('function smartFindDropSpec(',['function smartShiftRowMeta('],'smartFindDropSpec')
-grab('function smartMoveBeside(',['function smartMoveToExistingRow(','function smartMoveNewRow('],'smartMoveBeside')
+grab('function smartMoveBeside(',['function smartMoveToExistingRow('],'smartMoveBeside')
 grab('function smartMoveToExistingRow(',['function smartMoveNewRow('],'smartMoveToExistingRow')
 grab('function smartMoveNewRow(',['function smartCommitSpec('],'smartMoveNewRow')
+grab('function smartCommitSpec(',['function smartEndVisual('],'smartCommitSpec')
 
-for pat in ['duplicate','sectionActions','data-structure-action','deleteSection','removeSection','cloneSection','sectionField','Generale','general']:
+# Relevant CSS snippets.
+for pat in ['.df-layout-section-group','.df-layout-section-head','.df-smart-row-join-preview','.df-smart-source-line-empty','.df-icon-only']:
+    out.append(f"\n===== CSS SEARCH {pat} =====\n")
+    for m in list(re.finditer(re.escape(pat),s))[:15]:
+        a=max(0,m.start()-500); b=min(len(s),m.end()+1600)
+        out.append(s[a:b].replace('\n',' ')+'\n---\n')
+
+for pat in ['duplicate','sectionActions','sectionField','Generale','general']:
     out.append(f"\n===== SEARCH {pat} =====\n")
     for m in list(re.finditer(re.escape(pat),s,re.I))[:30]:
         a=max(0,m.start()-450); b=min(len(s),m.end()+900)

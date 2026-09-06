@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.63</version>
+		<note>Builder UI refinement: stato attivo uniforme per Sezione/Riga/Campo con background viola leggero e barra sinistra; Bloccato/Modifica hanno background attivo evidente (grigio vs viola); altezze finali aumentate per Sezione/Riga/Campo (desktop 72/68/72px, tablet 68px, smartphone 64px). Light/dark mode uniformi. Motori drag Campo e Riga/Sezione preservati senza modifiche, inclusi magnetismo, SOPRA/SOTTO, SINISTRA/DESTRA 50% solo Campi, VUOTO 50%, Row ID, Undo/Redo e salvataggio atomico.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.62</version>
 		<note>Correzione regressione Builder 1.3.61: la modalita Bloccato/Modifica ora governa in modo uniforme Campo, Riga e Sezione. In Bloccato nessuno dei tre puo essere trascinato; in Modifica restano attivi i tre drag. Aggiunti controlli server-side UI-state equivalenti all'avvio e al commit del drag strutturale, piu feedback visivo dei drag handle disabilitati. Il motore drag Campo approvato 1.3.60 e mantenuto invariato byte-per-byte.</note>
 	</changelog>

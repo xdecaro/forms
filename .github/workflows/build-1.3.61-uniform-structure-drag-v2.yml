@@ -1,0 +1,31 @@
+name: Build Forms 1.3.61 Uniform Structure Drag v2
+on:
+  push:
+    paths:
+      - 'tools/build-1.3.61-uniform-structure-drag-v2.sh'
+      - '.github/workflows/build-1.3.61-uniform-structure-drag-v2.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build Forms 1.3.61
+        run: bash tools/build-1.3.61-uniform-structure-drag-v2.sh
+      - name: Commit release and cleanup helpers
+        run: |
+          rm -f tools/build-1.3.61-uniform-structure-drag.sh
+          rm -f tools/build-1.3.61-uniform-structure-drag-v2.sh
+          rm -f .github/workflows/build-1.3.61-uniform-structure-drag.yml
+          rm -f .github/workflows/build-1.3.61-uniform-structure-drag-v2.yml
+          rm -f tools/inspect-1.3.60-structure-drag.sh
+          rm -f tools/inspect-1.3.60-structure-drag-report.txt
+          rm -f .github/workflows/inspect-1.3.60-structure-drag.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release Forms 1.3.61 uniform structure drag" || exit 0
+          git push

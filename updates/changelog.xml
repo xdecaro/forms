@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.66</version>
+		<note>Pulizia Builder UI: rimossi i selettori CSS duplicati e conflittuali della toolbar Bloccato/Modifica, incluso il vecchio override light-mode ad alta specificita che annullava il background attivo. Stato editor ora esposto da data-editor-mode e aria-pressed; Modifica attivo viola pieno, Bloccato attivo grigio pieno, inattivo neutro, dark mode coerente. Sezione, Riga e Campo restano uniformi a 59px. Motori drag e logica dati invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.65</version>
 		<note>Builder UI: Sezione, Riga e Campo uniformati a 59px su desktop, tablet e smartphone, coerenti con gli accordion 1-8. Corretto definitivamente lo stato attivo Bloccato/Modifica usando lo stato autorevole .df-builder.is-locked: Modifica attiva viola pieno con testo bianco, Bloccato attivo grigio ardesia pieno con testo bianco; scelta inattiva neutra e dark mode coerente. Motori drag Campo/Riga/Sezione invariati.</note>
 	</changelog>

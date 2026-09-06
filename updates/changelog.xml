@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.61</version>
+		<note>Uniformato il drag di Riga e Sezione al drag Campi approvato: solo movimento verticale SOPRA/SOTTO, nessuna destinazione sinistra/destra; target viola a meta area con badge, sorgente visibile con IN SPOSTAMENTO, ghost GPU e aggiornamento via requestAnimationFrame. Rimossi i margini temporanei che facevano saltare il canvas. Aumentata la tolleranza magnetica a 48px. Preservato lo spostamento Riga dentro una Sezione e tutta la logica Campi 1.3.60.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.60</version>
 		<note>Builder: aumentata leggermente l'altezza delle righe Campo per rendere piu leggibili e comode le zone magnetiche SOPRA/SOTTO e i relativi badge, senza rendere il Builder troppo alto. Desktop 68px, tablet 64px, smartphone 62px. Ridotta leggermente l'altezza del badge drag per mantenere margine visivo. Nessuna modifica alla logica drag fluida/magnetica 1.3.58 o ai colori 1.3.59.</note>
 	</changelog>

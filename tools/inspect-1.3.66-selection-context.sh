@@ -37,17 +37,18 @@ def func(name):
         i+=1
     return 'UNTERMINATED'
 
-for name in ['renderLayout','renderFieldSettings','renderRowSettings','renderSectionSettings','refreshActiveRowSelection']:
-    print('\n===== FUNCTION '+name+' =====')
-    print(func(name))
+canvas=func('renderLayoutCanvas')
+print('===== FUNCTION renderLayoutCanvas =====')
+for line in canvas.splitlines():
+    if any(t in line for t in ['activeFieldKey','activeStructureSelection','className','classList','dataset','data-layout-key','data-row-id','data-section','is-selected','is-active','rowGroup','sectionGroup','card']):
+        print(line)
 
-for token in ['activeFieldKey=','activeStructureSelection=','[data-field-edit]','[data-row-edit]','[data-section-edit]','classList.toggle(\'is-active\'','classList.toggle(\'is-selected\'']:
-    print('\n===== TOKEN '+token+' =====')
-    for m in list(re.finditer(re.escape(token),s))[:20]:
-        line_start=s.rfind('\n',0,m.start())+1
-        line_end=s.find('\n',m.end())
-        if line_end<0:line_end=len(s)
-        print(s[line_start:line_end])
+print('\n===== CLICK/EDIT LINES =====')
+for token in ['data-field-edit','data-row-edit','data-section-edit','activeStructureSelection=','activeFieldKey=']:
+    print('\n-- '+token+' --')
+    for m in list(re.finditer(re.escape(token),s))[:30]:
+        a=s.rfind('\n',0,m.start())+1;b=s.find('\n',m.end());b=len(s) if b<0 else b
+        print(s[a:b])
 
 print('\n===== CURRENT SELECTION CSS =====')
 styles='\n'.join(re.findall(r'<style>(.*?)</style>',s,re.S|re.I))

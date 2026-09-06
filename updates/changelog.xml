@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.65</version>
+		<note>Builder UI: Sezione, Riga e Campo uniformati a 59px su desktop, tablet e smartphone, coerenti con gli accordion 1-8. Corretto definitivamente lo stato attivo Bloccato/Modifica usando lo stato autorevole .df-builder.is-locked: Modifica attiva viola pieno con testo bianco, Bloccato attivo grigio ardesia pieno con testo bianco; scelta inattiva neutra e dark mode coerente. Motori drag Campo/Riga/Sezione invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.64</version>
 		<note>Builder UI refinement: Sezione, Riga e Campo riportati a un'altezza più compatta (64/62/64px desktop, 60px tablet, 58px smartphone). Lo stato attivo Bloccato/Modifica ora usa un background pieno e inequivocabile: Modifica viola con testo bianco, Bloccato grigio scuro con testo bianco, con varianti coerenti light/dark. Motori drag Campo/Riga/Sezione preservati senza modifiche.</note>
 	</changelog>

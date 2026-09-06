@@ -1,2 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
+		<version>1.3.45</version>
+		<note>Builder: Generale resta sempre aperto con righe visibili; allineamento icone strutturali; trascinamento Riga/Sezione disponibile anche dall’intestazione oltre al grip.</note>
+	</changelog>
 <changelogs><changelog><element>pkg_decaroforms</element><type>package</type><version>1.3.44</version><security><item>No security changes.</item></security><fix><item>Make General the permanent neutral base container of the Builder, without section move/copy/delete actions.</item><item>Duplicate a section as a complete sibling block, preserving its rows, fields, widths, row metadata and remapping cloned field references.</item><item>Add clear internal-line drop targets: top/bottom of a field creates a 100% line above/below inside the same logical row; left/right keeps smart same-line sizing.</item><item>Preserve the 1.3.42 Add-field hotfix and the 1.3.43 drag-visibility fix.</item></fix></changelog></changelogs>

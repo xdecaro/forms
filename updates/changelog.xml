@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.58</version>
+		<note>Builder drag Campi reso piu fluido, stabile e rapido dopo revisione video: canvas statico durante il trascinamento senza reflow dei campi, target magnetici basati sul centro reale del campo trascinato, lock intenzione verticale/orizzontale con cambio solo deliberato, tolleranze ampliate, slot VUOTO 50% magnetici, preview overlay non invasiva, ghost GPU con translate3d e pointer processing via requestAnimationFrame. Preservati Row ID, Sezioni, Righe, visual line, larghezze, Undo/Redo e salvataggio atomico.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.57</version>
 		<note>Builder drag Campi migliorato in base al test video: la destinazione non dipende più dal punto del campo da cui è stato afferrato il mouse. Il Builder compensa l'offset di presa e interpreta il movimento reale del campo: movimento verticale = SOPRA/SOTTO, movimento orizzontale = SINISTRA/DESTRA, con isteresi per evitare cambi involontari. L'anteprima mostra subito SOPRA/SOTTO come informazione principale. Restano invariati row_id, Righe/Sezioni, slot VUOTO 50%, visual line, larghezze, Undo/Redo e salvataggio atomico.</note>
 	</changelog>

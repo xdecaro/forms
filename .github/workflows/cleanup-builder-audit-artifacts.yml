@@ -1,0 +1,24 @@
+name: Cleanup Builder Audit Artifacts
+
+on:
+  push:
+    paths:
+      - 'tools/cleanup-builder-audit-artifacts.sh'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove temporary audit and build helpers
+        run: bash tools/cleanup-builder-audit-artifacts.sh
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Clean temporary Builder audit and build artifacts"
+          git pull --rebase origin main
+          git push

@@ -2,6 +2,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.50</version>
+		<note>Builder core: introdotta identità stabile per le Righe separata dalla posizione numerica; metadata, selezione e stato accordion seguono la Riga durante rinumerazioni, drag, duplicazione, eliminazione e spostamenti tra Sezioni. Le Righe vuote restano persistenti. Gli slot VUOTO diventano destinazioni reali: il secondo campo consuma correttamente lo spazio 50/50. Salvataggio Builder reso atomico tramite transazione database.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.49</version>
 		<note>Builder: corretto lo stato accordion dopo il trascinamento di una Riga. La Riga mantiene il proprio stato aperto/chiuso invece di essere forzata aperta. I titoli automatici Riga N continuano a seguire la nuova posizione; eventuali titoli personalizzati seguono il blocco.</note>
 	</changelog>

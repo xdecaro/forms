@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.64</version>
+		<note>Builder UI refinement: Sezione, Riga e Campo riportati a un'altezza più compatta (64/62/64px desktop, 60px tablet, 58px smartphone). Lo stato attivo Bloccato/Modifica ora usa un background pieno e inequivocabile: Modifica viola con testo bianco, Bloccato grigio scuro con testo bianco, con varianti coerenti light/dark. Motori drag Campo/Riga/Sezione preservati senza modifiche.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.63</version>
 		<note>Builder UI refinement: stato attivo uniforme per Sezione/Riga/Campo con background viola leggero e barra sinistra; Bloccato/Modifica hanno background attivo evidente (grigio vs viola); altezze finali aumentate per Sezione/Riga/Campo (desktop 72/68/72px, tablet 68px, smartphone 64px). Light/dark mode uniformi. Motori drag Campo e Riga/Sezione preservati senza modifiche, inclusi magnetismo, SOPRA/SOTTO, SINISTRA/DESTRA 50% solo Campi, VUOTO 50%, Row ID, Undo/Redo e salvataggio atomico.</note>
 	</changelog>

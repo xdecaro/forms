@@ -13,24 +13,46 @@ python3 - "$BUILDER" > "$ROOT/tools/inspect-1.3.57-field-drag-report.txt" <<'PY'
 from pathlib import Path
 import sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
-needles=[
- 'const smartDrag=',
- 'function smartBeginDrag(){',
- 'function smartClassifyCard(card,x,y){',
- 'function smartNearestCardInRow(',
- 'function smartFindDropSpec(x,y){',
- 'function smartRenderPreview(',
- 'function smartPointerMove(',
- 'function smartPointerUp(',
- 'function smartCleanup(',
- '.df-smart-drag-ghost',
- '.df-smart-line-preview',
- 'body.df-smart-drag-active'
-]
-for needle in needles:
-    i=s.find(needle)
-    print('\n\n===== '+needle+' =====')
-    if i<0:
-        print('NOT FOUND'); continue
-    print(s[max(0,i-800):min(len(s),i+7000)])
+
+def extract_function(name):
+    start=s.find('function '+name+'(')
+    if start<0:
+        return 'NOT FOUND'
+    brace=s.find('{',start)
+    if brace<0:return 'NO BRACE'
+    depth=0; quote=None; esc=False; template=False
+    i=brace
+    while i<len(s):
+        c=s[i]
+        if quote:
+            if esc: esc=False
+            elif c=='\\': esc=True
+            elif c==quote: quote=None
+        elif template:
+            if esc: esc=False
+            elif c=='\\': esc=True
+            elif c=='`': template=False
+        else:
+            if c in "'\"": quote=c
+            elif c=='`': template=True
+            elif c=='{': depth+=1
+            elif c=='}':
+                depth-=1
+                if depth==0:return s[start:i+1]
+        i+=1
+    return s[start:start+12000]
+
+for name in [
+    'smartProjectedPoint','smartClassifyCard','smartNearestCardInRow',
+    'smartNearestEmptySlot','smartNearestCardNearPoint','smartFindDropSpec',
+    'smartRenderPreview','smartCreateGhost','smartPositionGhost',
+    'smartBeginDrag','smartQueueDrag','smartPointerMove','smartFinishDrag'
+]:
+    print('\n===== '+name+' =====')
+    print(extract_function(name))
+
+for marker in ['const smartDrag=','/* Forms 1.3.57: intent-aware field drag with grab-offset compensation. */']:
+    i=s.find(marker)
+    print('\n===== '+marker+' =====')
+    print(s[i:i+4500] if i>=0 else 'NOT FOUND')
 PY

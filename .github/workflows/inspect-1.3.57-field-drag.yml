@@ -1,0 +1,24 @@
+name: Inspect Forms 1.3.57 Field Drag
+on:
+  push:
+    paths:
+      - 'tools/inspect-1.3.57-field-drag.sh'
+      - '.github/workflows/inspect-1.3.57-field-drag.yml'
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Inspect field drag
+        run: bash tools/inspect-1.3.57-field-drag.sh
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/inspect-1.3.57-field-drag-report.txt
+          git commit -m "Inspect Forms 1.3.57 field drag" || exit 0
+          git push

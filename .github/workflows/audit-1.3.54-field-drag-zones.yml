@@ -1,0 +1,25 @@
+name: Audit Forms 1.3.54 Field Drag Zones
+
+on:
+  push:
+    paths:
+      - 'tools/audit-1.3.54-field-drag-zones.sh'
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit field drag zones
+        run: bash tools/audit-1.3.54-field-drag-zones.sh
+      - name: Commit audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/audit-1.3.54-field-drag-zones-report.txt
+          git commit -m "Audit Forms 1.3.54 field drag zones"
+          git pull --rebase origin main
+          git push

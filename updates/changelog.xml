@@ -2,6 +2,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.53</version>
+		<note>Consolidamento del nuovo drag Righe 50/50 introdotto in 1.3.52: corretto il selettore dark mode dell’overlay SOPRA/SOTTO per funzionare indipendentemente dal nodo su cui Joomla applica data-bs-theme. Nessuna modifica al modello dati o alla logica di riordino.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.52</version>
 		<note>Builder UX: trascinamento Righe reso molto più tollerante. Tutta la metà superiore della Riga bersaglio significa SOPRA e tutta la metà inferiore significa SOTTO; aggiunta isteresi al centro per evitare lampeggi e una zona di aggancio più ampia tra le Righe. Indicatore visivo 50/50 esteso su tutta la destinazione, compatibile light/dark.</note>
 	</changelog>

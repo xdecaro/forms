@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Trigger inspection 2026-09-07
+# Extract the current Forms 1.3.69 Information implementation for review.
 BASE="releases/1.3.69/pkg_decaroforms_1.3.69.zip"
 REPORT="releases/_inspect-1.3.69-information.txt"
+OUT="tools/_inspect-1.3.69-information"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -12,7 +13,8 @@ if [ ! -f "$BASE" ]; then
   exit 1
 fi
 
-mkdir -p "$WORK/outer" "$WORK/nested"
+rm -rf "$OUT"
+mkdir -p "$WORK/outer" "$WORK/nested" "$OUT"
 unzip -q "$BASE" -d "$WORK/outer"
 
 {
@@ -34,6 +36,17 @@ while IFS= read -r -d '' zipfile; do
     find "$dest" -type f -printf '%P\n' | sort
   } >> "$REPORT"
 done < <(find "$WORK/outer" -type f -name '*.zip' -print0)
+
+COMP="$WORK/nested/com_decaroforms_1.3.69"
+
+cp "$COMP/administrator/components/com_decaroforms/tmpl/information/default.php" "$OUT/information-default.php"
+cp "$COMP/administrator/components/com_decaroforms/src/View/Information/HtmlView.php" "$OUT/information-HtmlView.php"
+cp "$COMP/administrator/components/com_decaroforms/src/Helper/FormHelper.php" "$OUT/FormHelper.php"
+cp "$COMP/com_decaroforms.xml" "$OUT/com_decaroforms.xml"
+cp "$COMP/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini" "$OUT/com_decaroforms-it-IT.ini"
+cp "$COMP/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.ini" "$OUT/com_decaroforms-en-GB.ini"
+cp "$COMP/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.ini" "$OUT/com_decaroforms-fr-FR.ini"
+cp "$WORK/outer/pkg_decaroforms.xml" "$OUT/pkg_decaroforms.xml"
 
 {
   echo
@@ -72,6 +85,5 @@ done
   grep -RInE --include='*.xml' '<version>|<namespace>|<administration>|<media' "$WORK/nested" | head -n 500 || true
 } >> "$REPORT"
 
-rm -rf releases/_upload
-
 echo "Inspection report written to $REPORT"
+echo "Extracted source files written to $OUT"

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Extract the current Forms 1.3.69 Information implementation for review.
+# Trigger extraction after workflow update.
 BASE="releases/1.3.69/pkg_decaroforms_1.3.69.zip"
 REPORT="releases/_inspect-1.3.69-information.txt"
 OUT="tools/_inspect-1.3.69-information"

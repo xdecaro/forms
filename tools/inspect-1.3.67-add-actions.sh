@@ -12,18 +12,15 @@ python3 - "$B" > "$OUT" <<'PY'
 from pathlib import Path
 import re,sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
-
-def snippet(token, radius=2400):
+body=s[s.rfind('</style>')+8:]
+for token in ['df-add-field-main','df-field-entry-actions','df-ai-import-main','data-add-field','Aggiungi campo','field-library','add-field','librarySearch','libraryList','selectField(index)','selectRowSettings(rowNo)','isLayoutSectionField']:
     print('\n===== '+token+' =====')
-    pos=0; count=0
-    while True:
-        i=s.find(token,pos)
-        if i<0 or count>=12: break
-        chunk=s[max(0,i-radius):min(len(s),i+radius)]
+    pos=0
+    for n in range(8):
+        i=body.find(token,pos)
+        if i<0: break
+        chunk=body[max(0,i-1800):min(len(body),i+2600)]
         chunk=chunk.replace(';',';\n').replace('><','>\n<')
-        print('\n--- OCCURRENCE',count+1,'---\n',chunk)
-        pos=i+len(token); count+=1
-
-for token in ['df-field-entry-actions','df-add-field-main','Aggiungi campo','data-add-field','field-library','structureUi.section','isLayoutSectionField','selectField(index)','selectRowSettings(rowNo)']:
-    snippet(token)
+        print('\n---',n+1,'---\n'+chunk)
+        pos=i+len(token)
 PY

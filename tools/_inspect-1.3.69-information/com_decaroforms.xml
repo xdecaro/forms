@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="component" method="upgrade">
+    <name>COM_DECAROFORMS</name>
+    <author>Luca De Caro</author>
+    <creationDate>2026-09-05</creationDate>
+    <copyright>Copyright (C) 2026 Luca De Caro</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.3.69</version>
+    <description>COM_DECAROFORMS_XML_DESCRIPTION</description>
+    <element>com_decaroforms</element>
+    <namespace path="src">DeCaro\Component\Forms</namespace>
+    <scriptfile>script.php</scriptfile>
+    <files folder="site/components/com_decaroforms">
+        <folder>src</folder>
+        <folder>tmpl</folder>
+        <folder>language</folder>
+    </files>
+    <languages folder="site/components/com_decaroforms/language">
+        <language tag="fr-FR">fr-FR/com_decaroforms.ini</language>
+        <language tag="it-IT">it-IT/com_decaroforms.ini</language>
+        <language tag="en-GB">en-GB/com_decaroforms.ini</language>
+    </languages>
+    <administration>
+        <files folder="administrator/components/com_decaroforms">
+            <folder>services</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>
+        </files>
+        <languages folder="administrator/components/com_decaroforms/language">
+            <language tag="fr-FR">fr-FR/com_decaroforms.ini</language>
+            <language tag="fr-FR">fr-FR/com_decaroforms.sys.ini</language>
+            <language tag="it-IT">it-IT/com_decaroforms.ini</language>
+            <language tag="it-IT">it-IT/com_decaroforms.sys.ini</language>
+            <language tag="en-GB">en-GB/com_decaroforms.ini</language>
+            <language tag="en-GB">en-GB/com_decaroforms.sys.ini</language>
+        </languages>
+        <menu link="option=com_decaroforms&amp;view=dashboard" img="class:dashboard">COM_DECAROFORMS_MENU</menu>
+        <submenu>
+            <menu link="option=com_decaroforms&amp;view=dashboard" img="class:dashboard">COM_DECAROFORMS_MENU_DASHBOARD</menu>
+            <menu link="option=com_decaroforms&amp;view=forms" img="class:list">COM_DECAROFORMS_MENU_FORMS</menu>
+            <menu link="option=com_decaroforms&amp;view=builder" img="class:plus">COM_DECAROFORMS_MENU_CREATE</menu>
+            <menu link="option=com_decaroforms&amp;view=recent" img="class:inbox">COM_DECAROFORMS_MENU_RECENT</menu>
+            <menu link="option=com_decaroforms&amp;view=import" img="class:download">COM_DECAROFORMS_MENU_IMPORT</menu>
+            <menu link="option=com_decaroforms&amp;view=information" img="class:info-circle">COM_DECAROFORMS_MENU_INFORMATION</menu>
+        </submenu>
+    </administration>
+</extension>

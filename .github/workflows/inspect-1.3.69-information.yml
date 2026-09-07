@@ -21,6 +21,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add releases/_inspect-1.3.69-information.txt
+          git add releases/_inspect-1.3.69-information.txt tools/_inspect-1.3.69-information
           git commit -m "Inspect Forms 1.3.69 information view" || exit 0
           git push

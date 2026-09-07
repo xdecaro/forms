@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.71</version>
+		<note>Hotfix Informazioni: corretto il percorso WebAssetManager di information.css e information.js. Joomla aggiunge automaticamente le directory css/js agli URI degli asset dell'estensione; la 1.3.70 richiedeva quindi un percorso duplicato e la pagina risultava senza stile. Guida e Informazioni restano separate; Builder, drag, database e logica applicativa invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.70</version>
 		<note>Informazioni uniformata allo standard xdecaro/Competitions: stato prodotto e ambiente, estensioni incluse, aggiornamenti Joomla, componenti collegati e diagnostica tecnica con copia/download. Aggiunta voce Guida separata preservando shortcode, funzioni e dettagli precedenti. Corretto FormHelper::VERSION. Builder e motori drag 1.3.69 invariati.</note>
 	</changelog>

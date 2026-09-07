@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Trigger inspection 2026-09-07
 BASE="releases/1.3.69/pkg_decaroforms_1.3.69.zip"
 REPORT="releases/_inspect-1.3.69-information.txt"
 WORK="$(mktemp -d)"

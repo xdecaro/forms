@@ -2,7 +2,6 @@
 set -euo pipefail
 
 # Extract the current Forms 1.3.69 Information implementation for review.
-# Trigger extraction after workflow update.
 BASE="releases/1.3.69/pkg_decaroforms_1.3.69.zip"
 REPORT="releases/_inspect-1.3.69-information.txt"
 OUT="tools/_inspect-1.3.69-information"
@@ -39,15 +38,25 @@ while IFS= read -r -d '' zipfile; do
 done < <(find "$WORK/outer" -type f -name '*.zip' -print0)
 
 COMP="$WORK/nested/com_decaroforms_1.3.69"
+SYSTEM="$WORK/nested/plg_system_decaroforms_1.3.69"
+EDITOR="$WORK/nested/plg_editors-xtd_decaroforms_1.3.69"
 
 cp "$COMP/administrator/components/com_decaroforms/tmpl/information/default.php" "$OUT/information-default.php"
 cp "$COMP/administrator/components/com_decaroforms/src/View/Information/HtmlView.php" "$OUT/information-HtmlView.php"
 cp "$COMP/administrator/components/com_decaroforms/src/Helper/FormHelper.php" "$OUT/FormHelper.php"
 cp "$COMP/com_decaroforms.xml" "$OUT/com_decaroforms.xml"
+cp "$COMP/script.php" "$OUT/component-script.php"
+cp "$COMP/administrator/components/com_decaroforms/access.xml" "$OUT/access.xml"
+cp "$COMP/administrator/components/com_decaroforms/config.xml" "$OUT/config.xml"
 cp "$COMP/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini" "$OUT/com_decaroforms-it-IT.ini"
 cp "$COMP/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.ini" "$OUT/com_decaroforms-en-GB.ini"
 cp "$COMP/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.ini" "$OUT/com_decaroforms-fr-FR.ini"
+cp "$COMP/administrator/components/com_decaroforms/language/it-IT/com_decaroforms.sys.ini" "$OUT/com_decaroforms-it-IT.sys.ini"
+cp "$COMP/administrator/components/com_decaroforms/language/en-GB/com_decaroforms.sys.ini" "$OUT/com_decaroforms-en-GB.sys.ini"
+cp "$COMP/administrator/components/com_decaroforms/language/fr-FR/com_decaroforms.sys.ini" "$OUT/com_decaroforms-fr-FR.sys.ini"
 cp "$WORK/outer/pkg_decaroforms.xml" "$OUT/pkg_decaroforms.xml"
+cp "$SYSTEM/decaroforms.xml" "$OUT/plg-system-decaroforms.xml"
+cp "$EDITOR/decaroforms.xml" "$OUT/plg-editors-xtd-decaroforms.xml"
 
 {
   echo

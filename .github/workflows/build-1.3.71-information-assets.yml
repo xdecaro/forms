@@ -1,0 +1,30 @@
+name: Build Forms 1.3.71 Information assets
+
+on:
+  push:
+    paths:
+      - 'tools/release-1.3.71/InformationHtmlView.php'
+      - 'tools/build-1.3.71-information-assets.sh'
+      - '.github/workflows/build-1.3.71-information-assets.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and validate Forms 1.3.71
+        shell: bash
+        run: bash tools/build-1.3.71-information-assets.sh
+
+      - name: Commit generated release
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/1.3.71 updates/pkg_decaroforms.xml updates/changelog.xml
+          git commit -m "Release Forms 1.3.71 Information asset hotfix" || exit 0
+          git push

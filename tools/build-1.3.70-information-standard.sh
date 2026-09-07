@@ -45,6 +45,7 @@ p.write_text(s, encoding='utf-8')
 PY
 
 # Install the new Information implementation and dedicated assets.
+mkdir -p "$WORK/component/administrator/components/com_decaroforms/src/Model"
 cp "$SRC/InformationModel.php" "$WORK/component/administrator/components/com_decaroforms/src/Model/InformationModel.php"
 cp "$SRC/InformationHtmlView.php" "$WORK/component/administrator/components/com_decaroforms/src/View/Information/HtmlView.php"
 cp "$SRC/GuideHtmlView.php" "$WORK/component/administrator/components/com_decaroforms/src/View/Guide/HtmlView.php"

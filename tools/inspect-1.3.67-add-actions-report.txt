@@ -1,1430 +1,54 @@
 
-===== FUNCTION isLayoutSectionField =====
-function isLayoutSectionField(f){return !!f&&(f.type==='heading'||(f.type==='fieldset'&&f.config?.builder_role==='section'));
+===== FUNCTION ADD =====
+
+--- 1 ---
+);
 }
-
-===== FUNCTION renderLibrary =====
-function renderLibrary(){
- const tabs=document.getElementById('df-library-tabs');
-
- const q=(search.value||'').trim().toLowerCase();
-
- const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
-
- tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
-
- tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
-renderLibrary();
+function visualLinesForItems(items){const lines=[];
+let line=[],total=0;
+(Array.isArray(items)?items:[]).forEach(entry=>{const f=entry?.[0],span=smartEffectiveWidth(f);
+if(line.length&&total+span>101){lines.push(line);
+line=[];
+total=0;
+}line.push(entry);
+total+=span;
+if(total>=99){lines.push(line);
+line=[];
+total=0;
+}});
+if(line.length)lines.push(line);
+return lines;
+}
+function visualLinesInRow(row){return visualLinesForItems(fieldsInRow(row));
+}
+function visualLineForField(field){if(!field)return[];
+const row=Number(field.config?.layout?.row||1);
+return visualLinesInRow(row).find(line=>line.some(([f])=>f===field))||[];
+}
+function setLogicalRowOrder(row,fields){(Array.isArray(fields)?fields:[]).forEach((f,i)=>{defaultFieldConfig(f);
+f.config.layout.row=Number(row);
+f.config.layout.col=i+1;
 });
-
- const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
-
- lib.innerHTML='';
-
- if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+}
+function normalizeVisualLines(row){const items=fieldsInRow(row);
+if(!items.length)return;
+const lines=visualLinesForItems(items);
+lines.forEach(line=>{if(!line.length)return;
+if(line.length===1){const f=line[0][0],w=Math.max(1,Math.min(100,Number(f.config?.layout?.width||100))),before=smartOffsetBefore(f),after=smartOffsetAfter(f),total=before+w+after;
+if((before>0||after>0)&&total>=99&&total<=101)return;
+smartClearOffsets(f);
+f.config.layout.width=100;
 return;
+}const effective=line.reduce((n,[f])=>n+smartEffectiveWidth(f),0),hasSlots=line.some(([f])=>smartOffsetBefore(f)>0||smartOffsetAfter(f)>0);
+if(hasSlots&&effective>=99&&effective<=101)return;
+line.forEach(([f])=>smartClearOffsets(f));
+const widths=line.map(([f])=>Number(f.config?.layout?.width||0)),total=widths.reduce((a,b)=>a+b,0),valid=total>=99&&total<=101&&widths.every(w=>Number.isFinite(w)&&w>0&&w<100);
+if(!valid){const auto=smartAutoWidths(line.length);
+line.forEach(([f],i)=>f.config.layout.width=auto[i]??100);
+}});
+fieldsInRow(row).forEach(([f],i)=>f.config.layout.col=i+1);
 }
- const grid=document.createElement('div');
-grid.className='df-library-items-grid';
-
- items.forEach(x=>{const d=document.createElement('div');
-d.className='df-lib-item';
-const saved=!!x._savedPresetId;
-d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
-d.querySelector('.df-add').onclick=()=>add(x);
-d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
-e.stopPropagation();
-confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
-});
-grid.appendChild(d);
-});
-lib.appendChild(grid);
-
-}
-
-===== FUNCTION renderFieldLibrary =====
-NOT FOUND
-
-===== FUNCTION addLibraryField =====
-NOT FOUND
-
-===== FUNCTION createField =====
-NOT FOUND
-
-===== FUNCTION makeField =====
-NOT FOUND
-
-===== FUNCTION selectField =====
-function selectField(index){if(index==null||!selected[index])return;
-activeStructureSelection=null;
-activeFieldKey=selected[index].key;
-openFieldKeys.clear();
-openFieldKeys.add(activeFieldKey);
-renderSelected();
-document.querySelectorAll('.df-layout-card').forEach(card=>card.classList.toggle('is-active',card.dataset.fieldKey===activeFieldKey));
-}
-
-===== FUNCTION selectRowSettings =====
-function selectRowSettings(rowNo){rowNo=Math.max(1,Number(rowNo)||1);
-activeStructureSelection={type:'row',id:rowIdForRow(rowNo),row:rowNo};
-renderSelected();
-renderLayoutCanvas();
-}
-
-===== FUNCTION layoutGroups =====
-function layoutGroups(){
- const rows=logicalRowNumbers().map(rowNo=>({rowNo,items:fieldsInRow(rowNo)}));
-
- const groups=[];
-let current={id:'general',sectionField:null,title:structureUi.general,rows:[]};
-
- rows.forEach(model=>{const marker=model.items.find(([f])=>isLayoutSectionField(f));
-if(marker){if(current.id==='general'||current.rows.length||current.sectionField)groups.push(current);
-const [sf,si]=marker;
-current={id:'section:'+sf.key,sectionField:marker,title:layoutSectionTitle(sf),rows:[]};
-const rest=model.items.filter(x=>x!==marker);
-if(rest.length)current.rows.push({rowNo:model.rowNo,items:rest});
-}else current.rows.push(model);
-});
-
- if(current.rows.length||current.sectionField||current.id==='general'||!groups.length)groups.push(current);
-
- if(!groups.some(g=>g.id==='general'))groups.unshift({id:'general',sectionField:null,title:structureUi.general,rows:[]});
-
- return groups;
-
-}
-
-===== FUNCTION structureRowBlocks =====
-function structureRowBlocks(){
- normalizeLayoutRows();
-
- return logicalRowNumbers().map(rowNo=>{
-  const fields=fieldsInRow(rowNo).map(([f])=>f),storedMeta=clone(rowMeta(rowNo)),rowId=String(storedMeta.id||rowIdForRow(rowNo)),sectionKey=fields.find(isLayoutSectionField)?.key||null;
-
-  const node=layoutCanvas?.querySelector(`.df-layout-row-group[data-row-id="${CSS.escape(rowId)}"]`),openState=sectionKey?null:(layoutRowState.has(rowId)?!!layoutRowState.get(rowId):!!node?.classList.contains('is-open'));
-
-  return{rowNo,rowId,fields,meta:storedMeta,sectionKey,openState};
-
- });
-
-}
-
-===== FUNCTION structureApplyBlocks =====
-function structureApplyBlocks(blocks){
- builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};
-builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};
-
- const nextMeta={},ordered=[],nextRowState=new Map();
-
- blocks.forEach((block,bi)=>{
-  const row=bi+1,meta=block.meta&&typeof block.meta==='object'?clone(block.meta):{title:'',description:''};
-if(!meta.id)meta.id=block.rowId||newRowId();
-if(typeof meta.title!=='string')meta.title='';
-if(typeof meta.description!=='string')meta.description='';
-block.rowId=meta.id;
-nextMeta[String(row)]=meta;
-
-  if(!block.sectionKey&&block.openState!==null&&block.openState!==undefined)nextRowState.set(meta.id,!!block.openState);
-
-  block.fields.forEach((f,ci)=>{defaultFieldConfig(f);
-f.config.layout={...(f.config.layout||{}),row,col:ci+1};
-ordered.push(f);
-});
-
- });
-
- builderConfig.layout.row_meta=nextMeta;
-layoutRowState.clear();
-nextRowState.forEach((value,id)=>layoutRowState.set(String(id),value));
-selected.splice(0,selected.length,...ordered);
-sortSelectedByLayout();
-refreshActiveRowSelection();
-
-}
-
-===== FUNCTION smartShiftRowMeta =====
-function smartShiftRowMeta(insertRow){builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};
-builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};
-const meta=rowMetaStore(),next={};
-Object.keys(meta).forEach(k=>{const n=Number(k);
-next[String(Number.isFinite(n)&&n>=insertRow?n+1:n)]=meta[k];
-});
-builderConfig.layout.row_meta=next;
-refreshActiveRowSelection();
-}
-
-===== TOKEN library.addEventListener =====
-
-===== TOKEN library.onclick =====
-
-===== TOKEN df-library =====
-
---- 1 ---
-;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px;
-min-height:38px}.df-selected-config textarea.df-options{min-height:96px;
-max-height:180px;
-resize:vertical}.df-config-panel{grid-column:1/-1;
-border-top:1px dashed var(--df-border);
-padding-top:10px}.df-config-grid{display:grid;
-grid-template-columns:repeat(3,minmax(0,1fr));
-gap:9px}.df-condition-list{display:flex;
-flex-direction:column;
-gap:7px;
-margin-top:8px}.df-condition-row{display:grid;
-grid-template-columns:1.2fr .8fr 1fr 34px;
-gap:7px}.df-condition-row button{border:1px solid var(--df-border);
-border-radius:5px;
-background:transparent;
-color:inherit}.df-required{display:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display
-
---- 2 ---
-area.df-options{min-height:96px;
-max-height:180px;
-resize:vertical}.df-config-panel{grid-column:1/-1;
-border-top:1px dashed var(--df-border);
-padding-top:10px}.df-config-grid{display:grid;
-grid-template-columns:repeat(3,minmax(0,1fr));
-gap:9px}.df-condition-list{display:flex;
-flex-direction:column;
-gap:7px;
-margin-top:8px}.df-condition-row{display:grid;
-grid-template-columns:1.2fr .8fr 1fr 34px;
-gap:7px}.df-condition-row button{border:1px solid var(--df-border);
-border-radius:5px;
-background:transparent;
-color:inherit}.df-required{display:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:
-
---- 3 ---
-ht:96px;
-max-height:180px;
-resize:vertical}.df-config-panel{grid-column:1/-1;
-border-top:1px dashed var(--df-border);
-padding-top:10px}.df-config-grid{display:grid;
-grid-template-columns:repeat(3,minmax(0,1fr));
-gap:9px}.df-condition-list{display:flex;
-flex-direction:column;
-gap:7px;
-margin-top:8px}.df-condition-row{display:grid;
-grid-template-columns:1.2fr .8fr 1fr 34px;
-gap:7px}.df-condition-row button{border:1px solid var(--df-border);
-border-radius:5px;
-background:transparent;
-color:inherit}.df-required{display:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-
-
---- 4 ---
-rid;
-grid-template-columns:repeat(3,minmax(0,1fr));
-gap:9px}.df-condition-list{display:flex;
-flex-direction:column;
-gap:7px;
-margin-top:8px}.df-condition-row{display:grid;
-grid-template-columns:1.2fr .8fr 1fr 34px;
-gap:7px}.df-condition-row button{border:1px solid var(--df-border);
-border-radius:5px;
-background:transparent;
-color:inherit}.df-required{display:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff)}.df-column-item input{width:17px;
-height:17px}
-.df-email-block{border:1px solid var(--df-border);
-border-radius:8px;
-overflow:hidden;
-margin-botto
-
---- 5 ---
-px}.df-condition-list{display:flex;
-flex-direction:column;
-gap:7px;
-margin-top:8px}.df-condition-row{display:grid;
-grid-template-columns:1.2fr .8fr 1fr 34px;
-gap:7px}.df-condition-row button{border:1px solid var(--df-border);
-border-radius:5px;
-background:transparent;
-color:inherit}.df-required{display:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff)}.df-column-item input{width:17px;
-height:17px}
-.df-email-block{border:1px solid var(--df-border);
-border-radius:8px;
-overflow:hidden;
-margin-bottom:11px}.df-email-block>summary{padding:12px 14px;
-backgr
-
---- 6 ---
-ndition-row{display:grid;
-grid-template-columns:1.2fr .8fr 1fr 34px;
-gap:7px}.df-condition-row button{border:1px solid var(--df-border);
-border-radius:5px;
-background:transparent;
-color:inherit}.df-required{display:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff)}.df-column-item input{width:17px;
-height:17px}
-.df-email-block{border:1px solid var(--df-border);
-border-radius:8px;
-overflow:hidden;
-margin-bottom:11px}.df-email-block>summary{padding:12px 14px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:850;
-cursor:pointer}.df-email-block-body
-
---- 7 ---
-isplay:flex;
-align-items:center;
-gap:7px}.df-required input{width:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff)}.df-column-item input{width:17px;
-height:17px}
-.df-email-block{border:1px solid var(--df-border);
-border-radius:8px;
-overflow:hidden;
-margin-bottom:11px}.df-email-block>summary{padding:12px 14px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:850;
-cursor:pointer}.df-email-block-body{padding:14px}.df-email-templates{display:grid;
-grid-template-columns:repeat(4,minmax(130px,1fr));
-gap:9px;
-margin-top:8px}.df-email-choice{border:1px solid var(--df-border);
-border-radius:7px;
-padding:8px;
-ba
-
---- 8 ---
-:17px;
-height:17px}
-.df-layout-widths{display:grid;
-grid-template-columns:repeat(4,minmax(90px,1fr));
-gap:9px}.df-layout-widths .df-field[hidden]{display:none}.df-presets{display:flex;
-flex-wrap:wrap;
-gap:7px;
-margin-top:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff)}.df-column-item input{width:17px;
-height:17px}
-.df-email-block{border:1px solid var(--df-border);
-border-radius:8px;
-overflow:hidden;
-margin-bottom:11px}.df-email-block>summary{padding:12px 14px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:850;
-cursor:pointer}.df-email-block-body{padding:14px}.df-email-templates{display:grid;
-grid-template-columns:repeat(4,minmax(130px,1fr));
-gap:9px;
-margin-top:8px}.df-email-choice{border:1px solid var(--df-border);
-border-radius:7px;
-padding:8px;
-background:var(--bs-body-bg,#fff)}.df-email-choice.is-active{bord
-
---- 9 ---
-:10px}.df-preset{border:1px solid var(--df-border);
-border-radius:999px;
-padding:6px 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-cursor:pointer;
-font-weight:700;
-font-size:12px}.df-layout-total{font-weight:800}.df-layout-total.is-error{color:#b42318}.df-layout-total.is-ok{color:#18794e}
-.df-library-tools{display:grid;
-grid-template-columns:minmax(220px,1fr) 250px;
-gap:10px;
-margin-bottom:12px}.df-library-tools input,.df-library-tools select{min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library{display:flex;
-flex-direction:column;
-gap:8px}.df-library-group{border:1px solid var(--df-border);
-border-radius:7px;
-overflow:hidden}.df-library-group summary{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:11px 13px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:800;
-cursor:pointer;
-list-style:none}.df-library-group summary::-webkit-details-marker{display:none}.df-library-count{display:inline-flex;
-min-width:26px;
-height:24px;
-align-items:center;
-justify-content:center;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 12%,transparent);
-color:var(--df);
-font-size:12px}.df-library-items{display:flex;
-flex-direction:column;
-gap:7px;
-padding:9px}.df-lib-item{display:grid;
-grid-template-columns:minmax(0,1fr) auto;
-gap:12px;
-align-items:center;
-padding:10px 11px;
-border:1px solid var(--df-border);
-border-radius:6px}.df-lib-item strong{display:block}.df-lib-item small{color:var(--bs-secondary-color,#667085)}.df-add{min-height:34px;
-padding:0 12px;
-border:0;
-border-radius:5px;
-background:var(--df);
-color:#fff;
-font-weight:800;
-cursor:pointer}
-.df-status-editor{display:flex;
-flex-direction:column;
-gap:8px}.df-status-row{display:grid;
-grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) 110px 34px;
-gap:7px;
-align-items:center}.df-status-row input{width:100%;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:8px 9px}.df-status-color-wrap{display:flex;
-align-items:center;
-gap:6px}.df-status-color{width:44px!important;
-min-width:44px;
-height:39px;
-padding:3px!important}.df-status-color-value{font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.df-status-remove{border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-height:36px}.df-column-tools{display:flex;
-gap:7px;
-flex-wrap:wrap;
-margin:8px 0}.df-column-list{display:flex;
-flex-wrap:wrap;
-gap:7px}.df-column-item{display:inline-flex;
-align-items:center;
-gap:7px;
-padding:8px 10px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff)}.df-column-item input{width:17px;
-height:17px}
-.df-email-block{border:1px solid var(--df-border);
-border-radius:8px;
-overflow:hidden;
-margin-bottom:11px}.df-email-block>summary{padding:12px 14px;
-background:var(--bs-tertiary-bg,#f7f8fa);
-font-weight:850;
-cursor:pointer}.df-email-block-body{padding:14px}.df-email-templates{display:grid;
-grid-template-columns:repeat(4,minmax(130px,1fr));
-gap:9px;
-margin-top:8px}.df-email-choice{border:1px solid var(--df-border);
-border-radius:7px;
-padding:8px;
-background:var(--bs-body-bg,#fff)}.df-email-choice.is-active{border-color:var(--df);
-box-shadow:0 0 0 2px color-mix(in srgb,var(--df) 18%,transparent)}.df-email-thumb{display:block;
-width:100%;
-height:62px;
-border:1px solid #e1e4e8;
-border-radius:5px;
-background:#fff;
-cursor:pointer;
-ov
-
---- 10 ---
-border);
-border-bottom:0;
-justify-content:flex-end}.df-preview-body{padding:17px;
-background:#e9edf2}.df-preview-canvas{max-width:700px;
-margin:auto}.df-preview-x{width:36px;
-height:36px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:transparent;
-color:inherit;
-font-size:22px}
-.df-security-grid{display:grid;
-grid-template-columns:repeat(2,minmax(0,1fr));
-gap:12px}.df-custom-code-grid{display:grid;
-grid-template-columns:1fr;
-gap:12px}.df-custom-code-grid .df-field{width:100%;
-min-width:0}.df-custom-code-grid .df-codearea{width:100%;
-max-width:none;
-box-sizing:border-box}.df-warning{padding:10px 12px;
-border-left:4px solid #f59e0b;
-background:color-mix(in srgb,#f59e0b 10%,transparent);
-font-size:12px}.df-admin-footer{width:100%;
-box-sizing:border-box;
-clear:both;
-margin:28px 0 10px;
-padding-top:16px;
-border-top:1px solid var(--df-border);
-text-align:center;
-color:var(--bs-secondary-color,#667085);
-font-size:12px}
-@media(max-width:980px){.df-email-templates{grid-template-columns:repeat(3,1fr)}.df-config-grid{grid-template-columns:1fr 1fr}.df-custom-code-grid{grid-template-columns:1fr}}
-@media(max-width:800px){.df-bhead{align-items:flex-start;
-flex-direction:column}.df-grid,.df-selected-config,.df-library-tools,.df-additional-grid,.df-security-grid{grid-template-columns:1fr}.df-field-full,.df-selected-config .full,.df-additional-grid .full{grid-column:auto}.df-layout-widths{grid-template-columns:1fr 1fr}.df-email-templates{grid-template-columns:1fr 1fr}.df-condition-row{grid-template-columns:1fr 1fr}.df-condition-row button{grid-column:2}.df-config-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.df-section-body{padding:12px}.df-email-templates,.df-layout-widths,.df-config-grid{grid-template-columns:1fr}.df-status-row{grid-template-columns:1fr 1fr}.df-status-color-wrap{grid-column:1}.df-selected-top{grid-template-columns:1fr}.df-mini-actions{justify-content:flex-start}.df-column-item{width:100%}.df-condition-row{grid-template-columns:1fr}.df-condition-row button{grid-column:auto}.df-preview-modal{padding:8px}}
-
-/* Forms 1.3.2 UX refinements */
-.df-section-toggle{background:var(--bs-tertiary-bg,#f7f8fa)!important;
-color:inherit!important;
-border:0!important}
-.df-section-toggle:hover,.df-section-toggle:focus-visible{background:color-mix(in srgb,var(--bs-tertiary-bg,#f7f8fa) 88%,var(--df) 12%)!important;
-color:inherit!important}
-.df-section-toggle strong,.df-section-chevron{color:inherit!important}
-.df-template-row button.is-active{background:var(--bs-body-bg,#fff)!important;
-color:var(--df)!important;
-border-color:var(--df)!important;
-box-shadow:0 0 0 2px color-mix(in srgb,var(--df) 16%,transparent)}
-.df-closed-box{grid-column:1/-1;
-background:var(--df);
-border-radius:8px;
-padding:14px}.df-closed-box label{color:#fff}.df-closed-box .df-note{color:#fff;
-opacity:.9}.df-closed-box input,.df-closed-box select{background:#fff!important;
-color:#1f2937!important}
-.df-switch{display:inline-flex;
-align-items:center;
-gap:10px;
-font-weight:750;
-cursor:pointer;
-min-height:42px}.df-switch input{position:absolute;
-opacity:0;
-pointer-events:none}.df-switch-ui{position:relative;
-width:42px;
-height:24px;
-border-radius:999px;
-background:#aeb6c2;
-transition:.2s}.df-switch-ui:after{content:"";
-position:absolute;
-width:18px;
-height:18px;
-left:3px;
-top:3px;
-border-radius:50%;
-background:#fff;
-box-shadow:0 1px 3px rgba(0,0,0,.28);
-transition:.2s}.df-switch input:checked+.df-switch-ui{background:
-
---- 11 ---
-x(in srgb,var(--bs-tertiary-bg,#f7f8fa) 45%,transparent)}.df-layout-card{position:relative;
-min-width:120px;
-max-width:100%;
-border:1px solid var(--df-border);
-border-radius:7px;
-background:var(--bs-body-bg,#fff);
-padding:10px;
-display:flex;
-align-items:center;
-gap:8px;
-cursor:grab;
-box-shadow:0 1px 2px rgba(0,0,0,.04)}.df-layout-card.dragging{opacity:.4}.df-layout-handle{font-weight:900;
-color:var(--bs-secondary-color,#667085);
-letter-spacing:-2px}.df-layout-card strong{overflow:hidden;
-text-overflow:ellipsis;
-white-space:nowrap;
-flex:1}.df-layout-card select{width:auto;
-min-width:78px;
-min-height:32px;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit}.df-layout-newrow{min-height:48px;
-border:1px dashed var(--df-border);
-border-radius:8px;
-display:flex;
-align-items:center;
-justify-content:center;
-color:var(--bs-secondary-color,#667085);
-font-size:12px}.df-layout-row.is-over,.df-layout-newrow.is-over{border-color:var(--df);
-background:color-mix(in srgb,var(--df) 7%,transparent)}.df-layout-advanced-box{margin-top:12px}.df-layout-empty{padding:22px;
-border:1px dashed var(--df-border);
-border-radius:8px;
-text-align:center;
-color:var(--bs-secondary-color,#667085)}
-.df-library-tabs{display:flex;
-gap:6px;
-flex-wrap:wrap;
-margin-bottom:10px}.df-library-tab{border:1px solid var(--df-border);
-border-radius:999px;
-min-height:32px;
-padding:0 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-font-weight:750;
-font-size:12px;
-cursor:pointer;
-display:inline-flex;
-align-items:center;
-gap:6px}.df-library-tab.is-active{border-color:var(--df);
-color:var(--df);
-box-shadow:0 0 0 2px color-mix(in srgb,var(--df) 12%,transparent)}.df-library-tab-count{font-size:10px;
-min-width:19px;
-height:19px;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 10%,transparent);
-display:inline-flex;
-align-items:center;
-justify-content:center}.df-library-tools-v2{display:block;
-margin-bottom:10px}.df-library-tools-v2 input{width:100%;
-min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library-items-grid{display:grid;
-grid-template-columns:repeat(2,minmax(0,1fr));
-gap:8px}.df-library-empty{padding:20px;
-text-align:center;
-color:var(--bs-secondary-color,#667085);
-border:1px dashed var(--df-border);
-border-radius:7px}
-.df-info{border:0;
-background:transparent;
-color:#3971c7;
-font-weight:900;
-font-size:15px;
-padding:0 3px;
-cursor:pointer;
-vertical-align:middle}.df-info-wrap{position:relative;
-display:inline-flex;
-align-items:center}.df-info-bubble{position:absolute;
-z-index:50;
-left:50%;
-top:calc(100% + 7px);
-transform:translateX(-50%);
-width:min(320px,76vw);
-padding:9px 10px;
-border:1px solid var(--df-border);
-border-radius:7px;
-background:var(--bs-body-bg,#fff);
-color:var(--bs-body-color,#222);
-box-shadow:0 8px 28px rgba(0,0,0,.16);
-font-size:12px;
-font-weight:500;
-line-height:1.4;
-display:none}.df-info-wrap.is-open .df-info-bubble{display:block}.df-label-info{display:inline-flex;
-align-items:center;
-gap:4px}
-.df-email-special-choice{border-style:dashed!important}.df-email-choice[data-special="1"]{background:color-mix(in srgb,var(--bs-tertiary-bg,#f7f8fa) 55%,transparent)}
-@media(max-width:800px){.df-library-tabs{flex-wrap:nowrap;
-overflow-x:auto;
-padding-bottom:4px}.df-library-tab{flex:0 0 auto}.df-library-items-grid{grid-template-columns:1fr}.df-layout-row{flex-direction:column}.df-layout-card{width:100%!important}.df-s
-
---- 12 ---
-{position:relative;
-min-width:120px;
-max-width:100%;
-border:1px solid var(--df-border);
-border-radius:7px;
-background:var(--bs-body-bg,#fff);
-padding:10px;
-display:flex;
-align-items:center;
-gap:8px;
-cursor:grab;
-box-shadow:0 1px 2px rgba(0,0,0,.04)}.df-layout-card.dragging{opacity:.4}.df-layout-handle{font-weight:900;
-color:var(--bs-secondary-color,#667085);
-letter-spacing:-2px}.df-layout-card strong{overflow:hidden;
-text-overflow:ellipsis;
-white-space:nowrap;
-flex:1}.df-layout-card select{width:auto;
-min-width:78px;
-min-height:32px;
-border:1px solid var(--df-border);
-border-radius:5px;
-background:var(--bs-body-bg,#fff);
-color:inherit}.df-layout-newrow{min-height:48px;
-border:1px dashed var(--df-border);
-border-radius:8px;
-display:flex;
-align-items:center;
-justify-content:center;
-color:var(--bs-secondary-color,#667085);
-font-size:12px}.df-layout-row.is-over,.df-layout-newrow.is-over{border-color:var(--df);
-background:color-mix(in srgb,var(--df) 7%,transparent)}.df-layout-advanced-box{margin-top:12px}.df-layout-empty{padding:22px;
-border:1px dashed var(--df-border);
-border-radius:8px;
-text-align:center;
-color:var(--bs-secondary-color,#667085)}
-.df-library-tabs{display:flex;
-gap:6px;
-flex-wrap:wrap;
-margin-bottom:10px}.df-library-tab{border:1px solid var(--df-border);
-border-radius:999px;
-min-height:32px;
-padding:0 10px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-font-weight:750;
-font-size:12px;
-cursor:pointer;
-display:inline-flex;
-align-items:center;
-gap:6px}.df-library-tab.is-active{border-color:var(--df);
-color:var(--df);
-box-shadow:0 0 0 2px color-mix(in srgb,var(--df) 12%,transparent)}.df-library-tab-count{font-size:10px;
-min-width:19px;
-height:19px;
-border-radius:999px;
-background:color-mix(in srgb,var(--df) 10%,transparent);
-display:inline-flex;
-align-items:center;
-justify-content:center}.df-library-tools-v2{display:block;
-margin-bottom:10px}.df-library-tools-v2 input{width:100%;
-min-height:42px;
-border:1px solid var(--df-border);
-border-radius:6px;
-background:var(--bs-body-bg,#fff);
-color:inherit;
-padding:0 11px}.df-library-items-grid{display:grid;
-grid-template-columns:repeat(2,minmax(0,1fr));
-gap:8px}.df-library-empty{padding:20px;
-text-align:center;
-color:var(--bs-secondary-color,#667085);
-border:1px dashed var(--df-border);
-border-radius:7px}
-.df-info{border:0;
-background:transparent;
-color:#3971c7;
-font-weight:900;
-font-size:15px;
-padding:0 3px;
-cursor:pointer;
-vertical-align:middle}.df-info-wrap{position:relative;
-display:inline-flex;
-align-items:center}.df-info-bubble{position:absolute;
-z-index:50;
-left:50%;
-top:calc(100% + 7px);
-transform:translateX(-50%);
-width:min(320px,76vw);
-padding:9px 10px;
-border:1px solid var(--df-border);
-border-radius:7px;
-background:var(--bs-body-bg,#fff);
-color:var(--bs-body-color,#222);
-box-shadow:0 8px 28px rgba(0,0,0,.16);
-font-size:12px;
-font-weight:500;
-line-height:1.4;
-display:none}.df-info-wrap.is-open .df-info-bubble{display:block}.df-label-info{display:inline-flex;
-align-items:center;
-gap:4px}
-.df-email-special-choice{border-style:dashed!important}.df-email-choice[data-special="1"]{background:color-mix(in srgb,var(--bs-tertiary-bg,#f7f8fa) 55%,transparent)}
-@media(max-width:800px){.df-library-tabs{flex-wrap:nowrap;
-overflow-x:auto;
-padding-bottom:4px}.df-library-tab{flex:0 0 auto}.df-library-items-grid{grid-template-columns:1fr}.df-layout-row{flex-direction:column}.df-layout-card{width:100%!important}.df-selected-config{grid-template-columns:1fr}.df-config-grid{grid-template-c
-
-===== TOKEN selected.push( =====
-
---- 1 ---
-nction distributeRow(row){normalizeVisualLines(row);
+function distributeRow(row){normalizeVisualLines(row);
 }
 function smartFitRow(row){normalizeVisualLines(row);
 }
@@ -1503,577 +127,727 @@ function ensureAiImportDom(){
   <div class="df-ai-dialog" role="dialog" aria-modal="true" aria-labelledby="df-ai-title">
    <div class="df-ai-head"><div class="df-ai-head-title"><strong id="df-ai-title">✨ Importa campi con AI</strong><span class="df-note">L’AI prepara una bozza: i campi entrano nel modulo solo dopo la tua conferma.</span></div><button class="df-ai-close" type="button" data-ai-close aria-label="Chiudi">×</button></div>
    <div class="df-ai-body">
-    <p class="df-ai-intro">Ricrea solo i campi del modulo. Template, CSS, colori, immagini, pulsanti decorativi e c
-
---- 2 ---
-FieldConfig(clone(item));
-x.key=uniqueKey(x.key);
-x.options=Array.isArray(x.options)?x.options:[];
-
- const structural=['heading','fieldset','separator'].includes(String(x.type||''));
-let preferredRow=null;
-
- if(activeStructureSelection?.type==='row')preferredRow=Math.max(1,Number(activeStructureSelection.row)||1);
-
- else if(activeFieldKey){const ai=selected.findIndex(f=>f.key===activeFieldKey);
-if(ai>=0)preferredRow=Number(selected[ai].config?.layout?.row||1);
-}
- const currentItems=preferredRow!=null?fieldsInRow(preferredRow):[],rowHasStructure=currentItems.some(([f])=>['heading','fieldset','separator'].includes(String(f.type||''))),canUseLogicalRow=preferredRow!=null&&!structural&&!rowHasStructure;
-
- if(canUseLogicalRow){x.config.layout={row:preferredRow,col:currentItems.length+1,width:100};
-selected.push(x);
-normalizeLayoutRows();
-sortSelectedByLayout();
-normalizeVisualLines(Number(x.config.layout.row||preferredRow));
-}
- else if(preferredRow!=null){const insertRow=preferredRow+1;
-smartShiftRowMeta(insertRow);
-selected.forEach(f=>{defaultFieldConfig(f);
-if(Number(f.config.layout.row||1)>=insertRow)f.config.layout.row=Number(f.config.layout.row)+1;
-});
-x.config.layout={row:insertRow,col:1,width:100};
-selected.push(x);
-normalizeLayoutRows();
-sortSelectedByLayout();
-}
- else{const maxRow=Math.max(0,...logicalRowNumbers());
-x.config.layout={row:maxRow+1,col:1,width:100};
-selected.push(x);
-normalizeLayoutRows();
-sortSelectedByLayout();
-}
- activeStructureSelection=null;
-activeFieldKey=x.key;
-openFieldKeys.clear();
-openFieldKeys.add(x.key);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-const selectedSection=[...document.querySelectorAll('[data-accordion]')][2];
-if(selectedSection){selectedSection.classList.add('is-open');
-selectedSection.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
-}setTimeout(()=>{sel.querySelector('.df-selected-item.is-open')?.scrollIntoView({behavior:'smooth',block:'nearest'});
-},100);
-
-}
-
-/* Forms 1.3.67: AI mode selector/* Forms 1.3.67: AI mode selector + saved-page ZIP import + runtime guard. */
-function ensureAiImportDom(){
- if(document.getElementById('df-ai-import-modal'))return true;
-
- const host=document.querySelector('.df-builder')||document.body;
-
- if(!host)return false;
-
- host.insertAdjacentHTML('beforeend',`<div class="df-ai-modal" id="df-ai-import-modal" hidden aria-hidden="true">
-  <div class="df-ai-backdrop" data-ai-close></div>
-  <div class="df-ai-dialog" role="dialog" aria-modal="true" aria-labelledby="df-ai-title">
-   <div class="df-ai-head"><div class="df-ai-head-title"><strong id="df-ai-title">✨ Importa campi con AI</strong><span class="df-note">L’AI prepara una bozza: i campi entrano nel modulo solo dopo la tua conferma.</span></div><button class="df-ai-close" type="button" data-ai-close aria-label="Chiudi">×</button></div>
-   <div class="df-ai-body">
     <p class="df-ai-intro">Ricrea solo i campi del modulo. Template, CSS, colori, immagini, pulsanti decorativi e contenuti del sito originale non vengono importati.</p>
-    <div class="df-ai-modes"><div class="df-ai-mode df-ai-html-mode"><div class="df-ai-mode-head"><strong>📄 Da pagina salvata</strong><span class="df-ai-badge df-ai-badge-free">Senza API</span></div><div class="df-ai-direct-note">Carica una pagina salvata dal sito in formato HTML oppure ZIP. Forms legge i campi e usa anche le risorse locali disponib
+    <div class="df-ai-modes"><div class="df-ai-mode df-ai-html-mode"><div class="df-ai-mode-head"><strong>📄 Da pagina salvata</strong><span class="df-ai-badge df-ai-badge-free">Senza API</span></div><div class="df-ai-direct-note">Carica una pagina salvata dal sito in formato HTML oppure ZIP. Forms legge i campi e usa anche le risorse locali disponibili per ricostruire meglio layout e struttura.</div><div class="df-ai-file-row"><input type="file" id="df-ai-html-file" accept="text/html,.html,.htm,.zip,application/zip,application/x-zip-compressed"><button class="df-ai-clear-file df-icon-only" type="button" id="df-ai-html-clear" title="Rimuovi pagina" aria-label="Rimuovi pagina" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 3h6l1 2h4v2h-1l-1 14H6L5 7H4V5h4l1-2zm-1.9 4 .86 12h8.08l.86-12H7.1zM10 9h2v8h-2V9zm4 0h2v8h-2V9z" fill="currentColor"/></svg></button><button class="df-btn df-small" type="button" id="df-ai-html-analyze">Analizza pagina</button><span class="df-note" id="df-ai-html-status">HTML/ZIP massimo 25 MB</span></div></div><div class="df-ai-mode is-disabled"
 
---- 3 ---
-(x.type||''));
-let preferredRow=null;
-
- if(activeStructureSelection?.type==='row')preferredRow=Math.max(1,Number(activeStructureSelection.row)||1);
-
- else if(activeFieldKey){const ai=selected.findIndex(f=>f.key===activeFieldKey);
-if(ai>=0)preferredRow=Number(selected[ai].config?.layout?.row||1);
-}
- const currentItems=preferredRow!=null?fieldsInRow(preferredRow):[],rowHasStructure=currentItems.some(([f])=>['heading','fieldset','separator'].includes(String(f.type||''))),canUseLogicalRow=preferredRow!=null&&!structural&&!rowHasStructure;
-
- if(canUseLogicalRow){x.config.layout={row:preferredRow,col:currentItems.length+1,width:100};
-selected.push(x);
-normalizeLayoutRows();
-sortSelectedByLayout();
-normalizeVisualLines(Number(x.config.layout.row||preferredRow));
-}
- else if(preferredRow!=null){const insertRow=preferredRow+1;
-smartShiftRowMeta(insertRow);
-selected.forEach(f=>{defaultFieldConfig(f);
-if(Number(f.config.layout.row||1)>=insertRow)f.config.layout.row=Number(f.config.layout.row)+1;
-});
-x.config.layout={row:insertRow,col:1,width:100};
-selected.push(x);
-normalizeLayoutRows();
-sortSelectedByLayout();
-}
- else{const maxRow=Math.max(0,...logicalRowNumbers());
-x.config.layout={row:maxRow+1,col:1,width:100};
-selected.push(x);
-normalizeLayoutRows();
-sortSelectedByLayout();
-}
- activeStructureSelection=null;
-activeFieldKey=x.key;
-openFieldKeys.clear();
-openFieldKeys.add(x.key);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-const selectedSection=[...document.querySelectorAll('[data-accordion]')][2];
-if(selectedSection){selectedSection.classList.add('is-open');
-selectedSection.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
-}setTimeout(()=>{sel.querySelector('.df-selected-item.is-open')?.scrollIntoView({behavior:'smooth',block:'nearest'});
-},100);
-
-}
-
-/* Forms 1.3.67: AI mode selector/* Forms 1.3.67: AI mode selector + saved-page ZIP import + runtime guard. */
-function ensureAiImportDom(){
- if(document.getElementById('df-ai-import-modal'))return true;
-
- const host=document.querySelector('.df-builder')||document.body;
-
- if(!host)return false;
-
- host.insertAdjacentHTML('beforeend',`<div class="df-ai-modal" id="df-ai-import-modal" hidden aria-hidden="true">
-  <div class="df-ai-backdrop" data-ai-close></div>
-  <div class="df-ai-dialog" role="dialog" aria-modal="true" aria-labelledby="df-ai-title">
-   <div class="df-ai-head"><div class="df-ai-head-title"><strong id="df-ai-title">✨ Importa campi con AI</strong><span class="df-note">L’AI prepara una bozza: i campi entrano nel modulo solo dopo la tua conferma.</span></div><button class="df-ai-close" type="button" data-ai-close aria-label="Chiudi">×</button></div>
-   <div class="df-ai-body">
-    <p class="df-ai-intro">Ricrea solo i campi del modulo. Template, CSS, colori, immagini, pulsanti decorativi e contenuti del sito originale non vengono importati.</p>
-    <div class="df-ai-modes"><div class="df-ai-mode df-ai-html-mode"><div class="df-ai-mode-head"><strong>📄 Da pagina salvata</strong><span class="df-ai-badge df-ai-badge-free">Senza API</span></div><div class="df-ai-direct-note">Carica una pagina salvata dal sito in formato HTML oppure ZIP. Forms legge i campi e usa anche le risorse locali disponibili per ricostruire meglio layout e struttura.</div><div class="df-ai-file-row"><input type="file" id="df-ai-html-file" accept="text/html,.html,.htm,.zip,application
-
---- 4 ---
-section-title value="${esc(x.label||'')}"></div><div class="full"><label>${esc(structureUi.description)}</label><textarea class="df-options" data-section-description>${esc(x.config?.content||'')}</textarea></div></div></div></details></div></div></div>`;
-d.querySelector('[data-section-title]').oninput=e=>{x.label=e.target.value;
-sync();
-renderLayoutCanvas();
-};
-d.querySelector('[data-section-description]').oninput=e=>{x.config.content=e.target.value;
-sync();
-renderLayoutCanvas();
-};
-d.querySelector('[data-structure-remove]').onclick=()=>confirmDelete(`la sezione “${x.label||structureUi.section}”`,()=>removeCanvasField(i));
-sel.appendChild(d);
-sync();
-}
-function duplicateLayoutRow(rowNo){rowNo=Math.max(1,Number(rowNo)||1);
-const items=fieldsInRow(rowNo).map(([f])=>f),originalMeta=clone(rowMeta(rowNo)),insertRow=rowNo+1;
-smartShiftRowMeta(insertRow);
-selected.forEach(f=>{defaultFieldConfig(f);
-if(Number(f.config.layout.row||1)>=insertRow)f.config.layout.row=Number(f.config.layout.row)+1;
-});
-const copies=items.map((f,i)=>{const c=clone(f);
-c.key=uniqueKey(c.key);
-defaultFieldConfig(c);
-c.config.layout={...(c.config.layout||{}),row:insertRow,col:i+1,width:Number(f.config?.layout?.width||100)};
-return c;
-});
-selected.push(...copies);
-const copyMeta={...originalMeta,id:newRowId(),title:originalMeta.title?`${originalMeta.title} copia`:'',description:originalMeta.description||''};
-rowMetaStore()[String(insertRow)]=copyMeta;
-normalizeLayoutRows();
-sortSelectedByLayout();
-const newRow=rowNoForId(copyMeta.id)||insertRow;
-if(copies.length)smartFitRow(newRow);
-activeFieldKey=copies[0]?.key||activeFieldKey;
-activeStructureSelection={type:'row',id:copyMeta.id,row:newRow};
-layoutRowState.set(copyMeta.id,layoutRowState.get(originalMeta.id)??false);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-clearTimeout(historyTimer);
-pushHistory();
-}
-function requestRemoveLayoutRow(rowNo){rowNo=Math.max(1,Number(rowNo)||1);
-const items=fieldsInRow(rowNo).map(([f])=>f),count=items.length,meta=rowMeta(rowNo),title=rowDisplayTitle(rowNo),rowId=meta.id;
-confirmDelete(`la riga “${title}” con ${count} camp${count===1?'o':'i'}`,()=>{const refs=new Set(items);
-for(let i=selected.length-1;
-i>=0;
-i--){if(refs.has(selected[i]))selected.splice(i,1);
-}if(builderConfig?.layout?.row_meta)delete builderConfig.layout.row_meta[String(rowNo)];
-layoutRowState.delete(rowId);
-activeStructureSelection=null;
-activeFieldKey=selected[0]?.key||null;
-normalizeLayoutRows();
-repairInvalidRows();
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-clearTimeout(historyTimer);
-pushHistory();
-});
-}
-function renderRowSettings(rowNo){const meta=rowMeta(rowNo);
-sel.innerHTML='';
-const d=document.createElement('div');
-d.className='df-selected-item is-open df-structure-settings';
-d.innerHTML=`<div class="df-selected-top"><div class="df-field-toggle-main"><strong>${esc(structureUi.rowSettings)}</strong><span class="df-field-summary"><span class="df-summary-chip">${esc(rowAutoLabel(rowNo))}</span></span></div><div class="df-mini-actions"><button type="button" data-row-copy class="df-icon-only" title="Duplica riga" aria-label="Duplica riga">${modernUiIcon('copy')}</button><button type="button" data-row-remove class="df-icon-only df-row-remove" title="Elimina riga" aria-label="Elimina riga">${modernUiIcon('trash')}</button></div></div><div clas
-
---- 5 ---
-rtClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-if(wasSection&&builderConfig?.layout?.row_meta)delete builderConfig.layout.row_meta[String(oldRow)];
-openFieldKeys.delete(old);
-activeFieldKey=selected[Math.min(index,selected.length-1)]?.key||null;
-normalizeLayoutRows();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-}
-function moveFieldToRow(index,row,targetIndex=null){if(index==null||!selected[index])return;
-const field=selected[index],oldRow=Number(field.config.layout.row||1),sourceLine=visualLineForField(field),sourceRest=sourceLine.map(([f])=>f).filter(f=>f!==field);
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-row=Math.max(1,Number(row)||1);
-const targetItems=fieldsInRow(row).map(([f])=>f).filter(f=>f!==field);
-field.config.layout={...(field.config.layout||{}),row,col:targetItems.length+1,width:100};
-targetItems.push(field);
-setLogicalRowOrder(row,targetItems);
-selected.push(field);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||row));
-activeFieldKey=field.key;
-sync();
-renderSelected();
-renderLayoutCanvas();
-}
-function moveFieldBeside(index,targetIndex,position='after'){if(smartMoveBeside(index,targetIndex,position)){sortSelectedByLayout();
-sync();
-renderSelected();
-renderLayoutCanvas();
-}}
-function moveFieldToNewRowAfter(index,afterRow){if(index==null||!selected[index])return;
-if(smartMoveNewRow(index,Number(afterRow),'after')){sortSelectedByLayout();
-sync();
-renderSelected();
-renderLayoutCanvas();
-}}
-
-/* Forms 1.3.67: intelligent field drag & drop. No external dependency. */
-const smartDrag={pending:null,active:false,pointerId:null,pointerType:'',fieldKey:'',sourceCard:null,sourceRow:null,ghost:null,spec:null,specKey:'',pressTimer:null,lastX:0,lastY:0,originX:0,originY:0,grabXRatio:.5,grabYRatio:.5,sourceWidth:0,sourceHeight:0,intentAxis:'',intentLockX:0,intentLockY:0,raf:0,queuedX:0,queuedY:0,ghostWidth:0,ghostHeight:0};
-
-let smartSuppressClickUntil=0;
-
-const smartDragIgnoreSelector='button,select,input,textarea,a,label,[contenteditable="true"],summary,details';
-
-function smartFieldIndex(key){return selected.findIndex(f=>f.key===key);
-}
-function smartFieldByKey(key){const i=smartFieldIndex(key);
-return i>=0?selected[i]:null;
-}
-function smartSpecId(spec){return spec?`${spec.kind}:${spec.targetKey||''}:${spec.row||''}:${spec.position||''}:${spec.slot?'slot':''}`:'';
-}
-function smartCaptureRects(){const map=new Map();
-layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const r=el.getBoundingClientRect();
-if(r.width&&r.height)map.set(el.dataset.fieldKey,{left:r.left,top:r.top});
-});
-return map;
-}
-function smartAnimateFrom(before){if(!before?.size)return;
-requestAnimationFrame(()=>{layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const b=before.get(el.dataset.fieldKey);
-if(!b||!el.animate)return;
-const r=el.getBoundingClientRect(),dx=b.left-r.left,dy=b.top-r.top;
-if(Math.abs(dx)<1&&Math.abs(dy)<1)return;
-el.animate([{transform:`tr
-
---- 6 ---
-nfig?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(targetRow);
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-}
-function smartMoveToExistingRow(index,targetRow,targetKey=null){if(index<0||!selected[index])return false;
-targetRow=Math.max(1,Number(targetRow)||1);
-const field=selected[index],oldRow=Number(field.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}const target=targetKey?selected.find(f=>f.key===targetKey):null,targetLine=target?visualLineForField(target).map(([f])=>f).filter(f=>f!==field):[];
-selected.splice(index,1);
-const targetItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field);
-let at=targetItems.length;
-if(targetLine.length){const last=targetLine[targetLine.length-1],li=targetItems.indexOf(last);
-if(li>=0)at=li+1;
-}smartClearOffsets(field);
-field.config.layout={...(field.config.layout||{}),row:targetRow,col:at+1,width:100};
-targetItems.splice(at,0,field);
-setLogicalRowOrder(targetRow,targetItems);
-selected.push(field);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||targetRow));
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-}
-function smartMoveToSlot(index,position='left'){if(index<0||!selected[index])return false;
-const field=selected[index],line=visualLineForField(field).map(([f])=>f);
-if(line.length!==1)return false;
-field.config.layout.width=50;
-if(position==='right'){field.config.layout.offset_before=50;
-delete field.config.layout.offset_after;
-}else{field.config.layout.offset_after=50;
-delete field.config.layout.offset_before;
-}normalizeVisualLines(Number(field.config.layout.row||1));
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-} function smartMoveNewRow(index,targetRow,position='after'){if(index<0||!selected[index])return false;
-const field=selected[index],oldRow=Number(field.config?.layout?.row||1),oldItems=fieldsInRow(oldRow).map(([f])=>f),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);
-if(oldRow===Number(targetRow)&&oldItems.length===1)return false;
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}const insertRow=Math.max(1,Number(targetRow)+(position==='after'?1:0));
-smartShiftRowMeta(insertRow);
-selected.forEach(f=>{defaultFieldConfig(f);
-if(f!==field&&Number(f.config.layout.row||1)>=insertRow)f.config.layout.row=Number(f.config.layout.row)+1;
-});
-smartClearOffsets(field);
-field.config.layout={...(field.config.layout||{}),row:insertRow,col:1,width:100};
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||1));
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-}
-function smartCommitSpec(spec,key){const index=smartFieldIndex(key);
-if(index<0||!spec)return false;
-let changed=false;
-if(spec.kind==='slot')changed=smartMoveToSlot(index,spec.position);
-else if(spec.kind==='beside'){const ti=s
-
-===== TOKEN selected.splice( =====
+===== CONST ADD =====
 
 --- 1 ---
-tion:['show','hide','require','disable'].includes(draft.condition_action)?draft.condition_action:'show'}});
-x.config.layout={row,col,width:Number(draft.width||100)};
-return x;
+??'',jo=j.operator||'eq';
+if(jf)return{conditions:[{field:aiSlug(jf),operator:['neq','!='].includes(jo)?'neq':'eq',value:aiHtmlClean(jv,180)}],condition_logic:j.logic==='any'?'any':'all',condition_action:attr==='data-hide-if'?'hide':(j.action||'show')};
+}}catch{}const m=expr.match(/^\s*([A-Za-z0-9_.\-\[\]]+)\s*(==|=|!=|:)\s*["']?(.+?)["']?\s*$/);
+if(m)return{conditions:[{field:aiSlug(m[1]),operator:m[2]==='!='?'neq':'eq',value:aiHtmlClean(m[3],180)}],condition_logic:'all',condition_action:attr==='data-hide-if'?'hide':'show'};
+}}
+ return{conditions:[],condition_logic:'all',condition_action:'show'};
 }
-function aiImportSelected(){if(editorLocked)return;
-const chosen=aiDraftFields.filter(f=>f._include);
-if(!chosen.length)return;
-const groups=aiLayoutGroups(chosen),position=document.getElementById('df-ai-position')?.value||'append';
-let startRow=Math.max(0,...selected.map(f=>Number(f.config?.layout?.row||0)))+1,insertIndex=selected.length;
-if(position==='current'&&activeFieldKey){const active=selected.find(f=>f.key===activeFieldKey);
-const activeRow=Number(active?.config?.layout?.row||0);
-if(activeRow>0){selected.forEach(f=>{defaultFieldConfig(f);
-if(Number(f.config.layout.row||0)>activeRow)f.config.layout.row=Number(f.config.layout.row)+groups.length;
+function aiHtmlControlType(el,label,key,groupCount=1){if(el.tagName==='TEXTAREA')return'textarea';
+if(el.tagName==='SELECT')return el.multiple?'multiselect':'select';
+let type=String(el.getAttribute('type')||'text').toLowerCase();
+const map={'datetime-local':'datetime','phone':'tel',file:'upload'};
+type=map[type]||type;
+if(type==='radio')return'radio';
+if(type==='checkbox'){const txt=`${label} ${key}`.toLowerCase();
+if(groupCount>1)return'checkboxes';
+if(/privacy|gdpr|consent|consenso|autorizz/.test(txt))return'consent';
+return'checkbox';
+}if(!aiAllowedTypes.has(type))type='text';
+return aiHtmlSemanticType(type,label,key);
+}
+function aiHtmlUploadConfig(el,root){if(String(el?.getAttribute?.('type')||'').toLowerCase()!=='file')return{};
+const cfg={accept:aiHtmlClean(el.getAttribute('accept')||'',500),multiple:!!el.multiple,max_files:el.multiple?2:1};
+let n=el,depth=0,text='';
+while(n&&n!==root&&depth++<4){text+=' '+String(n.textContent||'').replace(/\s+/g,' ').slice(0,1500);
+n=n.parentElement;
+}const m=text.match(/(?:massim[oa]|maximum|max(?:imum)?(?:\s+size)?)[^0-9]{0,35}(\d+(?:[.,]\d+)?)\s*MB/i)||text.match(/(\d+(?:[.,]\d+)?)\s*MB/i);
+if(m)cfg.max_mb=Math.max(1,Math.min(100,Number(String(m[1]).replace(',','.'))||5));
+return cfg;
+}
+function aiHtmlRowToken(el,root){let n=el,depth=0;
+while(n&&n!==root&&depth++<6){const cls=String(n.className||'').toLowerCase();
+if(/(^|\s)(row|form-row|fields-row|uk-grid|grid)(\s|$)/.test(cls))return n;
+n=n.parentElement;
+}return null;
+}
+
+function aiHtmlSectionCandidates(root,raw){
+ const fieldLabels=new Set(raw.map(f=>aiSlug(f.label||''))),nodes=[],seen=new Set();
+
+ const add=node=>{if(node&&!seen.has(node)){seen.add(node);
+nodes.push(node);
+}};
+
+ root.querySelectorAll('legend,h2,h3,h4,h5,h6,[role="heading"],[data-section-title],.form-section-title,.section-title,.fieldset-title,.field-section-title,.group-title,.block-title,.uk-heading-line,.uk-heading-bullet,.uk-heading-small,.uk-heading-medium,.uk-heading-large,.uk-heading-xlarge').forEach(add);
+
+ root.querySelectorAll('div,p,strong,span').forEach(el=>{
+  if(el.closest('label,button,option'))return;
+
+  if(el.querySelector('input,select,textarea,button'))return;
+
+  let text=aiHtmlClean(el.textContent,120);
+if(!text||text.length<3||text.length>100)return;
+
+  const meta=`${el.id||''} ${el.className||''} ${el.getAttribute?.('data-role')||''}`.toLowerCase();
+
+  if(/form-title|page-title|article-title|module-title/.test(meta))return;
+
+  const letters=(text.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g)||[]),upper=letters.length>=4&&letters.filter(ch=>ch===ch.toLocaleUpperCase()&&ch!==ch.toLocaleLowerCase()).length/letters.length>=.82;
+
+  const named=/(^|[-_\s])(section|fieldset|heading|headline|legend|group-title|block-title|section-title)([-_\s]|$)|uk-heading/.test(meta);
+
+  if(named||upper)add(el);
+
+ });
+
+ const order=[...root.querySelectorAll('*')],index=new Map(order.map((n,i)=>[n,i])),out=[];
+
+ for(const node of nodes){
+  if(node.closest('label,button,option'))continue;
+
+  if(node.querySelector('input,select,textarea,button'))continue;
+
+  let title=aiHtmlClean(node.textContent,120).replace(/\s*[*:]+\s*$/,'').trim();
+
+  if(!title||title.length<3||title.length>100)continue;
+
+  const slug=aiSlug(title);
+if(!slug||fieldLabels.has(slug))continue;
+
+  if(/^(invia|submit|send|continua|continue|indietro|back|next|previous|seleziona file|select file)$/i.test(title))continue;
+
+  const words=title.split(/\s+/).filter(Boolean);
+const tag=node.tagName||'';
+const semantic=/^(LEGEND|H2|H3|H4|H5|H6)$/.test(tag);
+
+  if(words.length>10&&!semantic)continue;
+
+  const pos=index.get(node);
+if(pos==null)continue;
+
+  const meta=`${node.id||''} ${node.className||''}`.toLowerCase(),confidence=(semantic||/(section|fieldset|heading|legend|uk-heading)/.test(meta))?'high':'medium';
+
+  out.push({node,index:pos,title,id:`section_${pos}_${slug}`,confidence});
+
+ }
+ out.sort((a,b)=>a.index-b.index);
+
+ return{items:out,index};
+
+}
+function aiHtmlNearestSection(node,sectionInfo){
+ const idx=sectionInfo?.index?.get(node);
+if(idx==null)return null;
+let found=null;
+
+ for(const item of sectionInfo.items){if(item.index>=idx)break;
+found=item;
+}
+ return found;
+
+}
+
+
+function aiHtmlPackSectionRows(fields,startRow){
+ const tokenCounts=new Map();
+
+ fields.forEach(f=>{const t=f._rowToken;
+if(t)tokenCounts.set(t,(tokenCounts.get(t)||0)+1);
 });
-startRow=activeRow+1;
-const indexes=selected.map((f,i)=>[f,i]).filter(([f])=>Number(f.config?.layout?.row||0)===activeRow).map(([,i])=>i);
-insertIndex=indexes.length?Math.max(...indexes)+1:selected.findIndex(f=>f.key===activeFieldKey)+1;
-}}const imported=[];
-groups.forEach((group,ri)=>group.forEach((draft,ci)=>imported.push(aiBuildImportedField(draft,startRow+ri,ci+1))));
-selected.splice(insertIndex,0,...imported);
-activeFieldKey=imported[0]?.key||activeFieldKey;
-openFieldKeys.clear();
-if(activeFieldKey)openFieldKeys.add(activeFieldKey);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-clearTimeout(historyTimer);
-pushHistory();
-aiResetAfterImport();
-aiClose();
-const fieldsSection=[...document.querySelectorAll('[data-accordion]')][2];
-fieldsSection?.classList.add('is-open');
-fieldsSection?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
-setTimeout(()=>document.querySelector(`[data-layout-key="${CSS.escape(activeFieldKey||'')}"]`)?.scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+
+ let row=startRow,current=[],sum=0,sharedToken=null;
+
+ const flush=()=>{if(!current.length)return;
+current.forEach(f=>{f.row=row;
+});
+row++;
+current=[];
+sum=0;
+sharedToken=null;
+};
+
+ for(const f of fields){
+  const width=Math.max(1,Math.min(100,Number(f.width||100))),token=f._rowToken,tokenShared=!!token&&(tokenCounts.get(token)||0)>1;
+
+  let breakBefore=false;
+
+  if(current.length){
+   if(width>=100||sum+width>100)breakBefore=true;
+
+   if(sharedToken&&(!tokenShared||token!==sharedToken))breakBefore=true;
+
+   if(!sharedToken&&tokenShared)breakBefore=true;
+
+  }
+  if(breakBefore)flush();
+
+  current.push(f);
+sum+=width;
+if(tokenShared)sharedToken=token;
+
+  if(width>=100||sum>=99)flush();
+
+ }
+ flush();
+return row;
+
 }
-aiImportButton?.addEventListener('click',aiImportSelected);
+
+function aiHtmlParsePage(html,assets={}){const doc=new DOMParser().parseFromString(String(html||''),'text/html');
+const forms=[...doc.querySelectorAll('form')];
+const root=(forms.length?forms.sort((a,b)=>b.querySelectorAll('input,select,textarea').length-a.querySelectorAll('input,select,textarea').length)[0]:doc.body);
+if(!root)throw new Error('Il file HTML non contiene una pagina leggibile.');
+const all=[...root.querySelectorAll('input,select,textarea')].filter(el=>!aiHtmlIsTechnical(el)&&!['submit','reset','button','image'].includes(String(el.getAttribute('type')||'').toLowerCase()));
+if(!all.length)throw new Error('Non ho trovato campi di modulo importabili nel file HTML.');
+const groups=new Map();
+all.forEach(el=>{const t=String(el.getAttribute('type')||'').toLowerCase();
+if((t==='radio'||t==='checkbox')&&el.getAttri
+
+===== LET ADD =====
+
+===== ADD ARROW =====
+
+===== LIBRARY DECL =====
+
+--- 1 ---
+SELECT'),'radio'=>Text::_('COM_DECAROFORMS_TYPE_RADIO'),'checkboxes'=>Text::_('COM_DECAROFORMS_TYPE_CHECKBOXES'),'checkbox'=>Text::_('COM_DECAROFORMS_TYPE_CHECKBOX'),'toggle'=>Text::_('COM_DECAROFORMS_TYPE_TOGGLE'),'consent'=>Text::_('COM_DECAROFORMS_TYPE_CONSENT'),'file'=>Text::_('COM_DECAROFORMS_TYPE_FILE'),'upload'=>Text::_('COM_DECAROFORMS_TYPE_UPLOAD'),'nationality'=>Text::_('COM_DECAROFORMS_FIELD_NATIONALITY'),'country'=>Text::_('COM_DECAROFORMS_FIELD_COUNTRY'),'region'=>Text::_('COM_DECAROFORMS_FIELD_REGION'),'city'=>Text::_('COM_DECAROFORMS_FIELD_CITY'),'province'=>'Provincia','tax_code'=>'Codice fiscale','postcode'=>Text::_('COM_DECAROFORMS_FIELD_POSTCODE'),'member_number'=>Text::_('COM_DECAROFORMS_FIELD_MEMBER_NUMBER'),'range'=>Text::_('COM_DECAROFORMS_TYPE_RANGE'),'separator'=>Text::_('COM_DECAROFORMS_TYPE_SEPARATOR'),'pagebreak'=>Text::_('COM_DECAROFORMS_TYPE_PAGEBREAK'),'page'=>Text::_('COM_DECAROFORMS_TYPE_MULTIPAGE'),'heading'=>Text::_('COM_DECAROFORMS_TYPE_HEADING'),'info'=>Text::_('COM_DECAROFORMS_TYPE_INFO'),'fieldset'=>Text::_('COM_DECAROFORMS_TYPE_FIELDSET'),'hidden'=>Text::_('COM_DECAROFORMS_TYPE_HIDDEN'),'map'=>Text::_('COM_DECAROFORMS_TYPE_MAP'),'payment'=>Text::_('COM_DECAROFORMS_TYPE_PAYMENT'),'calculated'=>Text::_('COM_DECAROFORMS_TYPE_CALCULATED')]
+], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+const structureUi={expandAll:'<?php echo addslashes(Text::_('COM_DECAROFORMS_EXPAND_ALL'));
+ ?>',collapseAll:'<?php echo addslashes(Text::_('COM_DECAROFORMS_COLLAPSE_ALL'));
+ ?>',general:'<?php echo addslashes(Text::_('COM_DECAROFORMS_GENERAL_SECTION'));
+ ?>',section:'<?php echo addslashes(Text::_('COM_DECAROFORMS_SECTION'));
+ ?>',row:'<?php echo addslashes(Text::_('COM_DECAROFORMS_ROW'));
+ ?>',fields:'<?php echo addslashes(Text::_('COM_DECAROFORMS_FIELDS'));
+ ?>',rows:'<?php echo addslashes(Text::_('COM_DECAROFORMS_ROWS'));
+ ?>',sectionSettings:'<?php echo addslashes(Text::_('COM_DECAROFORMS_SECTION_SETTINGS'));
+ ?>',rowSettings:'<?php echo addslashes(Text::_('COM_DECAROFORMS_ROW_SETTINGS'));
+ ?>',title:'<?php echo addslashes(Text::_('COM_DECAROFORMS_TITLE'));
+ ?>',description:'<?php echo addslashes(Text::_('COM_DECAROFORMS_DESCRIPTION'));
+ ?>'};
+
+const library=<?php echo json_encode(FormHelper::fieldLibrary(), JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
 
 
-/* Forms 1.3.6: bind quick templates early so unrelated later initializers cannot disable them. */
-const quickFormTemplates={contact:['first_name','last_name','email','phone','subject','message','privacy_consent'],registration:['first_name','last_name','birth_date','email','phone','address','postcode','city','privacy_consent'],event:['first_name','last_name','email','event_date','participants','notes','privacy_consent'],membership:['first_name','last_name','birth_date','email','phone','address','postcode','city','member_number','privacy_consent'],reservation:['first_name','last_name','email','phone','event_date','participants','notes'],blank:[]};
+/* Forms 1.3.8: reusable saved field presets. */
+const savedPresetStorageKey='decaroforms_saved_field_presets_v1';
 
-function applyQuickTemplate(button){
- const name=button.dataset.formTemplate;
-
- const map=Object.fromEntries(library.map(x=>[x.key,x]));
-
+function loadSavedFieldPresets(){
  try{
-  const wanted=quickFormTemplates[name]||[];
+  const parsed=JSON.parse(localStorage.getItem(savedPresetStorageKey)||'[]');
 
-  const next=[];
+  return Array.isArray(parsed)?parsed.filter(x=>x&&typeof x==='object'&&x.label&&x.type).slice(0,100):[];
 
-  if(name!=='blank')wanted.forEach(k=>{if(!map[k])return;
-const f=defaultFieldConfig(clone(map[k]));
-f.key=String(f.key||k);
-f.options=Array.isArray(f.options)?f.options:[];
-next.push(f);
-});
-
-  if(name!=='blank'&&!next.length)throw new Error('Quick template contains no available fields: '+name);
-
-  selected.splice(0,selected.length,...next);
-
-  selected.forEach((f,i)=>{defaultFieldConfig(f);
-f.config.layout={row:i+1,col:1,width:100};
-});
-
-  openFieldKeys.clear();
-
-  activeFieldKey=selected[0]?.key||null;
-
-  if(activeFieldKey)openFieldKeys.add(activeFieldKey);
-
-  sync();
-renderSelected();
-render
-
---- 2 ---
-?.addEventListener('click',aiImportSelected);
-
-
-/* Forms 1.3.6: bind quick templates early so unrelated later initializers cannot disable them. */
-const quickFormTemplates={contact:['first_name','last_name','email','phone','subject','message','privacy_consent'],registration:['first_name','last_name','birth_date','email','phone','address','postcode','city','privacy_consent'],event:['first_name','last_name','email','event_date','participants','notes','privacy_consent'],membership:['first_name','last_name','birth_date','email','phone','address','postcode','city','member_number','privacy_consent'],reservation:['first_name','last_name','email','phone','event_date','participants','notes'],blank:[]};
-
-function applyQuickTemplate(button){
- const name=button.dataset.formTemplate;
-
- const map=Object.fromEntries(library.map(x=>[x.key,x]));
-
- try{
-  const wanted=quickFormTemplates[name]||[];
-
-  const next=[];
-
-  if(name!=='blank')wanted.forEach(k=>{if(!map[k])return;
-const f=defaultFieldConfig(clone(map[k]));
-f.key=String(f.key||k);
-f.options=Array.isArray(f.options)?f.options:[];
-next.push(f);
-});
-
-  if(name!=='blank'&&!next.length)throw new Error('Quick template contains no available fields: '+name);
-
-  selected.splice(0,selected.length,...next);
-
-  selected.forEach((f,i)=>{defaultFieldConfig(f);
-f.config.layout={row:i+1,col:1,width:100};
-});
-
-  openFieldKeys.clear();
-
-  activeFieldKey=selected[0]?.key||null;
-
-  if(activeFieldKey)openFieldKeys.add(activeFieldKey);
-
-  sync();
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-
-  document.querySelectorAll('[data-form-template]').forEach(x=>x.classList.toggle('is-active',x===button));
-
-  const quick=[...document.querySelectorAll('[data-accordion]')][1];
-
-  quick?.classList.remove('is-open');
-quick?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','false');
-
-  openBuilderSection(2,true);
-
- }catch(err){console.error('Forms quick template error',err);
-alert('Impossibile caricare il modello rapido. Ricarica la pagina e riprova.');
-}
-}
-document.addEventListener('click',e=>{const button=e.target.closest('[data-form-template]');
-if(!button)return;
-e.preventDefault();
-e.stopPropagation();
-applyQuickTemplate(button);
-});
-
-
-/* Forms 1.3.17: reusable quick models saved from the current module structure. */
-const savedQuickTemplateStorageKey='decaroforms_saved_quick_templates_v1';
-
-function loadSavedQuickTemplates(){
- try{const parsed=JSON.parse(localStorage.getItem(savedQuickTemplateStorageKey)||'[]');
-return Array.isArray(parsed)?parsed:[];
-}
- catch(e){console.warn('Forms saved quick models could not be loaded',e);
+ }catch(e){console.warn('Forms saved field presets could not be loaded',e);
 return [];
 }
 }
-function persistSavedQuickTemplates(){
- try{localStorage.setItem(savedQuickTemplateStorageKey,JSON.stringify(savedQuickTemplates));
+function persistSavedFieldPresets(){
+ try{localStorage.setItem(savedPresetStorageKey,JSON.stringify(savedFieldPresets));
 }
- catch(e){console.warn('Forms saved quick models could not be saved',e);
+ catch(e){console.warn('Forms saved field presets could not be saved',e);
 }
 }
-let savedQuickTemplates=loadSavedQuickTemplates();
+let savedFieldPresets=loadSavedFieldPresets();
 
-function renderSavedQuickTemplates(){
- const box=document.getElementById('df-saved-quick-templates'),heading=document.getElementById('df-saved-quick-heading');
+savedFieldPresets.forEach(p=>library.push({...p,category:'custom',_savedPresetId:p._savedPresetId||p.id||''}));
 
- if(!box)return;
+function saveFieldPreset(field){
+ const copy=JSON.parse(JSON.stringify(field||{}));
 
- box.innerHTML='';
+ copy.category='custom';
 
- if(heading)heading.hidden=!savedQuickTemplates.length;
+ copy.options=Array.isArray(copy.options)?copy.options:[];
 
- savedQuickTemplates.forEach(tpl=>{
-  const wrap=document.createElement('span');
-wrap.className='df-saved-quick-item';
+ const existing=savedFieldPresets.find(p=>String(p.key||'')===String(copy.key||'')&&String(p.label||'')===String(copy.label||''));
 
-  wrap.innerHTML=`<button type="button" class="df-saved-quick-use" data-saved-quick="${esc(tpl.id)}" title="Carica modello rapi
+ copy._savedPresetId=existing?existing._savedPresetId:('saved_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7));
 
---- 3 ---
-[idx]=entry;
-else savedQuickTemplates.push(entry);
+ const idx=savedFieldPresets.findIndex(p=>p._savedPresetId===copy._savedPresetId);
 
- persistSavedQuickTemplates();
-renderSavedQuickTemplates();
+ if(idx>=0)savedFieldPresets[idx]=copy;
+else savedFieldPresets.push(copy);
 
- const quick=[...document.querySelectorAll('[data-accordion]')][1];
+ persistSavedFieldPresets();
 
- quick?.classList.add('is-open');
-quick?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
+ const libIdx=library.findIndex(p=>p._savedPresetId===copy._savedPresetId);
 
- document.getElementById('df-saved-quick-heading')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+ if(libIdx>=0)library[libIdx]=copy;
+else library.push(copy);
+
+ renderLibrary();
+
+ return copy._savedPresetId;
 
 }
-function saveCurrentStructureAsQuickTemplate(){
- if(!selected.length){openActionModal({title:'Salva struttura',message:'Aggiungi almeno un campo prima di salvare la struttura.',confirmLabel:'Chiudi',onConfirm:()=>{}});
+function deleteSavedFieldPreset(id){
+ savedFieldPresets=savedFieldPresets.filter(p=>p._savedPresetId!==id);
+
+ persistSavedFieldPresets();
+
+ for(let i=library.length-1;
+i>=0;
+i--)if(library[i]._savedPresetId===id)library.splice(i,1);
+
+ renderLibrary();
+
+}
+
+let selected=<?php echo json_encode($initialFields, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+let statuses=<?php echo json_encode($initialStatuses, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+let columns=<?php echo json_encode($initialColumns, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+let builderConfig=<?php echo json_encode($builderConfig, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+let emailConfig=<?php echo json_encode($emailConfig, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+let additionalEmails=<?php echo json_encode(array_values($additionalEmails), JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+let integrations=<?php echo json_encode($integrations, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ ?>;
+
+
+builderConfig.layout={columns:1,widths:[100],mobile_stack:true,...(builderConfig.layout||{})};
+
+builderConfig.validation={ajax:true,scroll_error:true,required_marker:'*',error_message:'<?php echo addslashes(Text::_('COM_DECAROFORMS_DEFAULT_ERROR_MESSAGE'));
+ ?>',...(builderConfig.validation||{})};
+
+builderConfig.confirmation={enabled:true,position:'below',format:'text',scroll:false,continue:false,continue_label:'<?php echo addslashes(Text::_('COM_DECAROFORMS_CONTINUE'));
+ ?>',continue_url:'',...(builderConfig.confirmation||{})};
+
+builderConfig.security={min_seconds:2,rate_seconds:8,...(builderConfig.security||{})};
+
+builderConfig.geography={default_country:'IT',default_region:'Lazio',...(builderConfig.geography||{})};
+
+integrations.google_sheets={enabled:false,webhook_url:'',secret:'',include_files:false,...(integrations.google_sheets||{})};
+
+emailConfig.admin=emailConfig.admin||{};
+emailConfig.user=emailConfig.user||{};
+
+emailConfig.admin.custom={base:'standard',primary:'#e60046',secondary:'#26364a',background:'#ffffff',text:'#20262d',button:'#e60046',border:'#dfe3e7',radius:8,...(emailConfig.admin.custom||{})};
+
+emailConfig.user.custom={base:'standard',primary:'#e60046',secondary:'#26364a',background:'#ffffff',text:'#20262d',button:'#e60046',border:'#dfe3e7',radius:8,...(emailConfig.user.custom||{})};
+
+
+const hidden={fields:document.getElementById('df-fields-json'),fieldCount:document.getElementById('df-fields-count'),statuses:document.getElementById('df-statuses-j
+
+===== LIBRARY DECL LET =====
+
+===== HEADING OBJECT =====
+
+--- 1 ---
+rim()==='');
+if(empty)placeholder=aiHtmlClean(empty.textContent,255);
+}const hidden=group.some(x=>aiHtmlHiddenHint(x,root)),disabled=group.every(x=>x.disabled),cond=aiHtmlExplicitConditions(el,root),warnings=[];
+if(hidden&&cond.conditions.length)warnings.push('Campo nascosto con condizione esplicita rilevata nel markup.');
+else if(hidden)warnings.push('Campo nascosto nel markup: possibile condizionale, ma la regola non è esplicita.');
+if(disabled)warnings.push('Campo disabilitato nel file HTML.');
+const width=aiHtmlWidth(el,root,assets.css||'');
+raw.push({label:label||key,key,type,required:group.some(x=>x.required||x.getAttribute('aria-required')==='true'),width,row:0,placeholder,options,config:type==='upload'?aiHtmlUploadConfig(el,root):{},conditions:cond.conditions,condition_logic:cond.condition_logic,condition_action:cond.condition_action,confidence:hidden&&!cond.conditions.length?'medium':'high',warning:warnings.join(' '),_disabled:disabled,_rowToken:aiHtmlRowToken(el,root),_node:group[0]||el});
+}
+ const uploadLabels=new Set(raw.filter(f=>f.type==='upload').map(f=>aiSlug(f.label)));
+for(let i=raw.length-1;
+i>=0;
+i--){const f=raw[i];
+if(f.type==='text'&&f._disabled&&uploadLabels.has(aiSlug(f.label)))raw.splice(i,1);
+}const keys=new Set(raw.map(f=>f.key));
+raw.forEach(f=>{if(f.conditions?.length){const before=f.conditions.length;
+f.conditions=f.conditions.filter(c=>keys.has(aiSlug(c.field))&&aiSlug(c.field)!==f.key);
+if(before&&!f.conditions.length){f.warning=`${f.warning?f.warning+' ':''}Condizione trovata ma il campo sorgente non è importabile o non è presente.`;
+f.confidence='medium';
+}}});
+
+ const sectionInfo=aiHtmlSectionCandidates(root,raw);
+raw.forEach(f=>{f._section=aiHtmlNearestSection(f._node,sectionInfo);
+});
+
+ const sectionGroups=[];
+let currentGroup=null;
+
+ for(const f of raw){const sec=f._section||null,secId=sec?.id||'';
+if(!currentGroup||currentGroup.id!==secId){currentGroup={id:secId,section:sec,fields:[]};
+sectionGroups.push(currentGroup);
+}currentGroup.fields.push(f);
+}
+ const out=[];
+let row=1,sectionCounter=0;
+
+ for(const group of sectionGroups){
+  if(group.section){const sec=group.section;
+out.push({label:sec.title,key:`section_${aiSlug(sec.title)}_${++sectionCounter}`,type:'heading',required:false,width:100,row,placeholder:'',options:[],config:{builder_role:'section',content:''},conditions:[],condition_logic:'all',condition_action:'show',confidence:sec.confidence||'high',warning:''});
+row++;
+}
+  row=aiHtmlPackSectionRows(group.fields,row);
+
+  group.fields.forEach(f=>{out.push(f);
+delete f._rowToken;
+delete f._disabled;
+delete f._node;
+delete f._section;
+});
+
+ }
+ out.sort((a,b)=>Number(a.row||0)-Number(b.row||0));
+return out.slice(0,100);
+}
+
+function aiZipU16(view,pos){return view.getUint16(pos,true)}
+function aiZipU32(view,pos){return view.getUint32(pos,true)}
+async function aiZipInflateRaw(bytes){if(typeof DecompressionStream==='undefined')throw new Error('Questo browser non supporta la decompressione ZIP locale. Usa un file HTML oppure aggiorna il browser.');
+let stream;
+try{stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+}catch{throw new Error('Impossibile decomprimere il file ZIP in questo browser.');
+}return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+function aiZipFindEnd(view){const min=Math.max(0,view.byteLength-65557);
+for(let p=view.byteLength-22;
+p>=min;
+p--){if(view.getUint32(p,true)===0x06054b50)return p;
+}return-1;
+}
+async function aiReadZipPage(file){const buffer=await file.arrayBuffer(),view=new DataView(buffer),bytes=new Uint8Array(buffer),end=aiZipFindEnd(view);
+if(end<0)throw new Error('Il file ZIP non è valido o non contiene una directory ZIP leggibile.');
+const count=aiZipU16(view,end+10),central=aiZipU32(view,end+16);
+if(count>3000)throw new Error('Lo ZIP contiene troppi file. Salva soltanto la pagina web completa.');
+let pos=central,totalText=0;
+const decoder=new TextDecoder('utf-8'),htmlFiles=[],cssFiles=[],jsFiles=[];
+for(let i=0;
+i<count;
+i++){if(pos+46>view.byteLength||view.getUint32(pos,true)!==0x02014b50)break;
+const flags=aiZipU16(view,pos+8),method=aiZipU16(view,pos+10),compSize=aiZipU32(view,pos+20),rawSize=aiZipU32(view,pos+24),nameLen=aiZipU16(view,pos+28),extraLen=aiZipU16(view,pos+30),commentLen=aiZipU16(view,pos+32),local=aiZipU32(view,pos+42),name=decoder.decode(bytes.slice(pos+46,pos+46+nameLen));
+pos+=46+nameLen+extraLen+commentLen;
+if(!name||name.endsWith('/')||(flags&1))continue;
+const lower=name.toLowerCase(),kind=/\.html?$/.test(lower)?'html':/\.css$/.test(lower)?'css':/\.js$/.test(lower)?'js':'';
+if(!kind)continue;
+if(rawSize>4*1024*1024||totalText+rawSize>12*1024*1024)continue;
+if(local+30>view.byteLength||view.getUint32(local,true)!==0x04034b50)continue;
+const ln=aiZipU16(view,local+26),le=aiZipU16(view,local+28),start=local+30+ln+le,endData=start+compSize;
+if(endData>view.byteLength)continue;
+let out;
+if(method===0)out=bytes.slice(start,endData);
+else if(method===8)out=await aiZipInflateRaw(bytes.slice(start,endData));
+else continue;
+totalText+=out.byteLength;
+const text=decoder.decode(out);
+if(kind==='html')htmlFiles.push({name,text});
+else if(kind==='css')cssFiles.push({name,text});
+else jsFiles.push({name,text});
+}if(!htmlFiles.length)throw new Error('Nello ZIP non è stato trovato alcun file .html o .htm.');
+const score=x=>{const t=x.text||'';
+return((t.match(/<form\b/gi)||[]).length*10000)+((t.match(/<(?:input|select|textarea)\b/gi)||[]).length*100)+Math.min(t.length,500000)/1000;
+};
+htmlFiles.sort((a,b)=>score(b)-score(a));
+const css=cssFiles.map(x=>x.text).join('\n').slice(0,3*1024*1024),js=jsFiles.map(x=>x.text).join('\n').slice(0,2*1024*1024);
+return{html:htmlFiles[0].text,css,js,mainName:htmlFiles[0].name,resourceCount:cssFiles.length+jsFiles.length};
+}
+async function aiReadSavedPage(file){const lower=String(file?.name||'').toLowerCase();
+if(lower.endsWith('.zip')||/zip/.test(String(file?.type||'')))return aiReadZipPage(file);
+return{html:await file.text(),css:'',js:'',mainName:file.name||'pagina.html',resourceCount:0};
+}
+
+document.getElementById('df-ai-html-analyze')?.addEventListener('click',async()=>{const input=document.getElementById('df-ai-html-file'),file=input?.files?.[0],status=document.getElementById('df-ai-html-status');
+if(!file){aiShowError('Seleziona prima un file HTML oppure ZIP.');
 return;
-}
- const suggested=(document.querySelector('[name="title"]')?.value||'Modello personalizzato').trim();
+}if(file.size>25*1024*1024){aiShowError('Il file supera 25 MB. Crea uno ZIP più leggero oppure carica soltanto il file HTML.');
+return
 
- openActionModal({title:'Salva struttura del modulo',message:'Salva questa struttura nei Modelli rapidi per riutilizzarla in altri moduli.',inputLabel:'Nome del modello',inputValue:suggested,inputRequired:true,confirmLabel:'Salva',onConfirm:saveQuickTemplateNamed});
+===== FIELDSET OBJECT =====
+
+===== BUILDER ROLE SECTION =====
+
+--- 1 ---
+den=group.some(x=>aiHtmlHiddenHint(x,root)),disabled=group.every(x=>x.disabled),cond=aiHtmlExplicitConditions(el,root),warnings=[];
+if(hidden&&cond.conditions.length)warnings.push('Campo nascosto con condizione esplicita rilevata nel markup.');
+else if(hidden)warnings.push('Campo nascosto nel markup: possibile condizionale, ma la regola non è esplicita.');
+if(disabled)warnings.push('Campo disabilitato nel file HTML.');
+const width=aiHtmlWidth(el,root,assets.css||'');
+raw.push({label:label||key,key,type,required:group.some(x=>x.required||x.getAttribute('aria-required')==='true'),width,row:0,placeholder,options,config:type==='upload'?aiHtmlUploadConfig(el,root):{},conditions:cond.conditions,condition_logic:cond.condition_logic,condition_action:cond.condition_action,confidence:hidden&&!cond.conditions.length?'medium':'high',warning:warnings.join(' '),_disabled:disabled,_rowToken:aiHtmlRowToken(el,root),_node:group[0]||el});
+}
+ const uploadLabels=new Set(raw.filter(f=>f.type==='upload').map(f=>aiSlug(f.label)));
+for(let i=raw.length-1;
+i>=0;
+i--){const f=raw[i];
+if(f.type==='text'&&f._disabled&&uploadLabels.has(aiSlug(f.label)))raw.splice(i,1);
+}const keys=new Set(raw.map(f=>f.key));
+raw.forEach(f=>{if(f.conditions?.length){const before=f.conditions.length;
+f.conditions=f.conditions.filter(c=>keys.has(aiSlug(c.field))&&aiSlug(c.field)!==f.key);
+if(before&&!f.conditions.length){f.warning=`${f.warning?f.warning+' ':''}Condizione trovata ma il campo sorgente non è importabile o non è presente.`;
+f.confidence='medium';
+}}});
+
+ const sectionInfo=aiHtmlSectionCandidates(root,raw);
+raw.forEach(f=>{f._section=aiHtmlNearestSection(f._node,sectionInfo);
+});
+
+ const sectionGroups=[];
+let currentGroup=null;
+
+ for(const f of raw){const sec=f._section||null,secId=sec?.id||'';
+if(!currentGroup||currentGroup.id!==secId){currentGroup={id:secId,section:sec,fields:[]};
+sectionGroups.push(currentGroup);
+}currentGroup.fields.push(f);
+}
+ const out=[];
+let row=1,sectionCounter=0;
+
+ for(const group of sectionGroups){
+  if(group.section){const sec=group.section;
+out.push({label:sec.title,key:`section_${aiSlug(sec.title)}_${++sectionCounter}`,type:'heading',required:false,width:100,row,placeholder:'',options:[],config:{builder_role:'section',content:''},conditions:[],condition_logic:'all',condition_action:'show',confidence:sec.confidence||'high',warning:''});
+row++;
+}
+  row=aiHtmlPackSectionRows(group.fields,row);
+
+  group.fields.forEach(f=>{out.push(f);
+delete f._rowToken;
+delete f._disabled;
+delete f._node;
+delete f._section;
+});
+
+ }
+ out.sort((a,b)=>Number(a.row||0)-Number(b.row||0));
+return out.slice(0,100);
+}
+
+function aiZipU16(view,pos){return view.getUint16(pos,true)}
+function aiZipU32(view,pos){return view.getUint32(pos,true)}
+async function aiZipInflateRaw(bytes){if(typeof DecompressionStream==='undefined')throw new Error('Questo browser non supporta la decompressione ZIP locale. Usa un file HTML oppure aggiorna il browser.');
+let stream;
+try{stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+}catch{throw new Error('Impossibile decomprimere il file ZIP in questo browser.');
+}return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+function aiZipFindEnd(view){const min=Math.max(0,view.byteLength-65557);
+for(let p=view.byteLength-22;
+p>=min;
+p--){if(view.getUint32(p,true)===0x06054b50)return p;
+}return-1;
+}
+async function aiReadZipPage(file){const buffer=await file.arrayBuffer(),view=new DataView(buffer),bytes=new Uint8Array(buffer),end=aiZipFindEnd(view);
+if(end<0)throw new Error('Il file ZIP non è valido o non contiene una directory ZIP leggibile.');
+const count=aiZipU16(view,end+10),central=aiZipU32(view,end+16);
+if(count>3000)throw new Error('Lo ZIP contiene troppi file. Salva soltanto la pagina web completa.');
+let pos=central,totalText=0;
+const decoder=new TextDecoder('utf-8'),htmlFiles=[],cssFiles=[],jsFiles=[];
+for(let i=0;
+i<count;
+i++){if(pos+46>view.byteLength||view.getUint32(pos,true)!==0x02014b50)break;
+const flags=aiZipU16(view,pos+8),method=aiZipU16(view,pos+10),compSize=aiZipU32(view,pos+20),rawSize=aiZipU32(view,pos+24),nameLen=aiZipU16(view,pos+28),extraLen=aiZipU16(view,pos+30),commentLen=aiZipU16(view,pos+32),local=aiZipU32(view,pos+42),name=decoder.decode(bytes.slice(pos+46,pos+46+nameLen));
+pos+=46+nameLen+extraLen+commentLen;
+if(!name||name.endsWith('/')||(flags&1))continue;
+const lower=name.toLowerCase(),kind=/\.html?$/.test(lower)?'html':/\.css$/.test(lower)?'css':/\.js$/.test(lower)?'js':'';
+if(!kind)continue;
+if(rawSize>4*1024*1024||totalText+rawSize>12*1024*1024)continue;
+if(local+30>view.byteLength||view.getUint32(local,true)!==0x04034b50)continue;
+const ln=aiZipU16(view,local+26),le=aiZipU16(view,local+28),start=local+30+ln+le,endData=start+compSize;
+if(endData>view.byteLength)continue;
+let out;
+if(method===0)out=bytes.slice(start,endData);
+else if(method===8)out=await aiZipInflateRaw(bytes.slice(start,endData));
+else continue;
+totalText+=out.byteLength;
+const text=decoder.decode(out);
+if(kind==='html')htmlFiles.push({name,text});
+else if(kind==='css')cssFiles.push({name,text});
+else jsFiles.push({name,text});
+}if(!htmlFiles.length)throw new Error('Nello ZIP non è stato trovato alcun file .html o .htm.');
+const score=x=>{const t=x.text||'';
+return((t.match(/<form\b/gi)||[]).length*10000)+((t.match(/<(?:input|select|textarea)\b/gi)||[]).length*100)+Math.min(t.length,500000)/1000;
+};
+htmlFiles.sort((a,b)=>score(b)-score(a));
+const css=cssFiles.map(x=>x.text).join('\n').slice(0,3*1024*1024),js=jsFiles.map(x=>x.text).join('\n').slice(0,2*1024*1024);
+return{html:htmlFiles[0].text,css,js,mainName:htmlFiles[0].name,resourceCount:cssFiles.length+jsFiles.length};
+}
+async function aiReadSavedPage(file){const lower=String(file?.name||'').toLowerCase();
+if(lower.endsWith('.zip')||/zip/.test(String(file?.type||'')))return aiReadZipPage(file);
+return{html:await file.text(),css:'',js:'',mainName:file.name||'pagina.html',resourceCount:0};
+}
+
+document.getElementById('df-ai-html-analyze')?.addEventListener('click',async()=>{const input=document.getElementById('df-ai-html-file'),file=input?.files?.[0],status=document.getElementById('df-ai-html-status');
+if(!file){aiShowError('Seleziona prima un file HTML oppure ZIP.');
+return;
+}if(file.size>25*1024*1024){aiShowError('Il file supera 25 MB. Crea uno ZIP più leggero oppure carica soltanto il file HTML.');
+return;
+}try{if(status)status.textContent='Analisi pagina…';
+const page=await aiReadSa
+
+===== OPEN LIBRARY HANDLER =====
+
+--- 1 ---
+e',targetKey:f.key});
+parts.push({slot:false,width:Math.max(1,Number(f.config.layout.width||100)),f,i});
+if(after>0)parts.push({slot:true,width:after,side:'after',targetKey:f.key});
+});
+row.style.gridTemplateColumns=parts.map(part=>Math.max(1,Number(part.width||1))+'fr').join(' ');
+parts.forEach(part=>{if(part.slot){const slot=document.createElement('div');
+slot.className='df-layout-empty-slot';
+slot.dataset.slotTargetKey=part.targetKey||'';
+slot.dataset.slotSide=part.side||'before';
+slot.setAttribute('role','button');
+slot.tabIndex=0;
+slot.setAttribute('aria-label','Spazio vuoto '+Math.round(part.width)+'%. Trascina qui un campo.');
+slot.innerHTML='<span>VUOTO '+Math.round(part.width)+'%</span>';
+row.appendChild(slot);
+}else renderLayoutFieldCard(part.f,part.i,model.rowNo,row);
+});
+row.addEventListener('dragover',e=>{if(e.target.closest('.df-layout-card'))return;
+e.preventDefault();
+row.classList.add('is-over');
+});
+row.addEventListener('dragleave',e=>{if(!row.contains(e.relatedTarget))row.classList.remove('is-over');
+});
+row.addEventListener('drop',e=>{if(e.target.closest('.df-layout-card'))return;
+e.preventDefault();
+row.classList.remove('is-over');
+moveFieldToRow(draggedFieldIndex,model.rowNo);
+});
+rowBody.appendChild(row);
+});
+
+   rowGroup.append(rowHead,rowBody);
+body.appendChild(rowGroup);
+
+  });
+
+  wrap.append(head,body);
+layoutCanvas.appendChild(wrap);
+
+ });
+sync();
+
+}
+function ensureInitialFieldWorkspace(){
+  if(!selected.length)return;
+
+  renderSelected();
+
+  renderLayoutCanvas();
+
+  const verify=()=>{
+    if(selected.length&&layoutCanvas&&!layoutCanvas.querySelector('.df-layout-card')){
+      renderSelected();
+
+      renderLayoutCanvas();
+
+    }
+  };
+
+  requestAnimationFrame(()=>{verify();
+setTimeout(verify,60);
+});
+
+}
+window.dfBuilderEnsureRender=ensureInitialFieldWorkspace;
+
+ensureInitialFieldWorkspace();
+
+layoutNewRow?.addEventListener('dragover',e=>{e.preventDefault();
+layoutNewRow.classList.add('is-over');
+});
+layoutNewRow?.addEventListener('dragleave',()=>layoutNewRow.classList.remove('is-over'));
+layoutNewRow?.addEventListener('drop',e=>{e.preventDefault();
+layoutNewRow.classList.remove('is-over');
+const max=Math.max(0,...logicalRowNumbers());
+moveFieldToRow(draggedFieldIndex,max+1);
+});
+
+document.getElementById('df-open-library')?.addEventListener('click',()=>openBuilderSection(3,true));
+
+function renderLayout(){builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};
+builderConfig.layout={columns:1,widths:[100],mobile_stack:true,...(builderConfig.layout||{})};
+let n=Math.max(1,Math.min(4,Number(builderConfig.layout.columns||1)));
+builderConfig.layout.columns=n;
+layoutColumns.value=String(n);
+mobileStack.checked=builderConfig.layout.mobile_stack!==false;
+let widths=Array.isArray(builderConfig.layout.widths)?builderConfig.layout.widths.slice(0,n).map(Number):[];
+while(widths.length<n)widths.push(Math.floor(100/n));
+if(n===1)widths=[100];
+builderConfig.layout.widths=widths;
+layoutWidths.innerHTML='';
+for(let i=0;
+i<4;
+i++){const w=document.createElement('div');
+w.className='df-field';
+if(i>=n)w.hidden=true;
+w.innerHTML=`<label>Colonna ${i+1}</label><input type="number" min="0" max="100" data-width="${i}" value="${esc(widths[i]??0)}">`;
+w.querySelector('input').addEventListener('input',e=>{builderConfig.layout.widths[i]=Number(e.target.value||0);
+renderLayoutTotal();
+sync();
+});
+layoutWidths.appendChild(w);
+}renderLayoutTotal();
+renderLayoutCanvas();
+sync();
+}
+function renderLayoutTotal(){const total=(builderConfig.layout.widths||[]).slice(0,builderConfig.layout.columns).reduce((a,b)=>a+Number(b||0),0);
+layoutTotal.textContent=`Totale: ${total}%`;
+layoutTotal.classList.toggle('is-ok',total===100);
+layoutTotal.classList.toggle('is-error',total!==100);
+}
+layoutColumns.addEventListener('change',()=>{builderConfig.layout.columns=Number(layoutColumns.value);
+builderConfig.layout.widths=Array.from({length:builderConfig.layout.columns},(_,i)=>builderConfig.layout.widths?.[i]??Math.floor(100/builderConfig.layout.columns));
+if(builderConfig.layout.columns===1)builderConfig.layout.widths=[100];
+renderLayout();
+});
+mobileStack.addEventListener('change',()=>{builderConfig.layout.mobile_stack=mobileStack.checked;
+sync();
+});
+document.querySelectorAll('[data-layout-preset]').forEach(b=>b.addEventListener('click',()=>{const w=b.dataset.layoutPreset.split(',').map(Number);
+builderConfig.layout.columns=w.length;
+builderConfig.layout.widths=w;
+renderLayout();
+}));
+document.getElementById('df-layout-apply').addEventListener('click',e=>{const widths=builderConfig.layout.widths.slice(0,builderConfig.layout.columns);
+selected.forEach((f,i)=>{defaultFieldConfig(f);
+const col=(i%builderConfig.layout.columns)+1,row=Math.floor(i/builderConfig.layout.columns)+1;
+f.config.layout={row,col,width:widths[col-1]||100};
+});
+renderSelected();
+renderLayoutCanvas();
+sync();
+const btn=e.currentTarget,old=btn.textContent;
+btn.textContent=selected.length?`✓ Applicato a ${selected.length} camp${selected.length===1?'o':'i'}`:'Nessun campo selezionato';
+setTimeout(()=>btn.textContent=old,1600);
+});
+
+
+// Statuses and columns.
+function slugStatus(v){return String(v||'status').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,30)||'status';
+}const statusPalette=['#0d6efd','#f59e0b','#198754','#6c757d','#dc3545','#7c3aed','#0891b2'];
+
+function normalizedStatusLabel(v){return String(v||'').trim().toLocaleLowerCase();
+}
+function statusConflicts(){const seen=new Set(),dupes=new Set();
+statuses.forEach(st=>{const n=normalizedStatusLabel(st.label);
+if(!n)return;
+if(seen.has(n))dupes.add(n);
+seen.add(n);
+});
+return dupes;
+}
+function renderStatuses(){statusEditor.innerHTML='';
+const dupes=statusConflicts();
+if(dupes.size){const warning=document.createElement('div');
+warning.className='df-status-warning';
+warning.textContent='Esistono stati con lo stesso nome. Rinominali prima di salvare.';
+statusEditor.appendChild(warning);
+}statuses.forEach((st,i)=>{st.color=/^#[0-9a-fA-F]{6}$/.test(st.color||'')?st.color:statusPalette[i%statusPalette.length];
+const r=document.createElement('div');
+r.className='df-status-row'+(dupes.has(normalizedStatusLabel(st.label))?' is-conflict':'');
+r.innerHTML=`<input data-status-label value="${esc(st.label||'')}" placeholder="Nome stato"><div class="df-status-color-wrap"><input class="df-status-color" data-status-color type="color" value="${esc(st.color)}"><span class="df-status-color-value">${esc(st.color)}</span></div><button
+
+===== ACTIVE LIBRARY CATEGORY =====
+
+--- 1 ---
+ed});
 
 }
 function applySavedQuickTemplate(id,button){
@@ -2157,583 +931,661 @@ function renderLibrary(){
 
  const q=(search.value||'').trim().toLowerCase();
 
- const counts=Object.fromEntries(categoryOrder
+ const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
+
+ tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
+
+ tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
+renderLibrary();
+});
+
+ const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
+
+ lib.innerHTML='';
+
+ if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+return;
+}
+ const grid=document.createElement('div');
+grid.className='df-library-items-grid';
+
+ items.forEach(x=>{const d=document.createElement('div');
+d.className='df-lib-item';
+const saved=!!x._savedPresetId;
+d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
+d.querySelector('.df-add').onclick=()=>add(x);
+d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
+});
+grid.appendChild(d);
+});
+lib.appendChild(grid);
+
+}
+filter.innerHTML='';
+filter.hidden=true;
+search.addEventListener('input',renderLibrary);
+renderLibrary();
+
+
+function fieldSelectOptions(current=''){return selected.map(f=>`<option value="${esc(f.key)}" ${f.key===current?'selected':''}>${esc(f.label)} (${esc(f.key)})</option>`).join('');
+}
+function configHtml(x){const c=x.config||{},t=x.type;
+let h='';
+if(['select','multiselect','radio','checkboxes','city'].includes(t)){h+=`<div class="full"><label>${esc(tr.options)}</label><textarea class="df-options" data-k="options">${esc((x.options||[]).join('\n'))}</textarea><div class="df-note"><?php echo addslashes(Text::_('COM_DECAROFORMS_OPTIONS_COMPACT_NOTE'));
+ ?></div></div>`;
+}
+if(['file','upload'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_UPLOAD_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_FILE_TYPES'));
+ ?></label><input data-cfg="accept" value="${esc(c.accept||'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_MB'));
+ ?></label><input type="number" min="1" max="25" data-cfg="max_mb" value="${esc(c.max_mb||5)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_FILES'));
+ ?></label><input type="number" min="1" max="10" data-cfg="max_files" value="${esc(c.max_files||1)}"></div><div class="df-required"><input type="checkbox" data-cfg-check="multiple" ${c.multiple?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MULTIPLE_FILES'));
+ ?></label></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BUTTON_LABEL'));
+ ?></label><input data-cfg="button_label" value="${esc(c.button_label||'')}"></div></div></div>`;
+}
+if(t==='range'){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_RANGE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label>Min</label><input type="number" data-cfg="min" value="${esc(c.min??0)}"></div><div><label>Max</label><input type="number" data-cfg="max" value="${esc(c.max??100)}"></div><div><label>Step</label><input ty
+
+--- 2 ---
+ed();
+renderLayoutCanvas();
+renderColumns();
+renderTokens();
+renderUserEmailFields();
+renderAdditional();
+sync();
+
+ document.querySelectorAll('[data-form-template],.df-saved-quick-use').forEach(x=>x.classList.toggle('is-active',x===button));
+
+ const quick=[...document.querySelectorAll('[data-accordion]')][1];
+
+ quick?.classList.remove('is-open');
+quick?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','false');
+
+ const fieldsSection=[...document.querySelectorAll('[data-accordion]')][2];
+
+ fieldsSection?.classList.add('is-open');
+fieldsSection?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
+
+}
+document.getElementById('df-save-structure')?.addEventListener('click',saveCurrentStructureAsQuickTemplate);
+
+document.addEventListener('click',e=>{
+ const use=e.target.closest('[data-saved-quick]');
+
+ if(use){e.preventDefault();
+e.stopPropagation();
+applySavedQuickTemplate(use.dataset.savedQuick,use);
+return;
+}
+ const del=e.target.closest('[data-saved-quick-delete]');
+
+ if(del){e.preventDefault();
+e.stopPropagation();
+const tpl=savedQuickTemplates.find(x=>x.id===del.dataset.savedQuickDelete);
+confirmDelete(`il modello salvato “${tpl?.name||'Modello personalizzato'}”`,()=>{savedQuickTemplates=savedQuickTemplates.filter(x=>x.id!==del.dataset.savedQuickDelete);
+persistSavedQuickTemplates();
+renderSavedQuickTemplates();
+});
+}
+});
+
+renderSavedQuickTemplates();
+
+
+
+
+// Accordion behavior.
+const accordionSections=[...document.querySelectorAll('[data-accordion]')];
+accordionSections.forEach((section,index)=>{const btn=section.querySelector('.df-section-toggle');
+const setOpen=open=>{section.classList.toggle('is-open',open);
+btn?.setAttribute('aria-expanded',open?'true':'false');
+};
+setOpen(index===0);
+btn?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+const open=!section.classList.contains('is-open');
+setOpen(open);
+});
+});
+
+
+let activeLibraryCategory='personal';
+
+function renderLibrary(){
+ const tabs=document.getElementById('df-library-tabs');
+
+ const q=(search.value||'').trim().toLowerCase();
+
+ const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
+
+ tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
+
+ tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
+renderLibrary();
+});
+
+ const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
+
+ lib.innerHTML='';
+
+ if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+return;
+}
+ const grid=document.createElement('div');
+grid.className='df-library-items-grid';
+
+ items.forEach(x=>{const d=document.createElement('div');
+d.className='df-lib-item';
+const saved=!!x._savedPresetId;
+d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
+d.querySelector('.df-add').onclick=()=>add(x);
+d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
+});
+grid.appendChild(d);
+});
+lib.appendChild(grid);
+
+}
+filter.innerHTML='';
+filter.hidden=true;
+search.addEventListener('input',renderLibrary);
+renderLibrary();
+
+
+function fieldSelectOptions(current=''){return selected.map(f=>`<option value="${esc(f.key)}" ${f.key===current?'selected':''}>${esc(f.label)} (${esc(f.key)})</option>`).join('');
+}
+function configHtml(x){const c=x.config||{},t=x.type;
+let h='';
+if(['select','multiselect','radio','checkboxes','city'].includes(t)){h+=`<div class="full"><label>${esc(tr.options)}</label><textarea class="df-options" data-k="options">${esc((x.options||[]).join('\n'))}</textarea><div class="df-note"><?php echo addslashes(Text::_('COM_DECAROFORMS_OPTIONS_COMPACT_NOTE'));
+ ?></div></div>`;
+}
+if(['file','upload'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_UPLOAD_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_FILE_TYPES'));
+ ?></label><input data-cfg="accept" value="${esc(c.accept||'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_MB'));
+ ?></label><input type="number" min="1" max="25" data-cfg="max_mb" value="${esc(c.max_mb||5)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_FILES'));
+ ?></label><input type="number" min="1" max="10" data-cfg="max_files" value="${esc(c.max_files||1)}"></div><div class="df-required"><input type="checkbox" data-cfg-check="multiple" ${c.multiple?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MULTIPLE_FILES'));
+ ?></label></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BUTTON_LABEL'));
+ ?></label><input data-cfg="button_label" value="${esc(c.button_label||'')}"></div></div></div>`;
+}
+if(t==='range'){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_RANGE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label>Min</label><input type="number" data-cfg="min" value="${esc(c.min??0)}"></div><div><label>Max</label><input type="number" data-cfg="max" value="${esc(c.max??100)}"></div><div><label>Step</label><input type="number" data-cfg="step" value="${esc(c.step??1)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_UNIT'));
+ ?></label><input data-cfg="unit" value="${esc(c.unit||'')}"></div><div class="df-required"><input type="checkbox" data-cfg-check="dual" ${c.dual?'checked':''}><label><?php echo addslashes(Text::_('COM_DE
+
+--- 3 ---
+'is-active',x===button));
+
+ const quick=[...document.querySelectorAll('[data-accordion]')][1];
+
+ quick?.classList.remove('is-open');
+quick?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','false');
+
+ const fieldsSection=[...document.querySelectorAll('[data-accordion]')][2];
+
+ fieldsSection?.classList.add('is-open');
+fieldsSection?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
+
+}
+document.getElementById('df-save-structure')?.addEventListener('click',saveCurrentStructureAsQuickTemplate);
+
+document.addEventListener('click',e=>{
+ const use=e.target.closest('[data-saved-quick]');
+
+ if(use){e.preventDefault();
+e.stopPropagation();
+applySavedQuickTemplate(use.dataset.savedQuick,use);
+return;
+}
+ const del=e.target.closest('[data-saved-quick-delete]');
+
+ if(del){e.preventDefault();
+e.stopPropagation();
+const tpl=savedQuickTemplates.find(x=>x.id===del.dataset.savedQuickDelete);
+confirmDelete(`il modello salvato “${tpl?.name||'Modello personalizzato'}”`,()=>{savedQuickTemplates=savedQuickTemplates.filter(x=>x.id!==del.dataset.savedQuickDelete);
+persistSavedQuickTemplates();
+renderSavedQuickTemplates();
+});
+}
+});
+
+renderSavedQuickTemplates();
+
+
+
+
+// Accordion behavior.
+const accordionSections=[...document.querySelectorAll('[data-accordion]')];
+accordionSections.forEach((section,index)=>{const btn=section.querySelector('.df-section-toggle');
+const setOpen=open=>{section.classList.toggle('is-open',open);
+btn?.setAttribute('aria-expanded',open?'true':'false');
+};
+setOpen(index===0);
+btn?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+const open=!section.classList.contains('is-open');
+setOpen(open);
+});
+});
+
+
+let activeLibraryCategory='personal';
+
+function renderLibrary(){
+ const tabs=document.getElementById('df-library-tabs');
+
+ const q=(search.value||'').trim().toLowerCase();
+
+ const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
+
+ tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
+
+ tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
+renderLibrary();
+});
+
+ const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
+
+ lib.innerHTML='';
+
+ if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+return;
+}
+ const grid=document.createElement('div');
+grid.className='df-library-items-grid';
+
+ items.forEach(x=>{const d=document.createElement('div');
+d.className='df-lib-item';
+const saved=!!x._savedPresetId;
+d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
+d.querySelector('.df-add').onclick=()=>add(x);
+d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
+});
+grid.appendChild(d);
+});
+lib.appendChild(grid);
+
+}
+filter.innerHTML='';
+filter.hidden=true;
+search.addEventListener('input',renderLibrary);
+renderLibrary();
+
+
+function fieldSelectOptions(current=''){return selected.map(f=>`<option value="${esc(f.key)}" ${f.key===current?'selected':''}>${esc(f.label)} (${esc(f.key)})</option>`).join('');
+}
+function configHtml(x){const c=x.config||{},t=x.type;
+let h='';
+if(['select','multiselect','radio','checkboxes','city'].includes(t)){h+=`<div class="full"><label>${esc(tr.options)}</label><textarea class="df-options" data-k="options">${esc((x.options||[]).join('\n'))}</textarea><div class="df-note"><?php echo addslashes(Text::_('COM_DECAROFORMS_OPTIONS_COMPACT_NOTE'));
+ ?></div></div>`;
+}
+if(['file','upload'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_UPLOAD_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_FILE_TYPES'));
+ ?></label><input data-cfg="accept" value="${esc(c.accept||'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_MB'));
+ ?></label><input type="number" min="1" max="25" data-cfg="max_mb" value="${esc(c.max_mb||5)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_FILES'));
+ ?></label><input type="number" min="1" max="10" data-cfg="max_files" value="${esc(c.max_files||1)}"></div><div class="df-required"><input type="checkbox" data-cfg-check="multiple" ${c.multiple?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MULTIPLE_FILES'));
+ ?></label></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BUTTON_LABEL'));
+ ?></label><input data-cfg="button_label" value="${esc(c.button_label||'')}"></div></div></div>`;
+}
+if(t==='range'){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_RANGE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label>Min</label><input type="number" data-cfg="min" value="${esc(c.min??0)}"></div><div><label>Max</label><input type="number" data-cfg="max" value="${esc(c.max??100)}"></div><div><label>Step</label><input type="number" data-cfg="step" value="${esc(c.step??1)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_UNIT'));
+ ?></label><input data-cfg="unit" value="${esc(c.unit||'')}"></div><div class="df-required"><input type="checkbox" data-cfg-check="dual" ${c.dual?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_DUAL_RANGE'));
+ ?></label></div></div></div>`;
+}
+if(['separator','pagebreak'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_LINE_SETTINGS'));
+ ?></
 
 --- 4 ---
-=uniqueKey(c.key);
-defaultFieldConfig(c);
-c.config.layout={...(c.config.layout||{}),row:insertRow,col:i+1,width:Number(f.config?.layout?.width||100)};
-return c;
-});
-selected.push(...copies);
-const copyMeta={...originalMeta,id:newRowId(),title:originalMeta.title?`${originalMeta.title} copia`:'',description:originalMeta.description||''};
-rowMetaStore()[String(insertRow)]=copyMeta;
-normalizeLayoutRows();
-sortSelectedByLayout();
-const newRow=rowNoForId(copyMeta.id)||insertRow;
-if(copies.length)smartFitRow(newRow);
-activeFieldKey=copies[0]?.key||activeFieldKey;
-activeStructureSelection={type:'row',id:copyMeta.id,row:newRow};
-layoutRowState.set(copyMeta.id,layoutRowState.get(originalMeta.id)??false);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-clearTimeout(historyTimer);
-pushHistory();
+tion=[...document.querySelectorAll('[data-accordion]')][2];
+
+ fieldsSection?.classList.add('is-open');
+fieldsSection?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
+
 }
-function requestRemoveLayoutRow(rowNo){rowNo=Math.max(1,Number(rowNo)||1);
-const items=fieldsInRow(rowNo).map(([f])=>f),count=items.length,meta=rowMeta(rowNo),title=rowDisplayTitle(rowNo),rowId=meta.id;
-confirmDelete(`la riga “${title}” con ${count} camp${count===1?'o':'i'}`,()=>{const refs=new Set(items);
-for(let i=selected.length-1;
-i>=0;
-i--){if(refs.has(selected[i]))selected.splice(i,1);
-}if(builderConfig?.layout?.row_meta)delete builderConfig.layout.row_meta[String(rowNo)];
-layoutRowState.delete(rowId);
-activeStructureSelection=null;
-activeFieldKey=selected[0]?.key||null;
-normalizeLayoutRows();
-repairInvalidRows();
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-clearTimeout(historyTimer);
-pushHistory();
+document.getElementById('df-save-structure')?.addEventListener('click',saveCurrentStructureAsQuickTemplate);
+
+document.addEventListener('click',e=>{
+ const use=e.target.closest('[data-saved-quick]');
+
+ if(use){e.preventDefault();
+e.stopPropagation();
+applySavedQuickTemplate(use.dataset.savedQuick,use);
+return;
+}
+ const del=e.target.closest('[data-saved-quick-delete]');
+
+ if(del){e.preventDefault();
+e.stopPropagation();
+const tpl=savedQuickTemplates.find(x=>x.id===del.dataset.savedQuickDelete);
+confirmDelete(`il modello salvato “${tpl?.name||'Modello personalizzato'}”`,()=>{savedQuickTemplates=savedQuickTemplates.filter(x=>x.id!==del.dataset.savedQuickDelete);
+persistSavedQuickTemplates();
+renderSavedQuickTemplates();
 });
 }
-function renderRowSettings(rowNo){const meta=rowMeta(rowNo);
-sel.innerHTML='';
-const d=document.createElement('div');
-d.className='df-selected-item is-open df-structure-settings';
-d.innerHTML=`<div class="df-selected-top"><div class="df-field-toggle-main"><strong>${esc(structureUi.rowSettings)}</strong><span class="df-field-summary"><span class="df-summary-chip">${esc(rowAutoLabel(rowNo))}</span></span></div><div class="df-mini-actions"><button type="button" data-row-copy class="df-icon-only" title="Duplica riga" aria-label="Duplica riga">${modernUiIcon('copy')}</button><button type="button" data-row-remove class="df-icon-only df-row-remove" title="Elimina riga" aria-label="Elimina riga">${modernUiIcon('trash')}</button></div></div><div class="df-selected-config-wrap"><div class="df-selected-config-inner"><div class="df-selected-config"><details class="full df-main-settings" open><summary>${esc(structureUi.rowSettings)}</summary><div class="df-main-settings-body"><div class="df-main-settings-grid"><div class="full"><label>${esc(structureUi.title)}</label><input data-row-title value="${esc(meta.title||'')}" placeholder="${esc(rowAutoLabel(rowNo))}"></div><div class="full"><label>${esc(structureUi.description)}</label><textarea class="df-options" data-row-description>${esc(meta.description||'')}</textarea></div><div class="full df-note">Titolo e descrizione della riga servono per organizzare più velocemente il Builder e non vengono inviati come dati del modulo.</div></div></div></details></div></div></div>`;
-d.querySelector('[data-row-title]').oninput=e=>{meta.title=e.target.value;
-sync();
-renderLayoutCanvas();
+});
+
+renderSavedQuickTemplates();
+
+
+
+
+// Accordion behavior.
+const accordionSections=[...document.querySelectorAll('[data-accordion]')];
+accordionSections.forEach((section,index)=>{const btn=section.querySelector('.df-section-toggle');
+const setOpen=open=>{section.classList.toggle('is-open',open);
+btn?.setAttribute('aria-expanded',open?'true':'false');
 };
-d.querySelector('[data-row-description]').oninput=e=>{meta.description=e.target.value;
-sync();
-renderLayoutCanvas();
-};
-d.querySelector('[data-row-copy]').oncli
+setOpen(index===0);
+btn?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+const open=!section.classList.contains('is-open');
+setOpen(open);
+});
+});
+
+
+let activeLibraryCategory='personal';
+
+function renderLibrary(){
+ const tabs=document.getElementById('df-library-tabs');
+
+ const q=(search.value||'').trim().toLowerCase();
+
+ const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
+
+ tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
+
+ tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
+renderLibrary();
+});
+
+ const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
+
+ lib.innerHTML='';
+
+ if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+return;
+}
+ const grid=document.createElement('div');
+grid.className='df-library-items-grid';
+
+ items.forEach(x=>{const d=document.createElement('div');
+d.className='df-lib-item';
+const saved=!!x._savedPresetId;
+d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
+d.querySelector('.df-add').onclick=()=>add(x);
+d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
+});
+grid.appendChild(d);
+});
+lib.appendChild(grid);
+
+}
+filter.innerHTML='';
+filter.hidden=true;
+search.addEventListener('input',renderLibrary);
+renderLibrary();
+
+
+function fieldSelectOptions(current=''){return selected.map(f=>`<option value="${esc(f.key)}" ${f.key===current?'selected':''}>${esc(f.label)} (${esc(f.key)})</option>`).join('');
+}
+function configHtml(x){const c=x.config||{},t=x.type;
+let h='';
+if(['select','multiselect','radio','checkboxes','city'].includes(t)){h+=`<div class="full"><label>${esc(tr.options)}</label><textarea class="df-options" data-k="options">${esc((x.options||[]).join('\n'))}</textarea><div class="df-note"><?php echo addslashes(Text::_('COM_DECAROFORMS_OPTIONS_COMPACT_NOTE'));
+ ?></div></div>`;
+}
+if(['file','upload'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_UPLOAD_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_FILE_TYPES'));
+ ?></label><input data-cfg="accept" value="${esc(c.accept||'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_MB'));
+ ?></label><input type="number" min="1" max="25" data-cfg="max_mb" value="${esc(c.max_mb||5)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_FILES'));
+ ?></label><input type="number" min="1" max="10" data-cfg="max_files" value="${esc(c.max_files||1)}"></div><div class="df-required"><input type="checkbox" data-cfg-check="multiple" ${c.multiple?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MULTIPLE_FILES'));
+ ?></label></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BUTTON_LABEL'));
+ ?></label><input data-cfg="button_label" value="${esc(c.button_label||'')}"></div></div></div>`;
+}
+if(t==='range'){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_RANGE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label>Min</label><input type="number" data-cfg="min" value="${esc(c.min??0)}"></div><div><label>Max</label><input type="number" data-cfg="max" value="${esc(c.max??100)}"></div><div><label>Step</label><input type="number" data-cfg="step" value="${esc(c.step??1)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_UNIT'));
+ ?></label><input data-cfg="unit" value="${esc(c.unit||'')}"></div><div class="df-required"><input type="checkbox" data-cfg-check="dual" ${c.dual?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_DUAL_RANGE'));
+ ?></label></div></div></div>`;
+}
+if(['separator','pagebreak'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_LINE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_COLOR'));
+ ?></label><input type="color" data-cfg="color" value="${esc(c.color||'#dfe3e7')}"></div><div><label><?php echo addslashes(Tex
 
 --- 5 ---
-els){conflict.hidden=false;
-conflict.className='df-status-warning';
-conflict.textContent='Attenzione: esistono campi con lo stesso nome. Usa la chiave mostrata tra parentesi per scegliere quello corretto.';
+open');
+fieldsSection?.querySelector('.df-section-toggle')?.setAttribute('aria-expanded','true');
+
 }
- d.querySelector('[data-act="save-preset"]').onclick=e=>{e.preventDefault();
+document.getElementById('df-save-structure')?.addEventListener('click',saveCurrentStructureAsQuickTemplate);
+
+document.addEventListener('click',e=>{
+ const use=e.target.closest('[data-saved-quick]');
+
+ if(use){e.preventDefault();
 e.stopPropagation();
-const btn=e.currentTarget;
-openActionModal({title:'Salva campo personalizzato',message:`Salvare “${x.label||'Campo'}” nella Libreria campi → Personalizzati?`,confirmLabel:'Salva',onConfirm:()=>{saveFieldPreset(x);
-btn.classList.add('is-saved');
-btn.title='Salvato nei campi personalizzati';
-setTimeout(()=>{btn.classList.remove('is-saved');
-btn.title='Salva come campo personalizzato';
-},1200);
-}});
-};
- d.querySelector('[data-act="up"]').onclick=()=>{if(i>0){[selected[i-1],selected[i]]=[selected[i],selected[i-1]];
-renderSelected();
-renderLayoutCanvas();
-}};
-d.querySelector('[data-act="down"]').onclick=()=>{if(i<selected.length-1){[selected[i+1],selected[i]]=[selected[i],selected[i+1]];
-renderSelected();
-renderLayoutCanvas();
-}};
-d.querySelector('[data-act="remove"]').onclick=()=>confirmDelete(`il campo “${x.label||'Campo'}”`,()=>{const removedRow=Number(x.config.layout.row||1);
-openFieldKeys.delete(x.key);
-selected.splice(i,1);
-activeFieldKey=selected[Math.min(i,selected.length-1)]?.key||null;
-normalizeLayoutRows();
-distributeRow(removedRow);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-});
-
- d.querySelector('[data-add-condition]')?.addEventListener('click',e=>{e.preventDefault();
-x.config.conditions.push({field:'',operator:'eq',value:''});
-renderSelected();
-setTimeout(()=>{const items=sel.querySelectorAll('.df-selected-item');
-items[i]?.querySelector('.df-condition-details')?.setAttribute('open','');
-},0);
-});
-d.querySelectorAll('[data-cond-field]').forEach(el=>el.addEventListener('change',()=>{x.config.conditions[Number(el.dataset.condField)].field=el.value;
-sync();
-}));
-d.querySelectorAll('[data-cond-op]').forEach(el=>el.addEventListener('change',()=>{x.config.conditions[Number(el.dataset.condOp)].operator=el.value;
-sync();
-}));
-d.querySelectorAll('[data-cond-value]').forEach(el=>el.addEventListener('input',()=>{x.config.conditions[Number(el.dataset.condValue)].value=el.value;
-sync();
-}));
-d.querySelectorAll('[data-cond-remove]').forEach(el=>el.addEventListener('click',()=>confirmDelete('questa condizione',()=>{x.config.conditions.splice(Number(el.dataset.condRemove),1);
-renderSelected();
-sync();
-})));
-sel.appendChild(d);
-});
-sync();
+applySavedQuickTemplate(use.dataset.savedQuick,use);
+return;
 }
+ const del=e.target.closest('[data-saved-quick-delete]');
 
-// Layout.
-const layoutColumns=document.getElementById('df-layout-columns'),layoutWidths=document.getElementById('df-layout-widths'),layoutTotal=document.getElementById('df-layout-total'),mobileStack=document.getElementById('df-layout-mobile-stack'),layoutCanvas=document.getElementById('df-layout-canvas'),layoutNewRow=document.getElementById('df-layout-newrow');
-
-let draggedFieldIndex=null;
-
-function normalizeLayoutRows(){
- builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};
-builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};
-
- const oldMeta=rowMetaStore(),rows=logicalRowNumbers(),legacyLabels=Number(builderConfig.layout.row_label_version||0)<1;
-
- let seq=rowLabelSeq();
-Object.values(oldMeta).forEach(meta=>{const n=Math.floor(Number(meta?.display_no)||0);
-if(n>seq)seq=n;
+ if(del){e.preventDefault();
+e.stopPropagation();
+const tpl=savedQuickTemplates.find(x=>x.id===del.dataset.savedQuickDelete);
+confirmDelete(`il modello salvato “${tpl?.name||'Modello personalizzato'}”`,()=>{savedQuickTemplates=savedQuickTemplates.filter(x=>x.id!==del.dataset.savedQuickDelete);
+persistSavedQuickTemplates();
+renderSavedQuickTemplates();
+});
+}
 });
 
- if(!rows.length){builderConfig.layo
+renderSavedQuickTemplates();
+
+
+
+
+// Accordion behavior.
+const accordionSections=[...document.querySelectorAll('[data-accordion]')];
+accordionSections.forEach((section,index)=>{const btn=section.querySelector('.df-section-toggle');
+const setOpen=open=>{section.classList.toggle('is-open',open);
+btn?.setAttribute('aria-expanded',open?'true':'false');
+};
+setOpen(index===0);
+btn?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+const open=!section.classList.contains('is-open');
+setOpen(open);
+});
+});
+
+
+let activeLibraryCategory='personal';
+
+function renderLibrary(){
+ const tabs=document.getElementById('df-library-tabs');
+
+ const q=(search.value||'').trim().toLowerCase();
+
+ const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
+
+ tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
+
+ tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
+renderLibrary();
+});
+
+ const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
+
+ lib.innerHTML='';
+
+ if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+return;
+}
+ const grid=document.createElement('div');
+grid.className='df-library-items-grid';
+
+ items.forEach(x=>{const d=document.createElement('div');
+d.className='df-lib-item';
+const saved=!!x._savedPresetId;
+d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
+d.querySelector('.df-add').onclick=()=>add(x);
+d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
+});
+grid.appendChild(d);
+});
+lib.appendChild(grid);
+
+}
+filter.innerHTML='';
+filter.hidden=true;
+search.addEventListener('input',renderLibrary);
+renderLibrary();
+
+
+function fieldSelectOptions(current=''){return selected.map(f=>`<option value="${esc(f.key)}" ${f.key===current?'selected':''}>${esc(f.label)} (${esc(f.key)})</option>`).join('');
+}
+function configHtml(x){const c=x.config||{},t=x.type;
+let h='';
+if(['select','multiselect','radio','checkboxes','city'].includes(t)){h+=`<div class="full"><label>${esc(tr.options)}</label><textarea class="df-options" data-k="options">${esc((x.options||[]).join('\n'))}</textarea><div class="df-note"><?php echo addslashes(Text::_('COM_DECAROFORMS_OPTIONS_COMPACT_NOTE'));
+ ?></div></div>`;
+}
+if(['file','upload'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_UPLOAD_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_FILE_TYPES'));
+ ?></label><input data-cfg="accept" value="${esc(c.accept||'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_MB'));
+ ?></label><input type="number" min="1" max="25" data-cfg="max_mb" value="${esc(c.max_mb||5)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_FILES'));
+ ?></label><input type="number" min="1" max="10" data-cfg="max_files" value="${esc(c.max_files||1)}"></div><div class="df-required"><input type="checkbox" data-cfg-check="multiple" ${c.multiple?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MULTIPLE_FILES'));
+ ?></label></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BUTTON_LABEL'));
+ ?></label><input data-cfg="button_label" value="${esc(c.button_label||'')}"></div></div></div>`;
+}
+if(t==='range'){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_RANGE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label>Min</label><input type="number" data-cfg="min" value="${esc(c.min??0)}"></div><div><label>Max</label><input type="number" data-cfg="max" value="${esc(c.max??100)}"></div><div><label>Step</label><input type="number" data-cfg="step" value="${esc(c.step??1)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_UNIT'));
+ ?></label><input data-cfg="unit" value="${esc(c.unit||'')}"></div><div class="df-required"><input type="checkbox" data-cfg-check="dual" ${c.dual?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_DUAL_RANGE'));
+ ?></label></div></div></div>`;
+}
+if(['separator','pagebreak'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_LINE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_COLOR'));
+ ?></label><input type="color" data-cfg="color" value="${esc(c.color||'#dfe3e7')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BORDER_WIDTH'));
+ ?> (px)</label><input type="number" min="0" max="20" da
 
 --- 6 ---
-sRight){field.config.layout.offset_before=100-width;
-delete field.config.layout.offset_after;
-}else{field.config.layout.offset_after=100-width;
-delete field.config.layout.offset_before;
-}}else if(width===100){members.forEach(f=>{smartClearOffsets(f);
-f.config.layout.width=100;
+tion-toggle')?.setAttribute('aria-expanded','true');
+
+}
+document.getElementById('df-save-structure')?.addEventListener('click',saveCurrentStructureAsQuickTemplate);
+
+document.addEventListener('click',e=>{
+ const use=e.target.closest('[data-saved-quick]');
+
+ if(use){e.preventDefault();
+e.stopPropagation();
+applySavedQuickTemplate(use.dataset.savedQuick,use);
+return;
+}
+ const del=e.target.closest('[data-saved-quick-delete]');
+
+ if(del){e.preventDefault();
+e.stopPropagation();
+const tpl=savedQuickTemplates.find(x=>x.id===del.dataset.savedQuickDelete);
+confirmDelete(`il modello salvato “${tpl?.name||'Modello personalizzato'}”`,()=>{savedQuickTemplates=savedQuickTemplates.filter(x=>x.id!==del.dataset.savedQuickDelete);
+persistSavedQuickTemplates();
+renderSavedQuickTemplates();
 });
-}else{members.forEach(f=>smartClearOffsets(f));
-field.config.layout.width=width;
-const others=members.filter(f=>f!==field),remaining=100-width,base=Math.floor(remaining/Math.max(1,others.length)),extra=remaining-base*Math.max(1,others.length);
-others.forEach((f,i)=>f.config.layout.width=Math.max(1,base+(i<extra?1:0)));
-}normalizeVisualLines(row);
-sync();
-renderSelected();
-renderLayoutCanvas();
 }
-function selectField(index){if(index==null||!selected[index])return;
-activeStructureSelection=null;
-activeFieldKey=selected[index].key;
-openFieldKeys.clear();
-openFieldKeys.add(activeFieldKey);
-renderSelected();
-document.querySelectorAll('.df-layout-card').forEach(card=>card.classList.toggle('is-active',card.dataset.fieldKey===activeFieldKey));
-}
-function duplicateField(index){if(index==null||!selected[index])return;
-const copy=clone(selected[index]);
-copy.key=uniqueKey(copy.key);
-copy.label=`${copy.label} copia`;
-defaultFieldConfig(copy);
-selected.splice(index+1,0,copy);
-activeFieldKey=copy.key;
-openFieldKeys.clear();
-openFieldKeys.add(copy.key);
-normalizeLayoutRows();
-smartFitRow(copy.config.layout.row);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-}
-function removeCanvasField(index){if(index==null||!selected[index])return;
-const field=selected[index],old=field.key,oldRow=Number(field.config.layout.row||1),wasSection=isLayoutSectionField(field),line=visualLineForField(field),rest=line.map(([f])=>f).filter(f=>f!==field);
-if(rest.length){const auto=smartAutoWidths(rest.length);
-rest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-if(wasSection&&builderConfig?.layout?.row_meta)delete builderConfig.layout.row_meta[String(oldRow)];
-openFieldKeys.delete(old);
-activeFieldKey=selected[Math.min(index,selected.length-1)]?.key||null;
-normalizeLayoutRows();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-}
-function moveFieldToRow(index,row,targetIndex=null){if(index==null||!selected[index])return;
-const field=selected[index],oldRow=Number(field.config.layout.row||1),sourceLine=visualLineForField(field),sourceRest=sourceLine.map(([f])=>f).filter(f=>f!==field);
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-row=Math.max(1,Number(row)||1);
-const targetItems=fieldsInRow(row).map(([f])=>f).filter(f=>f!==field);
-field.config.layout={...(field.config.layout||{}),row,col:targetItems.length+1,width:100};
-targetItems.push(field);
-setLogicalRowOrder(row,targetItems);
-selected.push(field);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||row));
-activeFieldKey=field.key;
-sync();
-renderSelected();
-renderLayoutCanvas();
-}
-function moveFieldBeside(index,targetIndex,position='after'){if(smartMoveBeside(index,target
-
---- 7 ---
-electField(index){if(index==null||!selected[index])return;
-activeStructureSelection=null;
-activeFieldKey=selected[index].key;
-openFieldKeys.clear();
-openFieldKeys.add(activeFieldKey);
-renderSelected();
-document.querySelectorAll('.df-layout-card').forEach(card=>card.classList.toggle('is-active',card.dataset.fieldKey===activeFieldKey));
-}
-function duplicateField(index){if(index==null||!selected[index])return;
-const copy=clone(selected[index]);
-copy.key=uniqueKey(copy.key);
-copy.label=`${copy.label} copia`;
-defaultFieldConfig(copy);
-selected.splice(index+1,0,copy);
-activeFieldKey=copy.key;
-openFieldKeys.clear();
-openFieldKeys.add(copy.key);
-normalizeLayoutRows();
-smartFitRow(copy.config.layout.row);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-sync();
-}
-function removeCanvasField(index){if(index==null||!selected[index])return;
-const field=selected[index],old=field.key,oldRow=Number(field.config.layout.row||1),wasSection=isLayoutSectionField(field),line=visualLineForField(field),rest=line.map(([f])=>f).filter(f=>f!==field);
-if(rest.length){const auto=smartAutoWidths(rest.length);
-rest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-if(wasSection&&builderConfig?.layout?.row_meta)delete builderConfig.layout.row_meta[String(oldRow)];
-openFieldKeys.delete(old);
-activeFieldKey=selected[Math.min(index,selected.length-1)]?.key||null;
-normalizeLayoutRows();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-}
-function moveFieldToRow(index,row,targetIndex=null){if(index==null||!selected[index])return;
-const field=selected[index],oldRow=Number(field.config.layout.row||1),sourceLine=visualLineForField(field),sourceRest=sourceLine.map(([f])=>f).filter(f=>f!==field);
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-row=Math.max(1,Number(row)||1);
-const targetItems=fieldsInRow(row).map(([f])=>f).filter(f=>f!==field);
-field.config.layout={...(field.config.layout||{}),row,col:targetItems.length+1,width:100};
-targetItems.push(field);
-setLogicalRowOrder(row,targetItems);
-selected.push(field);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||row));
-activeFieldKey=field.key;
-sync();
-renderSelected();
-renderLayoutCanvas();
-}
-function moveFieldBeside(index,targetIndex,position='after'){if(smartMoveBeside(index,targetIndex,position)){sortSelectedByLayout();
-sync();
-renderSelected();
-renderLayoutCanvas();
-}}
-function moveFieldToNewRowAfter(index,afterRow){if(index==null||!selected[index])return;
-if(smartMoveNewRow(index,Number(afterRow),'after')){sortSelectedByLayout();
-sync();
-renderSelected();
-renderLayoutCanvas();
-}}
-
-/* Forms 1.3.67: intelligent field drag & drop. No external dependency. */
-const smartDrag={pending:null,active:false,pointerId:null,pointerType:'',fieldKey:'',sourceCard:null,sourceRow:null,ghost:null,spec:null,specKey:'',pressTimer:null,lastX:0,lastY:0,originX:0,originY:0,grabXRatio:.5,grabYRatio:.5,sourceWidth:0,sourceHeight:0,intentAxis:'',intentLockX:0,intentLockY:0,ra
-
---- 8 ---
-st field=selected[index],old=field.key,oldRow=Number(field.config.layout.row||1),wasSection=isLayoutSectionField(field),line=visualLineForField(field),rest=line.map(([f])=>f).filter(f=>f!==field);
-if(rest.length){const auto=smartAutoWidths(rest.length);
-rest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-if(wasSection&&builderConfig?.layout?.row_meta)delete builderConfig.layout.row_meta[String(oldRow)];
-openFieldKeys.delete(old);
-activeFieldKey=selected[Math.min(index,selected.length-1)]?.key||null;
-normalizeLayoutRows();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-renderSelected();
-renderLayoutCanvas();
-renderColumns();
-renderTokens();
-renderUserEmailFields();
-renderAdditional();
-sync();
-}
-function moveFieldToRow(index,row,targetIndex=null){if(index==null||!selected[index])return;
-const field=selected[index],oldRow=Number(field.config.layout.row||1),sourceLine=visualLineForField(field),sourceRest=sourceLine.map(([f])=>f).filter(f=>f!==field);
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}selected.splice(index,1);
-row=Math.max(1,Number(row)||1);
-const targetItems=fieldsInRow(row).map(([f])=>f).filter(f=>f!==field);
-field.config.layout={...(field.config.layout||{}),row,col:targetItems.length+1,width:100};
-targetItems.push(field);
-setLogicalRowOrder(row,targetItems);
-selected.push(field);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||row));
-activeFieldKey=field.key;
-sync();
-renderSelected();
-renderLayoutCanvas();
-}
-function moveFieldBeside(index,targetIndex,position='after'){if(smartMoveBeside(index,targetIndex,position)){sortSelectedByLayout();
-sync();
-renderSelected();
-renderLayoutCanvas();
-}}
-function moveFieldToNewRowAfter(index,afterRow){if(index==null||!selected[index])return;
-if(smartMoveNewRow(index,Number(afterRow),'after')){sortSelectedByLayout();
-sync();
-renderSelected();
-renderLayoutCanvas();
-}}
-
-/* Forms 1.3.67: intelligent field drag & drop. No external dependency. */
-const smartDrag={pending:null,active:false,pointerId:null,pointerType:'',fieldKey:'',sourceCard:null,sourceRow:null,ghost:null,spec:null,specKey:'',pressTimer:null,lastX:0,lastY:0,originX:0,originY:0,grabXRatio:.5,grabYRatio:.5,sourceWidth:0,sourceHeight:0,intentAxis:'',intentLockX:0,intentLockY:0,raf:0,queuedX:0,queuedY:0,ghostWidth:0,ghostHeight:0};
-
-let smartSuppressClickUntil=0;
-
-const smartDragIgnoreSelector='button,select,input,textarea,a,label,[contenteditable="true"],summary,details';
-
-function smartFieldIndex(key){return selected.findIndex(f=>f.key===key);
-}
-function smartFieldByKey(key){const i=smartFieldIndex(key);
-return i>=0?selected[i]:null;
-}
-function smartSpecId(spec){return spec?`${spec.kind}:${spec.targetKey||''}:${spec.row||''}:${spec.position||''}:${spec.slot?'slot':''}`:'';
-}
-function smartCaptureRects(){const map=new Map();
-layoutCanvas?.querySelectorAll('.df-layout-card:not(.df-smart-source-hidden)').forEach(el=>{const r=el.getBoundingClientRect();
-if(r.width&&r.height)map.set(el.dataset.fieldKey,{left:r.left,top:r.top});
-});
-return map;
-}
-function smartAnimateFrom(before){if(!before?.size)return;
-requestAnimationFrame(()=>{layoutCanvas?.qu
-
---- 9 ---
-ems.indexOf(targetLine[targetLine.length-1]);
-if(first<0||last<0)return smartMoveToExistingRow(index,targetRow,targetKey);
-const at=position==='before'?first:last+1;
-smartClearOffsets(field);
-field.config.layout={...(field.config.layout||{}),row:targetRow,col:at+1,width:100};
-targetItems.splice(at,0,field);
-setLogicalRowOrder(targetRow,targetItems);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(targetRow);
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-}
-function smartMoveToExistingRow(index,targetRow,targetKey=null){if(index<0||!selected[index])return false;
-targetRow=Math.max(1,Number(targetRow)||1);
-const field=selected[index],oldRow=Number(field.config?.layout?.row||1),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}const target=targetKey?selected.find(f=>f.key===targetKey):null,targetLine=target?visualLineForField(target).map(([f])=>f).filter(f=>f!==field):[];
-selected.splice(index,1);
-const targetItems=fieldsInRow(targetRow).map(([f])=>f).filter(f=>f!==field);
-let at=targetItems.length;
-if(targetLine.length){const last=targetLine[targetLine.length-1],li=targetItems.indexOf(last);
-if(li>=0)at=li+1;
-}smartClearOffsets(field);
-field.config.layout={...(field.config.layout||{}),row:targetRow,col:at+1,width:100};
-targetItems.splice(at,0,field);
-setLogicalRowOrder(targetRow,targetItems);
-selected.push(field);
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>Number(f.config?.layout?.row||1)===oldRow))normalizeVisualLines(oldRow);
-normalizeVisualLines(Number(field.config.layout.row||targetRow));
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-}
-function smartMoveToSlot(index,position='left'){if(index<0||!selected[index])return false;
-const field=selected[index],line=visualLineForField(field).map(([f])=>f);
-if(line.length!==1)return false;
-field.config.layout.width=50;
-if(position==='right'){field.config.layout.offset_before=50;
-delete field.config.layout.offset_after;
-}else{field.config.layout.offset_after=50;
-delete field.config.layout.offset_before;
-}normalizeVisualLines(Number(field.config.layout.row||1));
-activeStructureSelection=null;
-activeFieldKey=field.key;
-return true;
-} function smartMoveNewRow(index,targetRow,position='after'){if(index<0||!selected[index])return false;
-const field=selected[index],oldRow=Number(field.config?.layout?.row||1),oldItems=fieldsInRow(oldRow).map(([f])=>f),sourceLine=visualLineForField(field).map(([f])=>f),sourceRest=sourceLine.filter(f=>f!==field);
-if(oldRow===Number(targetRow)&&oldItems.length===1)return false;
-if(sourceRest.length){const auto=smartAutoWidths(sourceRest.length);
-sourceRest.forEach((f,i)=>{smartClearOffsets(f);
-f.config.layout.width=auto[i]??100;
-});
-}const insertRow=Math.max(1,Number(targetRow)+(position==='after'?1:0));
-smartShiftRowMeta(insertRow);
-selected.forEach(f=>{defaultFieldConfig(f);
-if(f!==field&&Number(f.config.layout.row||1)>=insertRow)f.config.layout.row=Number(f.config.layout.row)+1;
-});
-smartClearOffsets(field);
-field.config.layout={...(field.config.layout||{}),row:insertRow,col:1,width:100};
-normalizeLayoutRows();
-sortSelectedByLayout();
-if(selected.some(f=>N
-
---- 10 ---
-`),openState=sectionKey?null:(layoutRowState.has(rowId)?!!layoutRowState.get(rowId):!!node?.classList.contains('is-open'));
-
-  return{rowNo,rowId,fields,meta:storedMeta,sectionKey,openState};
-
- });
-
-}
-function structureApplyBlocks(blocks){
- builderConfig=builderConfig&&typeof builderConfig==='object'?builderConfig:{};
-builderConfig.layout=builderConfig.layout&&typeof builderConfig.layout==='object'?builderConfig.layout:{};
-
- const nextMeta={},ordered=[],nextRowState=new Map();
-
- blocks.forEach((block,bi)=>{
-  const row=bi+1,meta=block.meta&&typeof block.meta==='object'?clone(block.meta):{title:'',description:''};
-if(!meta.id)meta.id=block.rowId||newRowId();
-if(typeof meta.title!=='string')meta.title='';
-if(typeof meta.description!=='string')meta.description='';
-block.rowId=meta.id;
-nextMeta[String(row)]=meta;
-
-  if(!block.sectionKey&&block.openState!==null&&block.openState!==undefined)nextRowState.set(meta.id,!!block.openState);
-
-  block.fields.forEach((f,ci)=>{defaultFieldConfig(f);
-f.config.layout={...(f.config.layout||{}),row,col:ci+1};
-ordered.push(f);
 });
 
- });
+renderSavedQuickTemplates();
 
- builderConfig.layout.row_meta=nextMeta;
-layoutRowState.clear();
-nextRowState.forEach((value,id)=>layoutRowState.set(String(id),value));
-selected.splice(0,selected.length,...ordered);
-sortSelectedByLayout();
-refreshActiveRowSelection();
 
-}
-function structureSectionRange(blocks,sectionId){
- if(sectionId==='general'){const end=blocks.findIndex(b=>b.sectionKey);
-return{start:0,end:end<0?blocks.length:end};
-}
- const key=String(sectionId||'').replace(/^section:/,'');
-const start=blocks.findIndex(b=>b.sectionKey===key);
-if(start<0)return null;
-let end=blocks.length;
-for(let i=start+1;
-i<blocks.length;
-i++){if(blocks[i].sectionKey){end=i;
-break;
-}}return{start,end};
 
-}
-function remapSectionCloneRefs(value,keyMap){
- if(Array.isArray(value))return value.map(v=>remapSectionCloneRefs(v,keyMap));
 
- if(value&&typeof value==='object'){Object.keys(value).forEach(k=>{value[k]=remapSectionCloneRefs(value[k],keyMap);
-});
-return value;
-}
- if(typeof value==='string'&&keyMap.has(value))return keyMap.get(value);
-
- return value;
-
-}
-function duplicateLayoutSection(sectionId){
- if(!sectionId||sectionId==='general')return false;
-
- const blocks=structureRowBlocks(),range=structureSectionRange(blocks,sectionId);
-if(!range||range.start>=range.end)return false;
-
- const source=blocks.slice(range.start,range.end),used=new Set(selected.map(f=>String(f.key||''))),keyMap=new Map(),pairs=[];
-
- const reserveKey=base=>{const stem=String(base||'field').replace(/[^a-zA-Z0-9_]+/g,'_')||'field';
-let n=2,k=`${stem}_${n}`;
-while(used.has(k)){n++;
-k=`${stem}_${n}`;
-}used.add(k);
-return k;
+// Accordion behavior.
+const accordionSections=[...document.querySelectorAll('[data-accordion]')];
+accordionSections.forEach((section,index)=>{const btn=section.querySelector('.df-section-toggle');
+const setOpen=open=>{section.classList.toggle('is-open',open);
+btn?.setAttribute('aria-expanded',open?'true':'false');
 };
-
- source.forEach(block=>block.fields.forEach(f=>{const cf=clone(f),oldKey=String(f.key||'');
-cf.key=reserveKey(oldKey);
-if(oldKey)keyMap.set(oldKey,cf.key);
-pairs.push({original:f,copy:cf});
-}));
-
- pairs.forEach(({copy})=>{const keepKey=copy.key;
-remapSectionCloneRefs(copy,keyMap);
-copy.key=keepKey;
-defaultFieldConfig(copy);
+setOpen(index===0);
+btn?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+const open=!section.classList.contains('is-open');
+setOpen(open);
+});
 });
 
- let pi=0,newSectionKey='';
 
- const clones=source.map(block=>{const fields=block.fields.map(()=>pairs[pi++].copy),marker=fields.find(isLayoutSectionField),meta=block.meta?clone(block.meta):{title:'',description:''};
-meta.id=newRowId();
-if(marker&&!newSectionKey){marker.label=`${String(marker.label||structureUi.section).trim()||structureUi.section} copia`;
-newSectionKey=marker.key;
-}return{rowNo:0,rowId:meta.id,fields,meta,sectionKey:marker?.key||null,openState:block.openSt
+let activeLibraryCategory='personal';
 
-===== TOKEN type:'section' =====
+function renderLibrary(){
+ const tabs=document.getElementById('df-library-tabs');
 
-===== TOKEN type:"section" =====
+ const q=(search.value||'').trim().toLowerCase();
 
-===== TOKEN layout_section =====
+ const counts=Object.fromEntries(categoryOrder.map(c=>[c,library.filter(x=>x.category===c).length]));
 
-===== TOKEN structure_section =====
+ tabs.innerHTML=`<button type="button" class="df-library-tab ${activeLibraryCategory==='all'?'is-active':''}" data-libcat="all">Tutti <span class="df-library-tab-count">${library.length}</span></button>`+categoryOrder.map(c=>`<button type="button" class="df-library-tab ${activeLibraryCategory===c?'is-active':''}" data-libcat="${c}">${esc(tr.cats[c]||c)} <span class="df-library-tab-count">${counts[c]||0}</span></button>`).join('');
 
-===== TOKEN category:'structure' =====
+ tabs.querySelectorAll('[data-libcat]').forEach(b=>b.onclick=()=>{activeLibraryCategory=b.dataset.libcat;
+renderLibrary();
+});
 
-===== TOKEN category:"structure" =====
+ const items=library.filter(x=>(q||activeLibraryCategory==='all'||x.category===activeLibraryCategory)&&(!q||`${x.label} ${x.key} ${x.type} ${tr.cats[x.category]||''}`.toLowerCase().includes(q)));
+
+ lib.innerHTML='';
+
+ if(!items.length){lib.innerHTML='<div class="df-library-empty">Nessun campo trovato.</div>';
+return;
+}
+ const grid=document.createElement('div');
+grid.className='df-library-items-grid';
+
+ items.forEach(x=>{const d=document.createElement('div');
+d.className='df-lib-item';
+const saved=!!x._savedPresetId;
+d.innerHTML=`<div><strong>${esc(x.label)}</strong><small>${esc(tr.cats[x.category]||x.category)} · ${esc(tr.types[x.type]||x.type)}${saved?' · Salvato':''}</small></div><div class="df-lib-actions"><button class="df-add" type="button">${esc(tr.add)}</button>${saved?`<button class="df-lib-delete df-icon-only" type="button" title="${esc(tr.remove)}" aria-label="${esc(tr.remove)}">${modernUiIcon('trash')}</button>`:''}</div>`;
+d.querySelector('.df-add').onclick=()=>add(x);
+d.querySelector('.df-lib-delete')?.addEventListener('click',e=>{e.preventDefault();
+e.stopPropagation();
+confirmDelete(`il campo personalizzato “${x.label||'Campo'}”`,()=>deleteSavedFieldPreset(x._savedPresetId));
+});
+grid.appendChild(d);
+});
+lib.appendChild(grid);
+
+}
+filter.innerHTML='';
+filter.hidden=true;
+search.addEventListener('input',renderLibrary);
+renderLibrary();
+
+
+function fieldSelectOptions(current=''){return selected.map(f=>`<option value="${esc(f.key)}" ${f.key===current?'selected':''}>${esc(f.label)} (${esc(f.key)})</option>`).join('');
+}
+function configHtml(x){const c=x.config||{},t=x.type;
+let h='';
+if(['select','multiselect','radio','checkboxes','city'].includes(t)){h+=`<div class="full"><label>${esc(tr.options)}</label><textarea class="df-options" data-k="options">${esc((x.options||[]).join('\n'))}</textarea><div class="df-note"><?php echo addslashes(Text::_('COM_DECAROFORMS_OPTIONS_COMPACT_NOTE'));
+ ?></div></div>`;
+}
+if(['file','upload'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_UPLOAD_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_FILE_TYPES'));
+ ?></label><input data-cfg="accept" value="${esc(c.accept||'.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_MB'));
+ ?></label><input type="number" min="1" max="25" data-cfg="max_mb" value="${esc(c.max_mb||5)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MAX_FILES'));
+ ?></label><input type="number" min="1" max="10" data-cfg="max_files" value="${esc(c.max_files||1)}"></div><div class="df-required"><input type="checkbox" data-cfg-check="multiple" ${c.multiple?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_MULTIPLE_FILES'));
+ ?></label></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BUTTON_LABEL'));
+ ?></label><input data-cfg="button_label" value="${esc(c.button_label||'')}"></div></div></div>`;
+}
+if(t==='range'){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_RANGE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label>Min</label><input type="number" data-cfg="min" value="${esc(c.min??0)}"></div><div><label>Max</label><input type="number" data-cfg="max" value="${esc(c.max??100)}"></div><div><label>Step</label><input type="number" data-cfg="step" value="${esc(c.step??1)}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_UNIT'));
+ ?></label><input data-cfg="unit" value="${esc(c.unit||'')}"></div><div class="df-required"><input type="checkbox" data-cfg-check="dual" ${c.dual?'checked':''}><label><?php echo addslashes(Text::_('COM_DECAROFORMS_DUAL_RANGE'));
+ ?></label></div></div></div>`;
+}
+if(['separator','pagebreak'].includes(t)){h+=`<div class="df-config-panel"><strong><?php echo addslashes(Text::_('COM_DECAROFORMS_LINE_SETTINGS'));
+ ?></strong><div class="df-config-grid"><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_COLOR'));
+ ?></label><input type="color" data-cfg="color" value="${esc(c.color||'#dfe3e7')}"></div><div><label><?php echo addslashes(Text::_('COM_DECAROFORMS_BORDER_WIDTH'));
+ ?> (px)</label><input type="number" min="0" max="20" data-cfg="border_width" value="${esc(c.border_

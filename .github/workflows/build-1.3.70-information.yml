@@ -17,9 +17,25 @@ jobs:
 
       - name: Build and validate Forms 1.3.70
         shell: bash
-        run: bash tools/build-1.3.70-information-standard.sh
+        run: |
+          set +e
+          bash tools/build-1.3.70-information-standard.sh 2>&1 | tee /tmp/forms-1.3.70-build.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+
+      - name: Commit failure log
+        if: failure()
+        shell: bash
+        run: |
+          cp /tmp/forms-1.3.70-build.log tools/_build-1.3.70-information-failure.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/_build-1.3.70-information-failure.log
+          git commit -m "Record Forms 1.3.70 build failure" || exit 0
+          git push
 
       - name: Commit generated release
+        if: success()
         shell: bash
         run: |
           git config user.name "github-actions[bot]"

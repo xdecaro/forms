@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.72</version>
+		<note>Informazioni: sostituita l'etichetta superiore ridondante con il nome prodotto FORMS. Traduzioni IT/EN/FR allineate; Builder, database e logica applicativa invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.71</version>
 		<note>Hotfix Informazioni: corretto il percorso WebAssetManager di information.css e information.js. Joomla aggiunge automaticamente le directory css/js agli URI degli asset dell'estensione; la 1.3.70 richiedeva quindi un percorso duplicato e la pagina risultava senza stile. Guida e Informazioni restano separate; Builder, drag, database e logica applicativa invariati.</note>
 	</changelog>

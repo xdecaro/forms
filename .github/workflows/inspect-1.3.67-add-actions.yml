@@ -1,0 +1,22 @@
+name: Inspect Forms 1.3.67 Add Actions
+on:
+  push:
+    paths:
+      - 'tools/inspect-1.3.67-add-actions.sh'
+      - '.github/workflows/inspect-1.3.67-add-actions.yml'
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect
+        run: bash tools/inspect-1.3.67-add-actions.sh
+      - name: Commit report
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/inspect-1.3.67-add-actions-report.txt
+          git diff --cached --quiet || git commit -m 'Audit Forms 1.3.67 add actions'
+          git push

@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.69</version>
+		<note>Builder: corretto lo stato gerarchico di selezione. Il Campo realmente attivo ora riceve background viola visibile, barra sinistra 4px e bordo viola; quando si passa tra Sezione, Riga e Campo il canvas viene ridisegnato eliminando classi is-selected obsolete. Una sola selezione reale alla volta; Sezione e Riga padre restano evidenziate solo come contesto (16% / 11%), Campo attivo 9%. Motori drag e dati invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.68</version>
 		<note>Builder: aggiunti Aggiungi sezione e Aggiungi riga accanto ad Aggiungi campo e Importa con AI. La nuova Sezione nasce vuota in fondo; la nuova Riga nasce vuota nel contesto della Sezione/Riga/Campo selezionato, altrimenti in Generale. Clic sul centro di Sezione e Riga ora seleziona anche l'accordion e mostra subito lo stato viola. Gerarchia viola invertita e piu leggibile: Sezione 16%, Riga 11%, Campo 8% con barra attiva 4px. Drag, 59px, Row ID, 50/50, Undo/Redo, salvataggio e dark mode preservati.</note>
 	</changelog>

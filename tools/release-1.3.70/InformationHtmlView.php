@@ -43,6 +43,14 @@ final class HtmlView extends BaseHtmlView
             );
         }
 
+        foreach ([
+            'COM_DECAROFORMS_INFO_DIAGNOSTICS_COPIED',
+            'COM_DECAROFORMS_INFO_DIAGNOSTICS_COPY_FAILED',
+            'COM_DECAROFORMS_INFO_DIAGNOSTICS_DOWNLOADED',
+        ] as $key) {
+            Text::script($key);
+        }
+
         $wa->useStyle('com_decaroforms.information');
         $wa->useScript('com_decaroforms.information');
 

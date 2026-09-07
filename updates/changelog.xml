@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.3.68</version>
+		<note>Builder: aggiunti Aggiungi sezione e Aggiungi riga accanto ad Aggiungi campo e Importa con AI. La nuova Sezione nasce vuota in fondo; la nuova Riga nasce vuota nel contesto della Sezione/Riga/Campo selezionato, altrimenti in Generale. Clic sul centro di Sezione e Riga ora seleziona anche l'accordion e mostra subito lo stato viola. Gerarchia viola invertita e piu leggibile: Sezione 16%, Riga 11%, Campo 8% con barra attiva 4px. Drag, 59px, Row ID, 50/50, Undo/Redo, salvataggio e dark mode preservati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.3.67</version>
 		<note>Builder: evidenziazione gerarchica viola dell'elemento in modifica. Sezione attiva forte; Riga attiva forte con Sezione padre leggera; Campo attivo più evidente con Riga padre media e Sezione padre leggera. Una sola selezione reale, genitori solo contestuali. Altezza uniforme 59px, light/dark e motori drag approvati invariati.</note>
 	</changelog>

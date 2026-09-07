@@ -13,37 +13,17 @@ from pathlib import Path
 import re,sys
 s=Path(sys.argv[1]).read_text(encoding='utf-8')
 
-def func(name):
-    start=s.find('function '+name+'(')
-    if start<0:return 'NOT FOUND'
-    brace=s.find('{',start); depth=0; quote=None; esc=False; template=False; i=brace
-    while i<len(s):
-        c=s[i]
-        if quote:
-            if esc:esc=False
-            elif c=='\\':esc=True
-            elif c==quote:quote=None
-        elif template:
-            if esc:esc=False
-            elif c=='\\':esc=True
-            elif c=='`':template=False
-        else:
-            if c in "'\"":quote=c
-            elif c=='`':template=True
-            elif c=='{':depth+=1
-            elif c=='}':
-                depth-=1
-                if depth==0:return s[start:i+1]
-        i+=1
-    return 'UNTERMINATED'
+def snippet(token, radius=2400):
+    print('\n===== '+token+' =====')
+    pos=0; count=0
+    while True:
+        i=s.find(token,pos)
+        if i<0 or count>=12: break
+        chunk=s[max(0,i-radius):min(len(s),i+radius)]
+        chunk=chunk.replace(';',';\n').replace('><','>\n<')
+        print('\n--- OCCURRENCE',count+1,'---\n',chunk)
+        pos=i+len(token); count+=1
 
-for name in ['renderLayoutCanvas','selectField','selectRowSettings','addField','addCanvasField','insertField','duplicateLayoutSection','duplicateLayoutRow','normalizeLayoutRows','sortSelectedByLayout']:
-    print('\n===== FUNCTION '+name+' =====')
-    print(func(name))
-
-for token in ['df-field-entry-actions','df-add-field-main','df-ai-import-main','Aggiungi campo','structure_section','section','data-section-edit','data-row-edit','isLayoutSectionField','newRowId','nextRowDisplayNo']:
-    print('\n===== TOKEN '+token+' =====')
-    for m in list(re.finditer(re.escape(token),s))[:25]:
-        ls=s.rfind('\n',0,m.start())+1; le=s.find('\n',m.end()); le=len(s) if le<0 else le
-        print(s[ls:le])
+for token in ['df-field-entry-actions','df-add-field-main','Aggiungi campo','data-add-field','field-library','structureUi.section','isLayoutSectionField','selectField(index)','selectRowSettings(rowNo)']:
+    snippet(token)
 PY

@@ -38,9 +38,9 @@ require() {
   printf 'OK  %s\n' "$label"
 }
 
-# Smart drag/pointer baseline. These markers intentionally describe the current
-# Forms implementation that an Editor Builder migration must match before the
-# local runtime can be removed.
+# Smart drag/pointer baseline. These markers intentionally describe observable
+# capabilities of the current Forms implementation rather than pinning every
+# check to one historical implementation line.
 require 'const smartDrag=' 'smart drag state'
 require 'function smartAutoWidths(' 'automatic row width distribution'
 require 'function smartMoveBeside(' 'left/right same-row placement'
@@ -48,7 +48,7 @@ require 'function smartMoveNewRow(' 'above/below logical-row placement'
 require 'function smartRenderPreview(' 'drag preview rendering'
 require 'function smartAnimateFrom(' 'movement animation'
 require 'smartDrag.pointerId' 'pointer-based drag lifecycle'
-require 'if(!same&&targetItems.length>=4)' 'four-field row limit'
+require 'canSide=count<=4' 'four-field row limit'
 require 'sync();renderSelected();' 'Forms canonical sync after drag'
 require 'pushHistory();' 'Forms domain history after drag'
 

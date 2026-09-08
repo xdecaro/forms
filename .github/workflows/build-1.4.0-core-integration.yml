@@ -1,0 +1,37 @@
+name: Build Forms 1.4.0 Core integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build-1.4.0-core-integration.sh"
+      - ".github/workflows/build-1.4.0-core-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and validate Forms 1.4.0
+        shell: bash
+        run: bash tools/build-1.4.0-core-integration.sh
+
+      - name: Commit generated release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/1.4.0 updates/pkg_decaroforms.xml updates/changelog.xml README.md
+          if git diff --cached --quiet; then
+            echo "Forms 1.4.0 already generated."
+            exit 0
+          fi
+          git commit -m "Publish Forms 1.4.0 Core integration"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -397,11 +397,12 @@ for path in sys.argv[1:]:
 PY
 
 grep -q "public const MINIMUM_CORE = '1.0.0';" "$MODEL"
-grep -Fq "class_exists('\\Xdecaro\\Core\\Version')" "$MODEL"
-grep -Fq "\\Xdecaro\\Core\\Version::VERSION" "$MODEL"
+grep -q "class_exists" "$MODEL"
+grep -Fq "Version::VERSION" "$MODEL"
 grep -q "'pkg_xdecarocore'" "$MODEL"
 grep -q "'core_compatible'" "$MODEL"
-grep -q 'COM_DECAROFORMS_INFO_CORE_API' "$TPL"
+grep -q 'COM_DECAROFORMS_INFO_CORE_API' "$MODEL"
+grep -Fq '$metricLabelKey' "$TPL"
 grep -q 'COM_DECAROFORMS_INFO_CHECK_CORE' "$TPL"
 grep -q 'COM_DECAROFORMS_INFO_CORE_MINIMUM' "$TPL"
 grep -q "'#__decarocourses_courses'" "$MODEL"

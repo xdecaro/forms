@@ -8,7 +8,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.3.74**
+**1.4.0**
 
 ## What is Forms?
 
@@ -214,6 +214,7 @@ Forms is designed to integrate with the Joomla administrator interface and inclu
 - optional legacy LSFS Forms migration preset;
 - submissions export to Excel (.xlsx), CSV and PDF;
 - export respects active search and status filters;
+- optional Xdecaro Core 1.0+ detection and diagnostics without making Core a hard runtime dependency;
 - package-level Joomla update server.
 
 ## Google Forms note

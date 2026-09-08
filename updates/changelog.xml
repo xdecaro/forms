@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.6.0</version>
+		<note>Core: migrato il consumo delle API pubbliche al namespace canonico xdecaro\Core introdotto da Core 1.3.0. Diagnostica e Core UI richiedono Core 1.3.0+ quando usate; Core resta opzionale e il fallback locale resta invariato. Nessuna modifica a dati, Builder, invii, plugin, ACL o identità Joomla.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.5.1</version>
 		<note>Builder: corretto il selettore CSS del Campo attivo. La classe .is-active era presente nel DOM ma i selettori dipendevano dall'antenato .df-builder e non applicavano lo stato visivo. I selettori del Campo attivo ora puntano direttamente a .df-layout-card.is-active; colori, gerarchia, drag, JavaScript, dati e integrazione Core restano invariati.</note>
 	</changelog>

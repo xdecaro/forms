@@ -1,0 +1,62 @@
+name: Build Forms 1.5.1 active field selector
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build-1.5.1-active-field-selector.sh"
+      - ".github/workflows/build-1.5.1-active-field-selector.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate build script
+        shell: bash
+        run: bash -n tools/build-1.5.1-active-field-selector.sh
+
+      - name: Build and validate Forms 1.5.1
+        shell: bash
+        run: bash tools/build-1.5.1-active-field-selector.sh
+
+      - name: Verify active Field selector hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="1.5.1"
+          COMPONENT="releases/${VERSION}/com_decaroforms_${VERSION}.zip"
+          PACKAGE="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
+          BUILDER_PATH="administrator/components/com_decaroforms/tmpl/builder/default.php"
+
+          unzip -t "$PACKAGE" >/dev/null
+          unzip -p "$COMPONENT" "$BUILDER_PATH" | grep -Fq '.df-layout-card.is-active{'
+          unzip -p "$COMPONENT" "$BUILDER_PATH" | grep -Fq 'background:color-mix(in srgb,#7c3aed 9%,var(--bs-body-bg,#fff))!important;'
+          unzip -p "$COMPONENT" "$BUILDER_PATH" | grep -Fq 'box-shadow:inset 4px 0 0 #7c3aed'
+          if unzip -p "$COMPONENT" "$BUILDER_PATH" | grep -Fq '.df-builder .df-layout-card.is-active{'; then
+            echo 'Old non-matching active Field selector still present' >&2
+            exit 1
+          fi
+
+          grep -Fq '<version>1.5.1</version>' updates/pkg_decaroforms.xml
+          grep -Fq 'releases/1.5.1/pkg_decaroforms_1.5.1.zip' updates/pkg_decaroforms.xml
+
+      - name: Commit generated release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/1.5.1 updates/pkg_decaroforms.xml updates/changelog.xml README.md
+          if git diff --cached --quiet; then
+            echo "Forms 1.5.1 already generated."
+            exit 0
+          fi
+          git commit -m "Publish Forms 1.5.1 active field selector fix"
+          git pull --rebase origin main
+          git push origin HEAD:main

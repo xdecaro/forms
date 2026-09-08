@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.5.1</version>
+		<note>Builder: corretto il selettore CSS del Campo attivo. La classe .is-active era presente nel DOM ma i selettori dipendevano dall'antenato .df-builder e non applicavano lo stato visivo. I selettori del Campo attivo ora puntano direttamente a .df-layout-card.is-active; colori, gerarchia, drag, JavaScript, dati e integrazione Core restano invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.5.0</version>
 		<note>Prima adozione controllata del design system Core by xdecaro nella sola pagina Informazioni/Diagnostica. Core 1.1+ viene caricato via AssetService/WAM e layout scoped dedicato; il layout locale 1.4.2 resta fallback automatico. Builder, campi, invii, email, import/export e database invariati.</note>
 	</changelog>

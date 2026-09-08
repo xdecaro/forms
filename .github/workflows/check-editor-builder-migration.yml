@@ -25,3 +25,17 @@ jobs:
       - name: Verify Forms 1.5.1 Builder baseline
         shell: bash
         run: bash tools/check-editor-builder-migration-baseline.sh 1.5.1
+
+      - name: Inspect Builder integration anchors
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          unzip -q releases/1.5.1/pkg_decaroforms_1.5.1.zip -d "$tmp/outer"
+          unzip -q "$tmp/outer/com_decaroforms_1.5.1.zip" -d "$tmp/component"
+          builder="$tmp/component/administrator/components/com_decaroforms/tmpl/builder/default.php"
+          echo '--- layout/lifecycle anchors ---'
+          grep -nE 'layoutCanvas|renderLayoutCanvas|df-layout-row-group|df-builder-workspace|DOMContentLoaded|addEventListener\(.load|activeFieldKey' "$builder" | head -n 120 || true
+          echo '--- script boundaries ---'
+          grep -nE '<script|</script>' "$builder" | tail -n 30 || true

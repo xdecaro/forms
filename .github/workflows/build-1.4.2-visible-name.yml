@@ -1,0 +1,51 @@
+name: Build Forms 1.4.2 visible name
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build-1.4.2-visible-name.sh"
+      - ".github/workflows/build-1.4.2-visible-name.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and validate Forms 1.4.2
+        shell: bash
+        run: bash tools/build-1.4.2-visible-name.sh
+
+      - name: Verify generated package naming
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE="releases/1.4.2/pkg_decaroforms_1.4.2.zip"
+          COMPONENT="releases/1.4.2/com_decaroforms_1.4.2.zip"
+          test -f "$PACKAGE"
+          test -f "$COMPONENT"
+          unzip -p "$PACKAGE" language/it-IT/it-IT.pkg_decaroforms.sys.ini | grep -Fq 'PKG_DECAROFORMS="Forms by xdecaro"'
+          unzip -p "$COMPONENT" administrator/components/com_decaroforms/language/it-IT/com_decaroforms.ini | grep -Fq 'COM_DECAROFORMS="Forms by xdecaro"'
+          unzip -p "$PACKAGE" pkg_decaroforms.xml | grep -Fq '<version>1.4.2</version>'
+          grep -Fq '<name>Forms by xdecaro</name>' updates/pkg_decaroforms.xml
+          grep -Fq '<version>1.4.2</version>' updates/pkg_decaroforms.xml
+
+      - name: Commit generated release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/1.4.2 updates/pkg_decaroforms.xml updates/changelog.xml README.md
+          if git diff --cached --quiet; then
+            echo "Forms 1.4.2 already generated."
+            exit 0
+          fi
+          git commit -m "Publish Forms 1.4.2 visible name"
+          git pull --rebase origin main
+          git push origin HEAD:main

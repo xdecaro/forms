@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.5.0</version>
+		<note>Prima adozione controllata del design system Core by xdecaro nella sola pagina Informazioni/Diagnostica. Core 1.1+ viene caricato via AssetService/WAM e layout scoped dedicato; il layout locale 1.4.2 resta fallback automatico. Builder, campi, invii, email, import/export e database invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.4.2</version>
 		<note>Corretto il nome pubblico di package e componente in Forms by xdecaro. Identificatori tecnici e logica applicativa invariati.</note>
 	</changelog>

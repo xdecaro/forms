@@ -5,6 +5,7 @@ on:
     paths:
       - "AGENTS.md"
       - "docs/editor-builder-integration.md"
+      - "integration/editor-builder/**"
       - "tools/check-editor-builder-migration-baseline.sh"
       - ".github/workflows/check-editor-builder-migration.yml"
   workflow_dispatch:
@@ -21,6 +22,10 @@ jobs:
       - name: Validate migration guard syntax
         shell: bash
         run: bash -n tools/check-editor-builder-migration-baseline.sh
+
+      - name: Validate adapter JavaScript
+        shell: bash
+        run: node --check integration/editor-builder/forms-builder-adapter.js
 
       - name: Verify Forms 1.5.1 Builder baseline
         shell: bash

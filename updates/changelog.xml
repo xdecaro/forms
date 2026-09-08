@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.4.2</version>
+		<note>Corretto il nome pubblico di package e componente in Forms by xdecaro. Identificatori tecnici e logica applicativa invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.4.1</version>
 		<note>Corretto il nome visibile dell'integrazione da Xdecaro Core a Core by xdecaro. Identificatori tecnici invariati.</note>
 	</changelog>

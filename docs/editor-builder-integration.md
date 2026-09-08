@@ -43,12 +43,28 @@ Core does not own the Builder engine and is not a blocker for this migration.
 
 ## Forms adapter responsibilities
 
-The future Forms adapter must translate between Editor layout events and Forms canonical state.
+The Forms adapter translates Editor layout intent into Forms canonical state.
+
+The initial contract lives at:
+
+`integration/editor-builder/forms-builder-adapter.js`
+
+It deliberately uses a **host-managed** model: Editor describes a visual action and Forms commits it through callbacks. Editor does not write directly to `selected[]`, `field.config.layout` or Forms persistence.
+
+Supported intent names in the first contract are:
+
+- `select`;
+- `move-beside`;
+- `move-new-row`;
+- `resize`;
+- `duplicate`;
+- `delete`.
 
 Mapping from the current Builder:
 
 | Forms runtime | Editor Builder concept |
 | --- | --- |
+| `#df-layout-canvas` | builder root |
 | `.df-layout-row` | row |
 | `.df-layout-card` | item |
 | `data-field-key` | stable item id |
@@ -59,7 +75,7 @@ Mapping from the current Builder:
 | `sync()` | host persistence bridge |
 | `pushHistory()` | host/domain history |
 
-Editor must never write directly to `selected[]` or Forms configuration objects. It emits visual-layout intent/state; Forms validates and commits it.
+The adapter also exposes a DOM description helper for the existing `.df-layout-row` / `.df-layout-card[data-field-key]` structure. This is diagnostic/integration state only; DOM order is never the authoritative Forms database model.
 
 ## Incremental migration
 
@@ -73,9 +89,9 @@ Forms runtime remains unchanged.
 
 ### Stage B — compatibility adapter
 
-Forms loads the Editor asset only when the supported Editor version is present. The adapter maps existing `.df-layout-*` DOM without changing stored Forms data.
+Forms loads the Editor asset only when a supported Editor version is present. The adapter maps Editor intent to the existing Forms callbacks and canonical data.
 
-During this stage the current smart-drag engine remains the fallback.
+During this stage the current Forms smart-drag engine remains the fallback and the Editor path must stay opt-in/development-only until host-managed intent parity exists.
 
 ### Stage C — parity mode
 

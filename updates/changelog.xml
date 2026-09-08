@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.4.1</version>
+		<note>Corretto il nome visibile dell'integrazione da Xdecaro Core a Core by xdecaro. Identificatori tecnici invariati.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.4.0</version>
 		<note>Prima integrazione runtime opzionale con Xdecaro Core 1.0+: rilevamento package/API/versione nella pagina Informazioni e nuovo controllo Diagnostica. Core assente non blocca Forms; Builder e logica applicativa invariati.</note>
 	</changelog>

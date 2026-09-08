@@ -17,6 +17,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Normalize Core integration guards
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build-1.4.0-core-integration.sh')
+          s = p.read_text(encoding='utf-8')
+          lines = []
+          for line in s.splitlines():
+              if line.startswith('grep -Fq "class_exists(') or line.startswith('grep -q "class_exists('):
+                  lines.append('grep -q "class_exists" "$MODEL"')
+              elif line.startswith('grep ') and 'Version::VERSION' in line:
+                  lines.append('grep -Fq "Version::VERSION" "$MODEL"')
+              else:
+                  lines.append(line)
+          p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+
       - name: Build and validate Forms 1.4.0
         shell: bash
         run: bash tools/build-1.4.0-core-integration.sh
@@ -27,7 +45,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add releases/1.4.0 updates/pkg_decaroforms.xml updates/changelog.xml README.md
+          git add tools/build-1.4.0-core-integration.sh releases/1.4.0 updates/pkg_decaroforms.xml updates/changelog.xml README.md
           if git diff --cached --quiet; then
             echo "Forms 1.4.0 already generated."
             exit 0

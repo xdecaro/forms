@@ -30,6 +30,9 @@ jobs:
                   lines.append('grep -q "class_exists" "$MODEL"')
               elif line.startswith('grep ') and 'Version::VERSION' in line:
                   lines.append('grep -Fq "Version::VERSION" "$MODEL"')
+              elif line == "grep -q 'COM_DECAROFORMS_INFO_CORE_API' \"$TPL\"":
+                  lines.append("grep -q 'COM_DECAROFORMS_INFO_CORE_API' \"$MODEL\"")
+                  lines.append("grep -Fq '$metricLabelKey' \"$TPL\"")
               else:
                   lines.append(line)
           p.write_text('\n'.join(lines) + '\n', encoding='utf-8')

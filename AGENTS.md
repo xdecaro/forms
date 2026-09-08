@@ -24,7 +24,7 @@ Good Core candidates include:
 Keep all Forms-specific business logic in this repository, including:
 
 - form definitions and field configuration;
-- Form Builder behavior;
+- Forms-specific Form Builder behavior and canonical serialization;
 - field libraries and presets;
 - submissions and submission statuses;
 - validation rules specific to Forms;
@@ -33,6 +33,59 @@ Keep all Forms-specific business logic in this repository, including:
 - multipage forms, payments and Forms-specific workflows.
 
 Do not move code into Core merely because it could technically be reused. A Core abstraction must be domain-neutral and useful to more than one product.
+
+## Editor Builder integration
+
+The reusable visual layout engine belongs to **Editor by xdecaro**, not to Core and not permanently to Forms.
+
+Editor may provide domain-neutral Builder primitives such as:
+
+- selection;
+- drag/drop placement;
+- rows and columns;
+- automatic width distribution;
+- custom width rebalance;
+- layout-only history primitives;
+- reusable lifecycle/events.
+
+Forms remains the owner of:
+
+- field definitions and field keys;
+- required state and validation;
+- Forms conditions;
+- Section/Row/Field semantics as persisted by Forms;
+- submission-facing configuration;
+- Forms undo/redo state when it includes domain data;
+- persistence and serialization.
+
+Dependency direction may be `Forms -> Editor`. Editor must never depend on Forms. Core must never depend on Editor.
+
+Do not make Editor a mandatory dependency of an already released Forms package until manifests, package/update behavior, minimum version and install/update regression tests are updated together.
+
+### Builder migration rule
+
+Forms already contains a mature smart-drag engine. Do not replace it with a simpler generic implementation.
+
+Any migration to Editor Builder Engine must preserve at least:
+
+- mouse, pointer and touch behavior;
+- drag above/below to create/reorder logical rows;
+- drag left/right to share a row;
+- maximum four fields per row;
+- automatic 100%, 50/50, 33/33/34 and 25/25/25/25 distribution;
+- custom widths such as 40/60 without unexpected reset;
+- preview/drop indicators and movement animation;
+- Section, Row and Field hierarchy;
+- active-field visual state;
+- current data and serialization;
+- current Forms undo/redo behavior;
+- desktop, tablet and smartphone;
+- light and dark mode;
+- keyboard/accessibility behavior.
+
+Migrate incrementally through an adapter and keep the current Forms implementation as fallback until parity is verified. Do not create a release whose only architectural benefit causes a user-visible Builder regression.
+
+Core stabilization is not a blocker for this migration. Use Editor's public asset/API directly first; add Core-based discovery/registry integration later only when the relevant Core API is stable.
 
 ## Migration rule
 
@@ -81,7 +134,7 @@ Continue to enforce where relevant:
 
 ## Regression rule
 
-A Core migration is complete only when the affected Forms behavior remains verified.
+A Core or Editor migration is complete only when the affected Forms behavior remains verified.
 
 Check as applicable:
 

@@ -1,0 +1,76 @@
+name: Build Forms 1.6.0 Core 1.3 lowercase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build-1.6.0-core-1.3-lowercase.sh"
+      - ".github/workflows/build-1.6.0-core-1.3-lowercase.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate build script
+        shell: bash
+        run: bash -n tools/build-1.6.0-core-1.3-lowercase.sh
+
+      - name: Build and validate Forms 1.6.0
+        shell: bash
+        run: bash tools/build-1.6.0-core-1.3-lowercase.sh
+
+      - name: Verify canonical Core namespace migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="1.6.0"
+          COMPONENT="releases/${VERSION}/com_decaroforms_${VERSION}.zip"
+          PACKAGE="releases/${VERSION}/pkg_decaroforms_${VERSION}.zip"
+          MODEL="administrator/components/com_decaroforms/src/Model/InformationModel.php"
+          VIEW="administrator/components/com_decaroforms/src/View/Information/HtmlView.php"
+
+          unzip -t "$PACKAGE" >/dev/null
+          unzip -t "$COMPONENT" >/dev/null
+          unzip -p "$COMPONENT" "$MODEL" | grep -Fq "public const MINIMUM_CORE = '1.3.0';"
+          unzip -p "$COMPONENT" "$MODEL" | grep -Fq 'xdecaro\Core\Version::VERSION'
+          unzip -p "$COMPONENT" "$VIEW" | grep -Fq "MINIMUM_CORE_UI_VERSION = '1.3.0'"
+          unzip -p "$COMPONENT" "$VIEW" | grep -Fq 'xdecaro\Core\Asset\AssetService'
+          unzip -p "$COMPONENT" "$VIEW" | grep -Fq 'useComponents($wa)'
+          unzip -p "$COMPONENT" "$VIEW" | grep -Fq "setLayout('core')"
+          unzip -p "$COMPONENT" administrator/components/com_decaroforms/tmpl/information/core.php | grep -Fq 'dfi-page xdecaro-scope forms-core-scope'
+          unzip -p "$COMPONENT" media/css/core-bridge.css | grep -Fq -- '--xdecaro-color-text'
+
+          if unzip -p "$COMPONENT" "$MODEL" | grep -Eq 'Xdecaro\\+Core'; then
+            echo 'Legacy Core namespace remains in InformationModel' >&2
+            exit 1
+          fi
+          if unzip -p "$COMPONENT" "$VIEW" | grep -Eq 'Xdecaro\\+Core'; then
+            echo 'Legacy Core namespace remains in Information HtmlView' >&2
+            exit 1
+          fi
+
+          grep -Fq '<version>1.6.0</version>' releases/${VERSION}/pkg_decaroforms.xml
+          grep -Fq '<name>Forms by xdecaro</name>' updates/pkg_decaroforms.xml
+          grep -Fq '<version>1.6.0</version>' updates/pkg_decaroforms.xml
+          grep -Fq 'releases/1.6.0/pkg_decaroforms_1.6.0.zip' updates/pkg_decaroforms.xml
+
+      - name: Commit generated release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/1.6.0 updates/pkg_decaroforms.xml updates/changelog.xml README.md
+          if git diff --cached --quiet; then
+            echo "Forms 1.6.0 already generated."
+            exit 0
+          fi
+          git commit -m "Publish Forms 1.6.0 Core namespace migration"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -1,0 +1,83 @@
+name: Publish Forms 1.7.0 Editor integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build-1.7.0-editor-integration.sh'
+      - '.github/workflows/publish-1.7.0-editor-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Validate build script
+        shell: bash
+        run: bash -n tools/build-1.7.0-editor-integration.sh
+
+      - name: Build deterministic Forms 1.7.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tools/build-1.7.0-editor-integration.sh
+          cp releases/1.7.0/pkg_decaroforms_1.7.0.zip /tmp/forms-1.7.0-a.zip
+          cp releases/1.7.0/SHA256SUMS.txt /tmp/forms-1.7.0-a.sums
+          bash tools/build-1.7.0-editor-integration.sh
+          cmp -s /tmp/forms-1.7.0-a.zip releases/1.7.0/pkg_decaroforms_1.7.0.zip
+          diff -u /tmp/forms-1.7.0-a.sums releases/1.7.0/SHA256SUMS.txt
+          echo 'f7fa1987abe73efd614978a0746ba8850e87e3f1a7100abd62f4cb9dec3b90b4  releases/1.7.0/pkg_decaroforms_1.7.0.zip' | sha256sum --check --strict
+          for file in releases/1.7.0/*.zip; do unzip -t "$file" >/dev/null; done
+          grep -Fq '<version>1.7.0</version>' releases/1.7.0/pkg_decaroforms.xml
+          grep -Fq '<version>1.7.0</version>' updates/pkg_decaroforms.xml
+          grep -Fq '<sha256>f7fa1987abe73efd614978a0746ba8850e87e3f1a7100abd62f4cb9dec3b90b4</sha256>' updates/pkg_decaroforms.xml
+
+      - name: Commit generated release channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add releases/1.7.0 updates/pkg_decaroforms.xml updates/changelog.xml README.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish Forms 1.7.0 Editor integration'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo 'Forms 1.7.0 release channel already generated.'
+          fi
+
+      - name: Create or verify GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='v1.7.0'
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            rm -rf /tmp/forms-existing-release
+            mkdir -p /tmp/forms-existing-release
+            gh release download "$TAG" --pattern 'pkg_decaroforms_1.7.0.zip' --dir /tmp/forms-existing-release
+            echo 'f7fa1987abe73efd614978a0746ba8850e87e3f1a7100abd62f4cb9dec3b90b4  /tmp/forms-existing-release/pkg_decaroforms_1.7.0.zip' | sha256sum --check --strict
+            echo 'Existing v1.7.0 release matches the deterministic package.'
+            exit 0
+          fi
+          gh release create "$TAG" \
+            releases/1.7.0/pkg_decaroforms_1.7.0.zip \
+            releases/1.7.0/com_decaroforms_1.7.0.zip \
+            releases/1.7.0/plg_system_decaroforms_1.7.0.zip \
+            releases/1.7.0/plg_editors-xtd_decaroforms_1.7.0.zip \
+            releases/1.7.0/SHA256SUMS.txt \
+            --target main \
+            --title 'Forms by xdecaro 1.7.0' \
+            --notes 'Forms 1.7.0 adds optional Joomla EditorsRegistry integration for the administrator and user HTML email templates. Editor by xdecaro 0.1.0-alpha6 can provide the visual editor; when it is absent or disabled Forms keeps its existing raw HTML textarea. No database schema change, hard Editor dependency or Core domain logic is introduced.'

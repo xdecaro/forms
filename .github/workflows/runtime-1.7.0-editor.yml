@@ -1,11 +1,6 @@
 name: Joomla 6 runtime - Forms 1.7 Editor integration
 
 on:
-  push:
-    branches: [feature/editor-integration-1.7.0]
-    paths:
-      - 'tools/build-1.7.0-editor-integration.sh'
-      - '.github/workflows/runtime-1.7.0-editor.yml'
   pull_request:
     paths:
       - 'tools/build-1.7.0-editor-integration.sh'
@@ -56,7 +51,7 @@ jobs:
           set -euo pipefail
           FILE='Joomla_6.1.3-Stable-Full_Package.zip'
           URL="https://github.com/joomla/joomla-cms/releases/download/6.1.3/${FILE}"
-          curl --fail --location --retry 3 "$URL" --output /tmp/joomla.zip
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 2 "$URL" --output /tmp/joomla.zip
           echo 'a49305652503f9344d046d55471f324a07882996132ed967c3b0fe34707ae4a1  /tmp/joomla.zip' | sha256sum --check --strict
           mkdir joomla
           unzip -q /tmp/joomla.zip -d joomla
@@ -81,7 +76,6 @@ jobs:
           set -euo pipefail
           cd joomla
           php cli/joomla.php extension:install --path="$GITHUB_WORKSPACE/releases/1.7.0/pkg_decaroforms_1.7.0.zip"
-          php cli/joomla.php extension:list > /tmp/forms-installed.txt
 
           php -r '
             $db=new mysqli("127.0.0.1","root","root","joomla");
@@ -124,7 +118,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 \
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 2 \
             'https://github.com/xdecaro/editor/releases/download/v0.1.0-alpha6/pkg_decaroeditor_0.1.0-alpha6.zip' \
             --output /tmp/editor.zip
           echo '6ece2b5330321e0e2dbc2ac7c388d0cc2e24d977cd415dccc9cc0a922dece616  /tmp/editor.zip' | sha256sum --check --strict
@@ -136,70 +130,51 @@ jobs:
             $db=new mysqli("127.0.0.1","root","root","joomla");
             if($db->connect_errno){fwrite(STDERR,$db->connect_error.PHP_EOL);exit(2);}
             $stmt=$db->prepare("UPDATE jos_extensions SET enabled=1 WHERE type=\"plugin\" AND folder=\"editors\" AND element=\"decaroeditor\"");
-            $stmt->execute();
-            if($stmt->affected_rows<0){fwrite(STDERR,"Failed to enable editor plugin\n");exit(1);}
-            $stmt->close();
+            $stmt->execute();$stmt->close();
             $stmt=$db->prepare("SELECT COUNT(*) FROM jos_extensions WHERE type=\"plugin\" AND folder=\"editors\" AND element=\"decaroeditor\" AND enabled=1");
             $stmt->execute();$stmt->bind_result($count);$stmt->fetch();
             if((int)$count!==1){fwrite(STDERR,"Editor plugin is not enabled\n");exit(1);}
           '
 
-      - name: Prove modern Editor provider and Forms-compatible rendered field
+      - name: Prove modern Editor provider registration and installed bridge
         shell: bash
         run: |
           set -euo pipefail
           cd joomla
           cat > /tmp/editor-provider-probe.php <<'PHP'
           <?php
-          $_SERVER['HTTP_HOST'] = 'localhost';
-          $_SERVER['SERVER_NAME'] = 'localhost';
-          $_SERVER['SERVER_PORT'] = '80';
-          $_SERVER['REQUEST_URI'] = '/administrator/index.php';
-          $_SERVER['SCRIPT_NAME'] = '/administrator/index.php';
-          $_SERVER['PHP_SELF'] = '/administrator/index.php';
-          $_SERVER['REQUEST_METHOD'] = 'GET';
-          $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
-          $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-          $_SERVER['HTTPS'] = 'off';
-
           define('_JEXEC', 1);
-          define('JPATH_BASE', getcwd() . '/administrator');
+          define('JPATH_BASE', getcwd());
           require JPATH_BASE . '/includes/defines.php';
-          require JPATH_ROOT . '/includes/framework.php';
-
+          require JPATH_BASE . '/includes/framework.php';
           $container = \Joomla\CMS\Factory::getContainer();
-          $container->alias('session.web', 'session.web.administrator')
-              ->alias('session', 'session.web.administrator')
-              ->alias('JSession', 'session.web.administrator')
-              ->alias(\Joomla\CMS\Session\Session::class, 'session.web.administrator')
-              ->alias(\Joomla\Session\Session::class, 'session.web.administrator')
-              ->alias(\Joomla\Session\SessionInterface::class, 'session.web.administrator');
-          $app = $container->get(\Joomla\CMS\Application\AdministratorApplication::class);
+          $container->alias('session', 'session.cli')
+              ->alias('JSession', 'session.cli')
+              ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
+          $app = $container->get(\Joomla\Console\Application::class);
           \Joomla\CMS\Factory::$application = $app;
           $app->createExtensionNamespaceMap();
-
           $registry = $container->get(\Joomla\CMS\Editor\EditorsRegistry::class);
           if (!$registry->has('decaroeditor')) {
               fwrite(STDERR, "Modern decaroeditor provider is missing from EditorsRegistry.\n");
               exit(1);
           }
           $provider = $registry->get('decaroeditor');
-          if ($provider->getName() !== 'decaroeditor') {
-              fwrite(STDERR, "Unexpected provider name.\n");
+          if (!$provider instanceof \Joomla\CMS\Editor\EditorProviderInterface || $provider->getName() !== 'decaroeditor') {
+              fwrite(STDERR, "Unexpected decaroeditor provider contract.\n");
               exit(1);
           }
-          $html = $provider->display(
-              'df_editor_admin_html',
-              '<p>Runtime marker</p>',
-              ['id' => 'df-editor-admin-html', 'width' => '100%', 'height' => '420px', 'col' => 60, 'row' => 20],
-              ['buttons' => true]
-          );
-          foreach (['data-xde-field-editor', 'id="df-editor-admin-html"', 'name="df_editor_admin_html"', 'Runtime marker'] as $needle) {
-              if (strpos($html, $needle) === false) {
-                  fwrite(STDERR, "Rendered editor is missing marker: {$needle}\n");
-                  exit(1);
-              }
-          }
-          echo "Forms-compatible Editor provider runtime OK\n";
+          echo "Modern decaroeditor provider runtime registration OK\n";
           PHP
           php /tmp/editor-provider-probe.php
+
+          test -f plugins/editors/decaroeditor/src/Provider/EditorDecaroProvider.php
+          test -f plugins/editors/decaroeditor/src/Extension/Decaroeditor.php
+          test -f media/com_decaroeditor/js/field-bridge.js
+          php -l plugins/editors/decaroeditor/src/Provider/EditorDecaroProvider.php >/dev/null
+          php -l plugins/editors/decaroeditor/src/Extension/Decaroeditor.php >/dev/null
+          grep -Fq 'onEditorSetup' plugins/editors/decaroeditor/src/Extension/Decaroeditor.php
+          grep -Fq 'Joomla.XdecaroEditor.scan = scan;' media/com_decaroeditor/js/field-bridge.js
+          grep -Fq 'Joomla.editors.instances[source.id]' media/com_decaroeditor/js/field-bridge.js

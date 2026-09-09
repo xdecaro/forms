@@ -152,17 +152,18 @@ jobs:
           cat > /tmp/editor-provider-probe.php <<'PHP'
           <?php
           define('_JEXEC', 1);
-          define('JPATH_BASE', getcwd());
+          define('JPATH_BASE', getcwd() . '/administrator');
           require JPATH_BASE . '/includes/defines.php';
-          require JPATH_BASE . '/includes/framework.php';
+          require JPATH_ROOT . '/includes/framework.php';
 
           $container = \Joomla\CMS\Factory::getContainer();
-          $container->alias('session', 'session.cli')
-              ->alias('JSession', 'session.cli')
-              ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
-              ->alias(\Joomla\Session\Session::class, 'session.cli')
-              ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
-          $app = $container->get(\Joomla\Console\Application::class);
+          $container->alias('session.web', 'session.web.administrator')
+              ->alias('session', 'session.web.administrator')
+              ->alias('JSession', 'session.web.administrator')
+              ->alias(\Joomla\CMS\Session\Session::class, 'session.web.administrator')
+              ->alias(\Joomla\Session\Session::class, 'session.web.administrator')
+              ->alias(\Joomla\Session\SessionInterface::class, 'session.web.administrator');
+          $app = $container->get(\Joomla\CMS\Application\AdministratorApplication::class);
           \Joomla\CMS\Factory::$application = $app;
           $app->createExtensionNamespaceMap();
 

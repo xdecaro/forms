@@ -1,0 +1,102 @@
+name: Validate Forms 1.7.0 Editor integration
+
+on:
+  push:
+    branches: [feature/editor-integration-1.7.0]
+    paths:
+      - 'tools/build-1.7.0-editor-integration.sh'
+      - '.github/workflows/build-1.7.0-editor-integration.yml'
+  pull_request:
+    paths:
+      - 'tools/build-1.7.0-editor-integration.sh'
+      - '.github/workflows/build-1.7.0-editor-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Build A
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tools/build-1.7.0-editor-integration.sh
+          cp releases/1.7.0/SHA256SUMS.txt /tmp/forms-1.7.0-sums-a
+          cp releases/1.7.0/pkg_decaroforms_1.7.0.zip /tmp/pkg-a.zip
+
+      - name: Validate package structure and integration boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/forms17 && mkdir -p /tmp/forms17/outer /tmp/forms17/component
+          unzip -q releases/1.7.0/pkg_decaroforms_1.7.0.zip -d /tmp/forms17/outer
+          test -f /tmp/forms17/outer/com_decaroforms_1.7.0.zip
+          test -f /tmp/forms17/outer/plg_system_decaroforms_1.7.0.zip
+          test -f /tmp/forms17/outer/plg_editors-xtd_decaroforms_1.7.0.zip
+          test -f /tmp/forms17/outer/pkg_decaroforms.xml
+          unzip -t /tmp/forms17/outer/com_decaroforms_1.7.0.zip >/dev/null
+          unzip -t /tmp/forms17/outer/plg_system_decaroforms_1.7.0.zip >/dev/null
+          unzip -t /tmp/forms17/outer/plg_editors-xtd_decaroforms_1.7.0.zip >/dev/null
+          unzip -q /tmp/forms17/outer/com_decaroforms_1.7.0.zip -d /tmp/forms17/component
+
+          BUILDER=/tmp/forms17/component/administrator/components/com_decaroforms/tmpl/builder/default.php
+          CONTROLLER=/tmp/forms17/component/administrator/components/com_decaroforms/src/Controller/BuilderController.php
+          test -f "$BUILDER"
+          test -f "$CONTROLLER"
+          grep -Fq 'use Joomla\CMS\Editor\EditorsRegistry;' "$BUILDER"
+          grep -Fq "has('decaroeditor')" "$BUILDER"
+          grep -Fq 'data-email-editor-host' "$BUILDER"
+          grep -Fq 'simpleFormControls()' "$BUILDER"
+          grep -Fq 'window.dfFormsFlushEmailEditors' "$BUILDER"
+          grep -Fq 'instance.replaceSelection(token)' "$BUILDER"
+          grep -Fq 'data-chatgpt-html' "$BUILDER"
+          grep -Fq 'data-a="html"' "$BUILDER"
+          ! grep -RInE 'Xdecaro\\Component\\Decaroeditor|Xdecaro\\Plugin\\Editors\\Decaroeditor|bootComponent\([^)]*decaroeditor' /tmp/forms17/component --include='*.php' --include='*.js'
+          ! grep -RInE 'Xdecaro\\Core' /tmp/forms17/component --include='*.php'
+          grep -Fq "Session::checkToken('post')" "$CONTROLLER"
+          grep -Fq "authorise(\$permission, 'com_decaroforms')" "$CONTROLLER"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          outer=Path('/tmp/forms17/outer')
+          root=ET.parse(outer/'pkg_decaroforms.xml').getroot()
+          assert root.findtext('version') == '1.7.0'
+          files=[(node.text or '').strip() for node in root.findall('./files/file')]
+          assert 'com_decaroforms_1.7.0.zip' in files, files
+          assert 'plg_system_decaroforms_1.7.0.zip' in files, files
+          assert 'plg_editors-xtd_decaroforms_1.7.0.zip' in files, files
+          assert not any('decaroeditor' in x and 'decaroforms' not in x for x in files), files
+          croot=ET.parse('/tmp/forms17/component/com_decaroforms.xml').getroot()
+          assert croot.findtext('version') == '1.7.0'
+          PY
+
+      - name: Build B and prove deterministic output
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tools/build-1.7.0-editor-integration.sh
+          diff -u /tmp/forms-1.7.0-sums-a releases/1.7.0/SHA256SUMS.txt
+          cmp -s /tmp/pkg-a.zip releases/1.7.0/pkg_decaroforms_1.7.0.zip
+
+      - name: Upload candidate package
+        uses: actions/upload-artifact@v4
+        with:
+          name: forms-1.7.0-editor-integration-${{ github.sha }}
+          path: |
+            releases/1.7.0/pkg_decaroforms_1.7.0.zip
+            releases/1.7.0/com_decaroforms_1.7.0.zip
+            releases/1.7.0/plg_system_decaroforms_1.7.0.zip
+            releases/1.7.0/plg_editors-xtd_decaroforms_1.7.0.zip
+            releases/1.7.0/SHA256SUMS.txt

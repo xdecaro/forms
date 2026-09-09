@@ -3,6 +3,12 @@
 	<changelog>
 		<element>pkg_decaroforms</element>
 		<type>package</type>
+		<version>1.7.0</version>
+		<note>Builder email: integrazione opzionale con il provider editor Joomla decaroeditor per i template HTML libero di amministrazione e utente. Editor assente/disabilitato mantiene automaticamente il textarea precedente. AI HTML ed email aggiuntive restano raw HTML. Nessuna nuova tabella, dipendenza obbligatoria, modifica a Core, ACL, CSRF o dati Forms.</note>
+	</changelog>
+	<changelog>
+		<element>pkg_decaroforms</element>
+		<type>package</type>
 		<version>1.6.0</version>
 		<note>Core: migrato il consumo delle API pubbliche al namespace canonico xdecaro\Core introdotto da Core 1.3.0. Diagnostica e Core UI richiedono Core 1.3.0+ quando usate; Core resta opzionale e il fallback locale resta invariato. Nessuna modifica a dati, Builder, invii, plugin, ACL o identità Joomla.</note>
 	</changelog>

@@ -8,7 +8,7 @@ Developed by **Luca De Caro**.
 
 ## Current development version
 
-**1.6.0**
+**1.7.0**
 
 ## What is Forms?
 
@@ -133,6 +133,8 @@ Email configuration can include:
 - user confirmation messages
 
 Email template cards are clickable and can be previewed through a modal facsimile preview before being used.
+
+When the optional **Editor by xdecaro 0.1.0-alpha6+** Joomla editor plugin is enabled, the administrator and user “HTML libero” email templates use the visual editor through Joomla’s public `EditorsRegistry` contract. Forms does not depend on Editor: if it is absent or disabled, the original HTML textarea is used automatically.
 
 ## Dashboard
 

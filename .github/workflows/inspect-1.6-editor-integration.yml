@@ -24,45 +24,47 @@ jobs:
           unzip -q releases/1.6.0/pkg_decaroforms_1.6.0.zip -d /tmp/forms-package
           unzip -q /tmp/forms-package/com_decaroforms_1.6.0.zip -d /tmp/forms-component
 
-          echo '=== TOP LEVEL ==='
-          find /tmp/forms-component -maxdepth 4 -type f | sort | head -n 120
-
           BUILDER="$(find /tmp/forms-component -type f -path '*/tmpl/builder/default.php' -print -quit)"
           VIEW="$(find /tmp/forms-component -type f -path '*/src/View/Builder/HtmlView.php' -print -quit)"
+          CONTROLLER="$(find /tmp/forms-component -type f -path '*/src/Controller/BuilderController.php' -print -quit)"
           MANIFEST="$(find /tmp/forms-component -maxdepth 2 -type f -name '*.xml' -print -quit)"
 
           test -n "$BUILDER" && test -f "$BUILDER"
-          echo "BUILDER=$BUILDER"
-          echo "VIEW=${VIEW:-NOT FOUND}"
-          echo "MANIFEST=${MANIFEST:-NOT FOUND}"
+          test -n "$VIEW" && test -f "$VIEW"
+          test -n "$CONTROLLER" && test -f "$CONTROLLER"
+          test -n "$MANIFEST" && test -f "$MANIFEST"
 
-          echo '=== BUILDER HEAD ==='
-          sed -n '1,120p' "$BUILDER"
-          if [ -n "$VIEW" ]; then
-            echo '=== BUILDER VIEW ==='
-            sed -n '1,280p' "$VIEW"
-          fi
-          if [ -n "$MANIFEST" ]; then
-            echo '=== MANIFEST ==='
-            cat "$MANIFEST"
-          fi
+          echo "BUILDER=$BUILDER"
+          echo "VIEW=$VIEW"
+          echo "CONTROLLER=$CONTROLLER"
+          echo "MANIFEST=$MANIFEST"
+
+          echo '=== BUILDER CONTROLLER ==='
+          sed -n '1,420p' "$CONTROLLER"
 
           python3 - "$BUILDER" <<'PY'
           from pathlib import Path
           import sys
           text = Path(sys.argv[1]).read_text(encoding='utf-8').splitlines()
-          markers = ['function renderEmailSpecial', "df-token-insert", "data-email-html", "data-chatgpt-html", "email_config_json", "useScript", "Editor"]
+          markers = [
+              'function renderEmailSpecial', 'df-token-insert', 'data-email-html',
+              'data-chatgpt-html', 'email_config_json', 'data-a="html"',
+              'function sync()', 'DeCaroFormsBuilderSubmit'
+          ]
           for marker in markers:
               print(f'=== MARKER: {marker} ===')
               matches = [i for i, line in enumerate(text) if marker in line]
               if not matches:
                   print('NOT FOUND')
                   continue
-              for i in matches[:3]:
-                  start=max(0,i-10); end=min(len(text),i+28)
+              for i in matches[:4]:
+                  start=max(0,i-12); end=min(len(text),i+34)
                   for n in range(start,end):
                       print(f'{n+1}: {text[n]}')
           PY
 
+          echo '=== INPUT ACCESS / SANITIZATION REFERENCES ==='
+          grep -RInE "get(Input|String|Int|Bool|Array|Raw)|filter|clean|email_config_json|additional_emails_json" "$CONTROLLER" || true
+
           echo '=== EDITOR / PLUGIN API REFERENCES ==='
-          grep -RInE 'Joomla\\CMS\\Editor|Editor::|PluginHelper|editors|WebAsset|Joomla\.editors' /tmp/forms-component --include='*.php' --include='*.js' || true
+          grep -RInE 'Joomla\\CMS\\Editor|Editor::|PluginHelper|editors|Joomla\.editors' /tmp/forms-component --include='*.php' --include='*.js' || true

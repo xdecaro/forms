@@ -1,0 +1,227 @@
+name: Joomla 6 runtime - Forms 1.6 to 1.7 upgrade
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/upgrade-1.6-to-1.7.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: joomla
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h localhost -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, zip, intl, mbstring, gd
+          coverage: none
+
+      - name: Install tooling
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq unzip curl
+
+      - name: Download and install pinned Joomla 6.1.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://github.com/joomla/joomla-cms/releases/download/6.1.3/Joomla_6.1.3-Stable-Full_Package.zip' \
+            --output /tmp/joomla.zip
+          echo 'a49305652503f9344d046d55471f324a07882996132ed967c3b0fe34707ae4a1  /tmp/joomla.zip' | sha256sum --check --strict
+          mkdir joomla
+          unzip -q /tmp/joomla.zip -d joomla
+          cd joomla
+          php installation/joomla.php install \
+            --site-name='Forms Upgrade Runtime' \
+            --admin-user='Runtime Admin' \
+            --admin-username='runtimeadmin' \
+            --admin-password='Runtime-Only-12345!' \
+            --admin-email='runtime@example.invalid' \
+            --db-type='mysqli' \
+            --db-host='127.0.0.1' \
+            --db-user='root' \
+            --db-pass='root' \
+            --db-name='joomla' \
+            --db-prefix='jos_'
+          test -f configuration.php
+
+      - name: Download and verify Forms 1.6.0 and 1.7.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.6.0/pkg_decaroforms_1.6.0.zip' \
+            --output /tmp/forms-1.6.0.zip
+          echo '5e7df40f442444eb0e12bb4f1441cd7bc53549f458273f94879f6304f266e286  /tmp/forms-1.6.0.zip' | sha256sum --check --strict
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://raw.githubusercontent.com/xdecaro/forms/main/releases/1.7.0/pkg_decaroforms_1.7.0.zip' \
+            --output /tmp/forms-1.7.0.zip
+          echo 'f7fa1987abe73efd614978a0746ba8850e87e3f1a7100abd62f4cb9dec3b90b4  /tmp/forms-1.7.0.zip' | sha256sum --check --strict
+          unzip -t /tmp/forms-1.6.0.zip >/dev/null
+          unzip -t /tmp/forms-1.7.0.zip >/dev/null
+
+      - name: Install Forms 1.6.0 and create preservation snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd joomla
+          php cli/joomla.php extension:install --path=/tmp/forms-1.6.0.zip
+
+          php -r '
+            $db = new mysqli("127.0.0.1", "root", "root", "joomla");
+            if ($db->connect_errno) { fwrite(STDERR, $db->connect_error . PHP_EOL); exit(2); }
+
+            foreach (["pkg_decaroforms", "com_decaroforms"] as $element) {
+              $stmt = $db->prepare("SELECT manifest_cache FROM jos_extensions WHERE element = ? LIMIT 1");
+              $stmt->bind_param("s", $element);
+              $stmt->execute();
+              $stmt->bind_result($cache);
+              if (!$stmt->fetch()) { fwrite(STDERR, "Missing extension before upgrade: $element\n"); exit(1); }
+              $stmt->close();
+              $manifest = json_decode((string) $cache, true);
+              if (!is_array($manifest) || ($manifest["version"] ?? "") !== "1.6.0") {
+                fwrite(STDERR, "Unexpected pre-upgrade version for $element\n"); exit(1);
+              }
+            }
+
+            $marker = json_encode(["upgrade_sentinel" => "preserve-1.6-to-1.7"], JSON_UNESCAPED_SLASHES);
+            $element = "com_decaroforms";
+            $stmt = $db->prepare("UPDATE jos_extensions SET params = ? WHERE element = ?");
+            $stmt->bind_param("ss", $marker, $element);
+            $stmt->execute();
+            if ($stmt->affected_rows < 0) { fwrite(STDERR, "Could not write preservation marker\n"); exit(1); }
+            $stmt->close();
+
+            $tables = [];
+            $result = $db->query("SHOW TABLES LIKE \"jos\\_decaroforms%\"");
+            while ($row = $result->fetch_row()) {
+              $table = $row[0];
+              if (!preg_match("/^[A-Za-z0-9_]+$/", $table)) { fwrite(STDERR, "Unsafe table name\n"); exit(1); }
+              $countResult = $db->query("SELECT COUNT(*) FROM `{$table}`");
+              $tables[$table] = (int) $countResult->fetch_row()[0];
+            }
+            ksort($tables);
+            if (!$tables) { fwrite(STDERR, "No Forms-owned tables discovered after 1.6.0 install\n"); exit(1); }
+            file_put_contents("/tmp/forms-tables-before.json", json_encode($tables, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+          '
+
+      - name: Upgrade to Forms 1.7.0 and prove preservation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd joomla
+          php cli/joomla.php extension:install --path=/tmp/forms-1.7.0.zip
+          php cli/joomla.php extension:list >/tmp/forms-upgrade-final.txt
+
+          php -r '
+            $db = new mysqli("127.0.0.1", "root", "root", "joomla");
+            if ($db->connect_errno) { fwrite(STDERR, $db->connect_error . PHP_EOL); exit(2); }
+
+            foreach (["pkg_decaroforms", "com_decaroforms"] as $element) {
+              $stmt = $db->prepare("SELECT manifest_cache FROM jos_extensions WHERE element = ? LIMIT 1");
+              $stmt->bind_param("s", $element);
+              $stmt->execute();
+              $stmt->bind_result($cache);
+              if (!$stmt->fetch()) { fwrite(STDERR, "Missing extension after upgrade: $element\n"); exit(1); }
+              $stmt->close();
+              $manifest = json_decode((string) $cache, true);
+              if (!is_array($manifest) || ($manifest["version"] ?? "") !== "1.7.0") {
+                fwrite(STDERR, "Unexpected post-upgrade version for $element\n"); exit(1);
+              }
+            }
+
+            $element = "com_decaroforms";
+            $stmt = $db->prepare("SELECT params FROM jos_extensions WHERE element = ? LIMIT 1");
+            $stmt->bind_param("s", $element);
+            $stmt->execute();
+            $stmt->bind_result($params);
+            if (!$stmt->fetch()) { fwrite(STDERR, "Forms component missing after upgrade\n"); exit(1); }
+            $stmt->close();
+            $decoded = json_decode((string) $params, true);
+            if (!is_array($decoded) || ($decoded["upgrade_sentinel"] ?? "") !== "preserve-1.6-to-1.7") {
+              fwrite(STDERR, "Forms component configuration was not preserved\n"); exit(1);
+            }
+
+            $before = json_decode((string) file_get_contents("/tmp/forms-tables-before.json"), true);
+            if (!is_array($before) || !$before) { fwrite(STDERR, "Invalid pre-upgrade table snapshot\n"); exit(1); }
+            $after = [];
+            $result = $db->query("SHOW TABLES LIKE \"jos\\_decaroforms%\"");
+            while ($row = $result->fetch_row()) {
+              $table = $row[0];
+              if (!preg_match("/^[A-Za-z0-9_]+$/", $table)) { fwrite(STDERR, "Unsafe table name\n"); exit(1); }
+              $countResult = $db->query("SELECT COUNT(*) FROM `{$table}`");
+              $after[$table] = (int) $countResult->fetch_row()[0];
+            }
+            ksort($after);
+            foreach ($before as $table => $count) {
+              if (!array_key_exists($table, $after)) { fwrite(STDERR, "Forms table disappeared during upgrade: $table\n"); exit(1); }
+              if ($after[$table] < $count) { fwrite(STDERR, "Forms rows were lost during upgrade: $table\n"); exit(1); }
+            }
+          '
+
+          test -f administrator/components/com_decaroforms/tmpl/builder/default.php
+          grep -Fq 'EditorsRegistry' administrator/components/com_decaroforms/tmpl/builder/default.php
+          grep -Fq "has('decaroeditor')" administrator/components/com_decaroforms/tmpl/builder/default.php
+          grep -Fq 'dfFormsFlushEmailEditors' administrator/components/com_decaroforms/tmpl/builder/default.php
+
+      - name: Install Editor alpha6 after upgrade and prove provider discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://github.com/xdecaro/editor/releases/download/v0.1.0-alpha6/pkg_decaroeditor_0.1.0-alpha6.zip' \
+            --output /tmp/editor.zip
+          echo '6ece2b5330321e0e2dbc2ac7c388d0cc2e24d977cd415dccc9cc0a922dece616  /tmp/editor.zip' | sha256sum --check --strict
+          cd joomla
+          php cli/joomla.php extension:install --path=/tmp/editor.zip
+          php -r '
+            $db = new mysqli("127.0.0.1", "root", "root", "joomla");
+            if ($db->connect_errno) { fwrite(STDERR, $db->connect_error . PHP_EOL); exit(2); }
+            $db->query("UPDATE jos_extensions SET enabled = 1 WHERE type = \"plugin\" AND folder = \"editors\" AND element = \"decaroeditor\"");
+          '
+
+          cat > /tmp/editor-registry-upgrade-probe.php <<'PHP'
+          <?php
+          define('_JEXEC', 1);
+          define('JPATH_BASE', getcwd());
+          require JPATH_BASE . '/includes/defines.php';
+          require JPATH_BASE . '/includes/framework.php';
+          $container = \Joomla\CMS\Factory::getContainer();
+          $container->alias('session', 'session.cli')
+              ->alias('JSession', 'session.cli')
+              ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
+          $app = $container->get(\Joomla\Console\Application::class);
+          \Joomla\CMS\Factory::$application = $app;
+          $app->createExtensionNamespaceMap();
+          $registry = $container->get(\Joomla\CMS\Editor\EditorsRegistry::class);
+          if (!$registry->has('decaroeditor')) {
+              fwrite(STDERR, "Editor provider missing after Forms upgrade\n");
+              exit(1);
+          }
+          if ($registry->get('decaroeditor')->getName() !== 'decaroeditor') {
+              fwrite(STDERR, "Unexpected Editor provider after Forms upgrade\n");
+              exit(1);
+          }
+          echo "Forms 1.6.0 -> 1.7.0 upgrade with Editor discovery OK\n";
+          PHP
+          php /tmp/editor-registry-upgrade-probe.php

@@ -1,0 +1,32 @@
+name: Check Forms Editor Builder migration baseline
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "docs/editor-builder-integration.md"
+      - "integration/editor-builder/**"
+      - "tools/check-editor-builder-migration-baseline.sh"
+      - ".github/workflows/check-editor-builder-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate migration guard syntax
+        shell: bash
+        run: bash -n tools/check-editor-builder-migration-baseline.sh
+
+      - name: Validate adapter JavaScript
+        shell: bash
+        run: node --check integration/editor-builder/forms-builder-adapter.js
+
+      - name: Verify Forms 1.5.1 Builder baseline
+        shell: bash
+        run: bash tools/check-editor-builder-migration-baseline.sh 1.5.1

@@ -1,0 +1,193 @@
+name: Joomla 6 runtime - Forms 1.7 Editor integration
+
+on:
+  push:
+    branches: [feature/editor-integration-1.7.0]
+    paths:
+      - 'tools/build-1.7.0-editor-integration.sh'
+      - '.github/workflows/runtime-1.7.0-editor.yml'
+  pull_request:
+    paths:
+      - 'tools/build-1.7.0-editor-integration.sh'
+      - '.github/workflows/runtime-1.7.0-editor.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: joomla
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h localhost -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, zip, intl, mbstring, gd
+          coverage: none
+
+      - name: Install tooling and build Forms candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq unzip curl
+          bash tools/build-1.7.0-editor-integration.sh
+          echo 'f7fa1987abe73efd614978a0746ba8850e87e3f1a7100abd62f4cb9dec3b90b4  releases/1.7.0/pkg_decaroforms_1.7.0.zip' | sha256sum --check --strict
+
+      - name: Download and install pinned Joomla 6.1.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE='Joomla_6.1.3-Stable-Full_Package.zip'
+          URL="https://github.com/joomla/joomla-cms/releases/download/6.1.3/${FILE}"
+          curl --fail --location --retry 3 "$URL" --output /tmp/joomla.zip
+          echo 'a49305652503f9344d046d55471f324a07882996132ed967c3b0fe34707ae4a1  /tmp/joomla.zip' | sha256sum --check --strict
+          mkdir joomla
+          unzip -q /tmp/joomla.zip -d joomla
+          cd joomla
+          php installation/joomla.php install \
+            --site-name='Forms Editor Runtime' \
+            --admin-user='Runtime Admin' \
+            --admin-username='runtimeadmin' \
+            --admin-password='Runtime-Only-12345!' \
+            --admin-email='runtime@example.invalid' \
+            --db-type='mysqli' \
+            --db-host='127.0.0.1' \
+            --db-user='root' \
+            --db-pass='root' \
+            --db-name='joomla' \
+            --db-prefix='jos_'
+          test -f configuration.php
+
+      - name: Install Forms 1.7.0 without Editor and verify fallback precondition
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd joomla
+          php cli/joomla.php extension:install --path="$GITHUB_WORKSPACE/releases/1.7.0/pkg_decaroforms_1.7.0.zip"
+          php cli/joomla.php extension:list > /tmp/forms-installed.txt
+
+          php -r '
+            $db=new mysqli("127.0.0.1","root","root","joomla");
+            if($db->connect_errno){fwrite(STDERR,$db->connect_error.PHP_EOL);exit(2);}
+            foreach(["pkg_decaroforms","com_decaroforms"] as $element){
+              $stmt=$db->prepare("SELECT COUNT(*) FROM jos_extensions WHERE element=?");
+              $stmt->bind_param("s",$element);$stmt->execute();$stmt->bind_result($count);$stmt->fetch();$stmt->close();
+              if((int)$count!==1){fwrite(STDERR,"Missing extension: $element\n");exit(1);}
+            }
+            $stmt=$db->prepare("SELECT COUNT(*) FROM jos_extensions WHERE type=\"plugin\" AND folder=\"editors\" AND element=\"decaroeditor\" AND enabled=1");
+            $stmt->execute();$stmt->bind_result($enabled);$stmt->fetch();
+            if((int)$enabled!==0){fwrite(STDERR,"decaroeditor unexpectedly enabled before installation\n");exit(1);}
+          '
+
+          cat > /tmp/editor-registry-probe.php <<'PHP'
+          <?php
+          define('_JEXEC', 1);
+          define('JPATH_BASE', getcwd());
+          require JPATH_BASE . '/includes/defines.php';
+          require JPATH_BASE . '/includes/framework.php';
+          $container = \Joomla\CMS\Factory::getContainer();
+          $container->alias('session', 'session.cli')
+              ->alias('JSession', 'session.cli')
+              ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
+          $app = $container->get(\Joomla\Console\Application::class);
+          \Joomla\CMS\Factory::$application = $app;
+          $app->createExtensionNamespaceMap();
+          $registry = $container->get(\Joomla\CMS\Editor\EditorsRegistry::class);
+          if ($registry->has('decaroeditor')) {
+              fwrite(STDERR, "decaroeditor provider unexpectedly available before installation.\n");
+              exit(1);
+          }
+          echo "Forms fallback precondition OK\n";
+          PHP
+          php /tmp/editor-registry-probe.php
+
+      - name: Download verify and install Editor 0.1.0-alpha6
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://github.com/xdecaro/editor/releases/download/v0.1.0-alpha6/pkg_decaroeditor_0.1.0-alpha6.zip' \
+            --output /tmp/editor.zip
+          echo '6ece2b5330321e0e2dbc2ac7c388d0cc2e24d977cd415dccc9cc0a922dece616  /tmp/editor.zip' | sha256sum --check --strict
+          unzip -t /tmp/editor.zip >/dev/null
+          cd joomla
+          php cli/joomla.php extension:install --path=/tmp/editor.zip
+
+          php -r '
+            $db=new mysqli("127.0.0.1","root","root","joomla");
+            if($db->connect_errno){fwrite(STDERR,$db->connect_error.PHP_EOL);exit(2);}
+            $stmt=$db->prepare("UPDATE jos_extensions SET enabled=1 WHERE type=\"plugin\" AND folder=\"editors\" AND element=\"decaroeditor\"");
+            $stmt->execute();
+            if($stmt->affected_rows<0){fwrite(STDERR,"Failed to enable editor plugin\n");exit(1);}
+            $stmt->close();
+            $stmt=$db->prepare("SELECT COUNT(*) FROM jos_extensions WHERE type=\"plugin\" AND folder=\"editors\" AND element=\"decaroeditor\" AND enabled=1");
+            $stmt->execute();$stmt->bind_result($count);$stmt->fetch();
+            if((int)$count!==1){fwrite(STDERR,"Editor plugin is not enabled\n");exit(1);}
+          '
+
+      - name: Prove modern Editor provider and Forms-compatible rendered field
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd joomla
+          cat > /tmp/editor-provider-probe.php <<'PHP'
+          <?php
+          define('_JEXEC', 1);
+          define('JPATH_BASE', getcwd());
+          require JPATH_BASE . '/includes/defines.php';
+          require JPATH_BASE . '/includes/framework.php';
+
+          $container = \Joomla\CMS\Factory::getContainer();
+          $container->alias('session', 'session.cli')
+              ->alias('JSession', 'session.cli')
+              ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\Session::class, 'session.cli')
+              ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
+          $app = $container->get(\Joomla\Console\Application::class);
+          \Joomla\CMS\Factory::$application = $app;
+          $app->createExtensionNamespaceMap();
+
+          $registry = $container->get(\Joomla\CMS\Editor\EditorsRegistry::class);
+          if (!$registry->has('decaroeditor')) {
+              fwrite(STDERR, "Modern decaroeditor provider is missing from EditorsRegistry.\n");
+              exit(1);
+          }
+          $provider = $registry->get('decaroeditor');
+          if ($provider->getName() !== 'decaroeditor') {
+              fwrite(STDERR, "Unexpected provider name.\n");
+              exit(1);
+          }
+          $html = $provider->display(
+              'df_editor_admin_html',
+              '<p>Runtime marker</p>',
+              ['id' => 'df-editor-admin-html', 'width' => '100%', 'height' => '420px', 'col' => 60, 'row' => 20],
+              ['buttons' => true]
+          );
+          foreach (['data-xde-field-editor', 'id="df-editor-admin-html"', 'name="df_editor_admin_html"', 'Runtime marker'] as $needle) {
+              if (strpos($html, $needle) === false) {
+                  fwrite(STDERR, "Rendered editor is missing marker: {$needle}\n");
+                  exit(1);
+              }
+          }
+          echo "Forms-compatible Editor provider runtime OK\n";
+          PHP
+          php /tmp/editor-provider-probe.php
